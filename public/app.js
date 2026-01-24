@@ -2,17 +2,17 @@
 // CONFIGURACIÓN EMAILJS - TUS DATOS
 // =============================================
 const EMAIL_CONFIG = {
-    serviceID: 'service_w443o2q',        // Tu Service ID
-    templateWelcome: 'template_spfox4j', // Template de bienvenida
-    templateRecovery: 'template_t60zh5m', // Template de recuperación
-    publicKey: 'zI6wDcEbWx6vmkK5G'       // Tu Public Key
+    serviceID: 'service_w443o2q',
+    templateWelcome: 'template_spfox4j',
+    templateRecovery: 'template_t60zh5m',
+    publicKey: 'zI6wDcEbWx6vmkK5G'
 };
 
 // =============================================
 // 1. INICIALIZAR EMAILJS
 // =============================================
 (function() {
-    console.log('🔄 Inicializando EmailJS...');
+    console.log('📧 Inicializando EmailJS...');
     if (typeof emailjs !== 'undefined') {
         try {
             emailjs.init(EMAIL_CONFIG.publicKey);
@@ -29,7 +29,6 @@ const EMAIL_CONFIG = {
 // 2. SISTEMA DE USUARIOS
 // =============================================
 const UserSystem = {
-    // Obtener todos los usuarios
     getUsers: function() {
         try {
             const users = localStorage.getItem('dominius_users');
@@ -40,7 +39,6 @@ const UserSystem = {
         }
     },
 
-    // Guardar usuarios
     saveUsers: function(users) {
         try {
             localStorage.setItem('dominius_users', JSON.stringify(users));
@@ -51,21 +49,17 @@ const UserSystem = {
         }
     },
 
-    // Registrar nuevo usuario
     register: function(name, username, email, password) {
         const users = this.getUsers();
         
-        // Validar que el username no exista
         if (users.find(u => u.username.toLowerCase() === username.toLowerCase())) {
             return { success: false, message: 'El nombre de usuario ya está en uso' };
         }
         
-        // Validar que el email no exista
         if (users.find(u => u.email.toLowerCase() === email.toLowerCase())) {
             return { success: false, message: 'El email ya está registrado' };
         }
 
-        // Crear nuevo usuario
         const newUser = {
             id: Date.now().toString(),
             name: name.trim(),
@@ -77,7 +71,6 @@ const UserSystem = {
             avatarColor: this.generateAvatarColor()
         };
 
-        // Guardar usuario
         users.push(newUser);
         this.saveUsers(users);
 
@@ -88,7 +81,6 @@ const UserSystem = {
         };
     },
 
-    // Generar color para avatar
     generateAvatarColor: function() {
         const colors = [
             '#8B5CF6', '#3B82F6', '#10B981', '#F59E0B', 
@@ -97,7 +89,6 @@ const UserSystem = {
         return colors[Math.floor(Math.random() * colors.length)];
     },
 
-    // Iniciar sesión
     login: function(usernameOrEmail, password) {
         const users = this.getUsers();
         const user = users.find(u => 
@@ -107,7 +98,6 @@ const UserSystem = {
         );
 
         if (user) {
-            // Actualizar último login
             user.lastLogin = new Date().toISOString();
             const userIndex = users.findIndex(u => u.id === user.id);
             if (userIndex !== -1) {
@@ -115,7 +105,6 @@ const UserSystem = {
                 this.saveUsers(users);
             }
             
-            // Guardar sesión
             localStorage.setItem('dominius_session', JSON.stringify(user));
             return { success: true, user: user };
         }
@@ -123,20 +112,17 @@ const UserSystem = {
         return { success: false, message: 'Usuario o contraseña incorrectos' };
     },
 
-    // Recuperar contraseña
     recoverPassword: function(email) {
         const users = this.getUsers();
         const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
 
         if (user) {
-            // Generar código de 6 dígitos
             const code = Math.floor(100000 + Math.random() * 900000).toString();
             
-            // Guardar código temporal (15 minutos)
             const recoveryData = {
                 code: code,
                 userId: user.id,
-                expiresAt: Date.now() + 15 * 60 * 1000 // 15 minutos
+                expiresAt: Date.now() + 15 * 60 * 1000
             };
             
             localStorage.setItem(`recovery_${user.id}`, JSON.stringify(recoveryData));
@@ -151,7 +137,6 @@ const UserSystem = {
         return { success: false, message: 'Email no encontrado en el sistema' };
     },
 
-    // Verificar código de recuperación
     verifyRecoveryCode: function(userId, code) {
         const recoveryKey = `recovery_${userId}`;
         const recoveryData = JSON.parse(localStorage.getItem(recoveryKey) || '{}');
@@ -172,7 +157,6 @@ const UserSystem = {
         return { success: true };
     },
 
-    // Cambiar contraseña
     changePassword: function(userId, newPassword) {
         const users = this.getUsers();
         const userIndex = users.findIndex(u => u.id === userId);
@@ -181,17 +165,14 @@ const UserSystem = {
             return { success: false, message: 'Usuario no encontrado' };
         }
         
-        // Actualizar contraseña
         users[userIndex].password = newPassword;
         this.saveUsers(users);
         
-        // Eliminar código de recuperación
         localStorage.removeItem(`recovery_${userId}`);
         
         return { success: true, message: 'Contraseña actualizada exitosamente' };
     },
 
-    // Obtener sesión actual
     getSession: function() {
         try {
             const session = localStorage.getItem('dominius_session');
@@ -202,7 +183,6 @@ const UserSystem = {
         }
     },
 
-    // Cerrar sesión
     logout: function() {
         localStorage.removeItem('dominius_session');
         window.location.href = 'index.html';
@@ -213,7 +193,6 @@ const UserSystem = {
 // 3. FUNCIONES DE EMAIL
 // =============================================
 
-// Enviar email de bienvenida
 async function sendWelcomeEmail(user) {
     console.log('📧 Preparando email de bienvenida para:', user.email);
     
@@ -236,23 +215,17 @@ async function sendWelcomeEmail(user) {
     };
 
     try {
-        console.log('Enviando email con servicio:', EMAIL_CONFIG.serviceID);
-        console.log('Template:', EMAIL_CONFIG.templateWelcome);
-        
         const response = await emailjs.send(
             EMAIL_CONFIG.serviceID,
             EMAIL_CONFIG.templateWelcome,
             templateParams
         );
         
-        console.log('✅ Email de bienvenida enviado:', response.status, response.text);
+        console.log('✅ Email de bienvenida enviado:', response.status);
         return { success: true };
         
     } catch (error) {
-        console.error('❌ Error enviando email de bienvenida:', error);
-        console.log('Status:', error.status);
-        console.log('Texto:', error.text);
-        
+        console.error('❌ Error enviando email:', error);
         return { 
             success: false, 
             error: error.text || 'Error al enviar el email'
@@ -260,10 +233,8 @@ async function sendWelcomeEmail(user) {
     }
 }
 
-// Enviar email de recuperación
 async function sendRecoveryEmail(user, code) {
     console.log('📧 Preparando email de recuperación para:', user.email);
-    console.log('Código:', code);
     
     const templateParams = {
         to_name: user.name,
@@ -279,27 +250,21 @@ async function sendRecoveryEmail(user, code) {
     };
 
     try {
-        console.log('Enviando email con servicio:', EMAIL_CONFIG.serviceID);
-        console.log('Template:', EMAIL_CONFIG.templateRecovery);
-        
         const response = await emailjs.send(
             EMAIL_CONFIG.serviceID,
             EMAIL_CONFIG.templateRecovery,
             templateParams
         );
         
-        console.log('✅ Email de recuperación enviado:', response.status, response.text);
+        console.log('✅ Email de recuperación enviado:', response.status);
         return { success: true };
         
     } catch (error) {
-        console.error('❌ Error enviando email de recuperación:', error);
-        console.log('Status:', error.status);
-        console.log('Texto:', error.text);
-        
+        console.error('❌ Error enviando email:', error);
         return { 
             success: false, 
             error: error.text || 'Error al enviar el email',
-            code: code // Devolvemos el código por si falla
+            code: code
         };
     }
 }
@@ -308,15 +273,10 @@ async function sendRecoveryEmail(user, code) {
 // 4. FUNCIONES DE INTERFAZ
 // =============================================
 
-// Mostrar notificación
 function showNotification(message, type = 'info') {
     const notification = document.getElementById('notification');
-    if (!notification) {
-        console.warn('Elemento de notificación no encontrado');
-        return;
-    }
+    if (!notification) return;
     
-    // Icono según tipo
     let icon = '';
     switch(type) {
         case 'success': icon = '✅'; break;
@@ -329,19 +289,14 @@ function showNotification(message, type = 'info') {
     notification.className = `notification ${type}`;
     notification.classList.add('show');
 
-    // Ocultar después de 4 segundos
     setTimeout(() => {
         notification.classList.remove('show');
     }, 4000);
 }
 
-// Mostrar/ocultar loading
 function showLoading(show = true, message = 'Procesando...') {
     const overlay = document.getElementById('loadingOverlay');
-    if (!overlay) {
-        console.warn('Elemento de loading no encontrado');
-        return;
-    }
+    if (!overlay) return;
     
     if (show) {
         overlay.querySelector('p').textContent = message;
@@ -351,14 +306,11 @@ function showLoading(show = true, message = 'Procesando...') {
     }
 }
 
-// Cambiar entre pantallas
 function showScreen(screenId) {
-    // Ocultar todas las pantallas
     document.querySelectorAll('.login-screen').forEach(screen => {
         screen.classList.remove('visible');
     });
 
-    // Mostrar la pantalla solicitada
     setTimeout(() => {
         const screen = document.getElementById(screenId);
         if (screen) {
@@ -373,13 +325,11 @@ function showScreen(screenId) {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 DOM cargado, configurando eventos...');
     
-    // Animación de bienvenida inicial
     setTimeout(() => {
         const welcomeScreen = document.getElementById('welcomeScreen');
         if (welcomeScreen) {
             welcomeScreen.classList.add('hidden');
             
-            // Verificar si hay sesión activa
             const session = UserSystem.getSession();
             if (session) {
                 console.log('Sesión encontrada, redirigiendo...');
@@ -395,9 +345,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }, 4800);
     
-    // =============================================
     // FORMULARIO DE LOGIN
-    // =============================================
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
         loginForm.addEventListener('submit', function(e) {
@@ -405,18 +353,14 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const username = document.getElementById('loginUser').value.trim();
             const password = document.getElementById('loginPassword').value;
-            const remember = document.getElementById('rememberMe').checked;
             
-            // Validaciones básicas
             if (!username || !password) {
                 showNotification('Por favor completa todos los campos', 'error');
                 return;
             }
             
-            // Mostrar loading
             showLoading(true, 'Iniciando sesión...');
             
-            // Intentar login después de un breve delay
             setTimeout(() => {
                 const result = UserSystem.login(username, password);
                 showLoading(false);
@@ -424,7 +368,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (result.success) {
                     showNotification(`¡Bienvenido, ${result.user.username}!`, 'success');
                     
-                    // Redirigir al chat
                     setTimeout(() => {
                         window.location.href = 'chat.html';
                     }, 1000);
@@ -435,9 +378,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // =============================================
     // FORMULARIO DE REGISTRO
-    // =============================================
     const registerForm = document.getElementById('registerForm');
     if (registerForm) {
         registerForm.addEventListener('submit', async function(e) {
@@ -449,7 +390,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const password = document.getElementById('regPassword').value;
             const confirmPassword = document.getElementById('regConfirmPassword').value;
             
-            // Validaciones
             if (!name || !username || !email || !password || !confirmPassword) {
                 showNotification('Por favor completa todos los campos', 'error');
                 return;
@@ -465,19 +405,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            if (!email.includes('@') || !email.includes('.')) {
-                showNotification('Por favor ingresa un email válido', 'error');
-                return;
-            }
-            
-            // Registrar usuario
             showLoading(true, 'Creando tu cuenta...');
             
             setTimeout(async () => {
                 const result = UserSystem.register(name, username, email, password);
                 
                 if (result.success) {
-                    // Intentar enviar email de bienvenida
                     showLoading(true, 'Enviando email de bienvenida...');
                     
                     try {
@@ -485,12 +418,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         showLoading(false);
                         
                         if (emailResult.success) {
-                            showNotification('¡Cuenta creada! Revisa tu email de bienvenida', 'success');
+                            showNotification('¡Cuenta creada! Revisa tu email', 'success');
                         } else {
-                            showNotification('Cuenta creada. ' + (emailResult.error || ''), 'info');
+                            showNotification('Cuenta creada correctamente', 'success');
                         }
                         
-                        // Volver al login después de 2 segundos
                         setTimeout(() => {
                             showScreen('loginScreen');
                             registerForm.reset();
@@ -498,7 +430,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         
                     } catch (error) {
                         showLoading(false);
-                        showNotification('Cuenta creada. Error al enviar email', 'info');
+                        showNotification('Cuenta creada correctamente', 'success');
                         setTimeout(() => {
                             showScreen('loginScreen');
                             registerForm.reset();
@@ -513,9 +445,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // =============================================
-    // FORMULARIO DE RECUPERACIÓN - CORREGIDO
-    // =============================================
+    // FORMULARIO DE RECUPERACIÓN
     const forgotForm = document.getElementById('forgotPasswordForm');
     if (forgotForm) {
         forgotForm.addEventListener('submit', async function(e) {
@@ -523,8 +453,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const email = document.getElementById('forgotEmail').value.trim();
             
-            // Validar email
-            if (!email || !email.includes('@') || !email.includes('.')) {
+            if (!email || !email.includes('@')) {
                 showNotification('Por favor ingresa un email válido', 'error');
                 return;
             }
@@ -535,33 +464,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 const result = UserSystem.recoverPassword(email);
                 
                 if (result.success) {
-                    // INTENTAR ENVIAR EMAIL REAL
-                    showLoading(true, 'Enviando código a tu email...');
+                    showLoading(true, 'Enviando código...');
                     
                     const emailResult = await sendRecoveryEmail(result.user, result.code);
                     
                     showLoading(false);
                     
                     if (emailResult.success) {
-                        // ÉXITO: Email enviado correctamente
                         showNotification('✅ Código enviado a tu email', 'success');
-                        showNotification('Revisa tu bandeja de entrada (y spam)', 'info');
                     } else {
-                        // FALLO: Mostrar el código y error
-                        showNotification(`📧 ${emailResult.error || 'Error al enviar email'}`, 'warning');
                         showNotification(`Tu código es: ${result.code}`, 'info');
                     }
                     
-                    // Mostrar pantalla para ingresar código
                     showRecoveryCodeScreen(result.user.id);
-                    
-                    // Limpiar formulario
                     forgotForm.reset();
                     
                 } else {
                     showLoading(false);
-                    // Por seguridad, no revelamos si el email existe
-                    showNotification('Si el email existe en nuestro sistema, recibirás un código de recuperación', 'info');
+                    showNotification('Si el email existe, recibirás un código', 'info');
                     setTimeout(() => {
                         showScreen('loginScreen');
                         forgotForm.reset();
@@ -571,9 +491,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // =============================================
-    // NAVEGACIÓN ENTRE PANTALLAS
-    // =============================================
+    // NAVEGACIÓN
     document.getElementById('showRegister')?.addEventListener('click', () => {
         showScreen('registerScreen');
     });
@@ -590,14 +508,13 @@ document.addEventListener('DOMContentLoaded', function() {
         showScreen('loginScreen');
     });
     
-    console.log('✅ Todos los eventos configurados correctamente');
+    console.log('✅ Eventos configurados correctamente');
 });
 
 // =============================================
 // 6. PANTALLA DE CÓDIGO DE RECUPERACIÓN
 // =============================================
 function showRecoveryCodeScreen(userId) {
-    // Crear la pantalla si no existe
     if (!document.getElementById('recoveryCodeScreen')) {
         const screenHTML = `
             <div class="login-screen" id="recoveryCodeScreen">
@@ -636,10 +553,8 @@ function showRecoveryCodeScreen(userId) {
             </div>
         `;
         
-        // Insertar la pantalla en el DOM
         document.body.insertAdjacentHTML('beforeend', screenHTML);
         
-        // Configurar eventos de la nueva pantalla
         const codeForm = document.getElementById('recoveryCodeForm');
         const backButton = document.getElementById('backToLoginFromCode');
         
@@ -651,9 +566,8 @@ function showRecoveryCodeScreen(userId) {
                 const newPassword = document.getElementById('newPasswordInput').value;
                 const confirmPassword = document.getElementById('confirmNewPasswordInput').value;
                 
-                // Validaciones
                 if (code.length !== 6 || !/^\d+$/.test(code)) {
-                    showNotification('El código debe tener 6 dígitos numéricos', 'error');
+                    showNotification('El código debe tener 6 dígitos', 'error');
                     return;
                 }
                 
@@ -667,17 +581,14 @@ function showRecoveryCodeScreen(userId) {
                     return;
                 }
                 
-                // Verificar código
                 const verification = UserSystem.verifyRecoveryCode(userId, code);
                 
                 if (verification.success) {
-                    // Cambiar contraseña
                     const result = UserSystem.changePassword(userId, newPassword);
                     
                     if (result.success) {
                         showNotification('✅ Contraseña cambiada exitosamente', 'success');
                         
-                        // Volver al login después de 2 segundos
                         setTimeout(() => {
                             showScreen('loginScreen');
                             codeForm.reset();
@@ -698,95 +609,5 @@ function showRecoveryCodeScreen(userId) {
         }
     }
     
-    // Mostrar la pantalla de código
     showScreen('recoveryCodeScreen');
 }
-
-// =============================================
-// 7. ESTILOS ADICIONALES (se inyectan automáticamente)
-// =============================================
-(function injectStyles() {
-    const styles = `
-        <style>
-            /* Efectos de transición suaves */
-            .login-screen {
-                transition: opacity 0.3s ease, transform 0.3s ease;
-            }
-            
-            .login-screen.visible {
-                animation: fadeInScale 0.4s ease-out;
-            }
-            
-            @keyframes fadeInScale {
-                0% {
-                    opacity: 0;
-                    transform: scale(0.95);
-                }
-                100% {
-                    opacity: 1;
-                    transform: scale(1);
-                }
-            }
-            
-            /* Mejoras para inputs */
-            .input-group input:valid {
-                border-color: #10B981;
-            }
-            
-            .input-group input:invalid:not(:placeholder-shown) {
-                border-color: #EF4444;
-            }
-            
-            /* Efecto hover para botones */
-            .login-button, .link {
-                transition: all 0.2s ease;
-            }
-            
-            .login-button:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 6px 20px rgba(138, 43, 226, 0.4);
-            }
-            
-            .link:hover {
-                color: #c4b5fd !important;
-            }
-            
-            /* Spinner mejorado */
-            .spinner {
-                border-width: 3px;
-                border-style: solid;
-                border-color: rgba(138, 92, 246, 0.2);
-                border-top-color: #8B5CF6;
-                border-radius: 50%;
-                width: 50px;
-                height: 50px;
-                animation: spin 1s linear infinite;
-            }
-            
-            @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-            }
-            
-            /* Responsive mejorado */
-            @media (max-width: 768px) {
-                .login-box {
-                    width: 90%;
-                    padding: 30px 20px;
-                    margin: 10px;
-                }
-                
-                .login-title {
-                    font-size: 28px;
-                }
-                
-                .input-group input {
-                    padding: 12px 15px;
-                    font-size: 16px;
-                }
-            }
-        </style>
-    `;
-    
-    document.head.insertAdjacentHTML('beforeend', styles);
-})();
