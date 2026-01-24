@@ -510,7 +510,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     'Authorization': `Bearer ${GROQ_API_KEY}`
                 },
                 body: JSON.stringify({
-                    model: 'llama3-70b-8192',
+                    model: 'llama-3.3-70b-versatile', // ⬅️ MODELO ACTUALIZADO
                     messages: [
                         {
                             role: 'system',
@@ -1138,6 +1138,7 @@ Como consultor de Dominius AI, te presento este **PLAN DE ACCIÓN ESTRUCTURADO**
     
     document.head.insertAdjacentHTML('beforeend', additionalStyles);
     
-    console.log('✅ Dominius AI cargado correctamente con Groq - Modos específicos');
+    console.log('✅ Dominius AI cargado correctamente con Groq - Modelo actualizado');
     console.log('🔑 API Key configurada');
+    console.log('🤖 Modelo: llama-3.3-70b-versatile');
 });
