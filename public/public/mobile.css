@@ -1,0 +1,530 @@
+[file name]: mobile.css
+[file content begin]
+/* ============================================= */
+/* ESTILOS ESPECÍFICOS PARA MÓVIL */
+/* ============================================= */
+
+@media (max-width: 768px) {
+    /* Reset para móvil */
+    body {
+        overflow: auto;
+        height: auto;
+        min-height: 100vh;
+        display: block;
+    }
+    
+    /* Pantalla de bienvenida */
+    .welcome-screen {
+        padding: 20px;
+    }
+    
+    .text-line {
+        font-size: 40px !important;
+        margin: 10px 0;
+    }
+    
+    .text-line.line1 {
+        font-size: 45px !important;
+        letter-spacing: 4px;
+        text-shadow: 0 0 20px rgba(138, 43, 226, 0.6);
+    }
+    
+    .text-line.line2 {
+        font-size: 20px !important;
+        letter-spacing: 2px;
+        margin: 10px 0;
+    }
+    
+    .text-line.line3 {
+        font-size: 14px !important;
+        letter-spacing: 1px;
+        margin-top: 30px;
+        text-align: center;
+        padding: 0 10px;
+    }
+    
+    /* Login/Register screens */
+    .login-screen {
+        padding: 15px;
+        align-items: flex-start;
+        padding-top: 30px;
+    }
+    
+    .login-box {
+        width: 100% !important;
+        max-width: 100%;
+        padding: 25px 20px !important;
+        margin: 0;
+        border-radius: 15px;
+        max-height: 85vh;
+        overflow-y: auto;
+    }
+    
+    .login-title {
+        font-size: 28px !important;
+        margin-bottom: 20px;
+    }
+    
+    .input-group input {
+        padding: 14px 16px;
+        font-size: 16px;
+    }
+    
+    .login-button {
+        padding: 16px;
+        font-size: 16px;
+    }
+    
+    /* Chat - Layout móvil */
+    body {
+        flex-direction: column;
+        height: 100vh;
+        overflow: hidden;
+    }
+    
+    .chat-area, .sidebar {
+        width: 100% !important;
+        position: relative;
+    }
+    
+    /* Sidebar en móvil - ocupa 40% */
+    .sidebar {
+        width: 100% !important;
+        height: 40vh;
+        min-height: 40vh;
+        max-height: 40vh;
+        border-right: none;
+        border-bottom: 1px solid rgba(138, 43, 226, 0.2);
+        overflow: hidden;
+    }
+    
+    .sidebar-header {
+        padding: 15px;
+    }
+    
+    .logo {
+        font-size: 18px;
+        margin-bottom: 15px;
+    }
+    
+    .user-info {
+        padding: 10px;
+    }
+    
+    .sidebar-tabs {
+        padding: 10px 15px;
+    }
+    
+    .tab-button {
+        padding: 10px 12px;
+        font-size: 13px;
+        min-height: 44px;
+    }
+    
+    .tab-content {
+        height: calc(100% - 200px);
+    }
+    
+    /* Chat area en móvil - ocupa 60% */
+    .chat-area {
+        height: 60vh;
+        min-height: 60vh;
+        max-height: 60vh;
+        flex: none;
+    }
+    
+    .chat-header {
+        padding: 12px 15px;
+        flex-wrap: wrap;
+    }
+    
+    .chat-title h2 {
+        font-size: 16px;
+    }
+    
+    .current-mode {
+        font-size: 12px;
+    }
+    
+    /* Mensajes en móvil */
+    .messages-container {
+        padding: 15px;
+        height: calc(100% - 150px);
+        overflow-y: auto;
+    }
+    
+    .message {
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+    
+    .message-avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 12px;
+    }
+    
+    .message-content-wrapper {
+        max-width: 80% !important;
+    }
+    
+    .message-content {
+        padding: 10px 14px;
+        font-size: 14px;
+        border-radius: 16px;
+        line-height: 1.5;
+    }
+    
+    .welcome-message {
+        margin: 20px auto;
+        padding: 0 15px;
+    }
+    
+    .welcome-icon {
+        width: 60px;
+        height: 60px;
+        margin-bottom: 20px;
+    }
+    
+    .welcome-message h2 {
+        font-size: 22px;
+        margin-bottom: 10px;
+    }
+    
+    .welcome-message p {
+        font-size: 14px;
+        margin-bottom: 25px;
+        line-height: 1.4;
+    }
+    
+    .quick-suggestions {
+        gap: 8px;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .suggestion-btn {
+        padding: 10px 15px;
+        font-size: 13px;
+        width: 100%;
+        max-width: 250px;
+    }
+    
+    /* Input area en móvil */
+    .input-area {
+        padding: 12px 15px;
+        position: sticky;
+        bottom: 0;
+        background: rgba(10, 10, 10, 0.98);
+        border-top: 1px solid rgba(138, 43, 226, 0.2);
+    }
+    
+    .input-container {
+        padding: 10px 14px;
+        border-radius: 18px;
+        min-height: 50px;
+    }
+    
+    #messageInput {
+        font-size: 16px;
+        line-height: 1.4;
+        min-height: 24px;
+    }
+    
+    .attach-btn, .send-btn {
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+        min-height: 36px;
+    }
+    
+    .input-footer {
+        font-size: 11px;
+        margin-top: 8px;
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+    
+    /* Archivos adjuntos */
+    .attached-files-container {
+        padding: 10px;
+        gap: 8px;
+        margin-bottom: 10px;
+        max-height: 100px;
+        overflow-y: auto;
+    }
+    
+    .attached-file-item {
+        padding: 8px 10px;
+        min-width: 0;
+    }
+    
+    .file-name {
+        max-width: 120px;
+        font-size: 13px;
+    }
+    
+    .file-size {
+        font-size: 11px;
+    }
+    
+    /* Lista de chats */
+    .chats-list {
+        padding: 0 10px 10px;
+        height: 100%;
+        overflow-y: auto;
+    }
+    
+    .chat-item {
+        padding: 12px;
+        margin-bottom: 8px;
+    }
+    
+    .chat-item:hover {
+        transform: translateX(3px);
+    }
+    
+    .chat-item-title {
+        font-size: 14px;
+    }
+    
+    .chat-item-preview {
+        font-size: 12px;
+    }
+    
+    /* Modos */
+    .modes-list {
+        padding: 10px;
+        height: 100%;
+        overflow-y: auto;
+    }
+    
+    .mode-card {
+        padding: 12px;
+        margin-bottom: 10px;
+    }
+    
+    .mode-card:hover {
+        transform: translateX(3px);
+    }
+    
+    .mode-icon {
+        width: 44px;
+        height: 44px;
+        font-size: 26px;
+    }
+    
+    .mode-info h3 {
+        font-size: 14px;
+    }
+    
+    .mode-info p {
+        font-size: 12px;
+    }
+    
+    /* Botones */
+    .new-chat-btn {
+        margin: 12px 15px;
+        padding: 12px 15px;
+        font-size: 14px;
+        min-height: 44px;
+    }
+    
+    .logout-btn {
+        padding: 12px 15px;
+        font-size: 14px;
+        min-height: 44px;
+    }
+    
+    .action-btn {
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+        min-height: 40px;
+    }
+    
+    /* Notificaciones */
+    .notification {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        padding: 14px 18px;
+        font-size: 14px;
+        text-align: center;
+        border-radius: 10px;
+    }
+    
+    /* Loading overlay */
+    .loading-overlay p {
+        font-size: 16px;
+    }
+    
+    .spinner {
+        width: 50px;
+        height: 50px;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Ajustes extra para pantallas muy pequeñas */
+    .text-line.line1 {
+        font-size: 38px !important;
+        letter-spacing: 3px;
+    }
+    
+    .text-line.line2 {
+        font-size: 18px !important;
+    }
+    
+    .text-line.line3 {
+        font-size: 13px !important;
+        margin-top: 25px;
+    }
+    
+    .login-box {
+        padding: 20px 15px !important;
+    }
+    
+    .message-content-wrapper {
+        max-width: 85% !important;
+    }
+    
+    .message-files {
+        gap: 5px;
+    }
+    
+    .message-file-badge {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+    
+    .sidebar {
+        height: 45vh;
+        min-height: 45vh;
+        max-height: 45vh;
+    }
+    
+    .chat-area {
+        height: 55vh;
+        min-height: 55vh;
+        max-height: 55vh;
+    }
+    
+    /* Orientación landscape para móviles */
+    @media (orientation: landscape) and (max-height: 500px) {
+        body {
+            flex-direction: row;
+            height: 100vh;
+        }
+        
+        .sidebar {
+            width: 40% !important;
+            height: 100vh;
+            max-height: 100vh;
+            min-height: 100vh;
+            border-right: 1px solid rgba(138, 43, 226, 0.2);
+            border-bottom: none;
+        }
+        
+        .chat-area {
+            width: 60% !important;
+            height: 100vh;
+            min-height: 100vh;
+            max-height: 100vh;
+        }
+        
+        .messages-container {
+            height: calc(100% - 140px);
+        }
+        
+        .sidebar-header {
+            padding: 12px;
+        }
+        
+        .logo {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        
+        .tab-content {
+            height: calc(100% - 180px);
+        }
+    }
+}
+
+/* Mejoras de toque para móvil */
+@media (hover: none) and (pointer: coarse) {
+    .tab-button,
+    .chat-item,
+    .mode-card,
+    .action-btn,
+    .attach-btn,
+    .send-btn,
+    .suggestion-btn,
+    .login-button,
+    .logout-btn,
+    .new-chat-btn {
+        min-height: 44px;
+        cursor: pointer;
+    }
+    
+    input, textarea, button, select {
+        font-size: 16px !important;
+        touch-action: manipulation;
+    }
+    
+    #messageInput {
+        font-size: 16px !important;
+    }
+    
+    .remove-file-btn {
+        min-width: 36px;
+        min-height: 36px;
+        padding: 8px;
+    }
+    
+    /* Previene el zoom en iOS al hacer focus en inputs */
+    @supports (-webkit-touch-callout: none) {
+        input, textarea {
+            font-size: 16px !important;
+        }
+    }
+}
+
+/* Smooth scrolling en móvil */
+@media (max-width: 768px) {
+    .messages-container,
+    .chats-list,
+    .modes-list {
+        -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
+    }
+}
+
+/* Ajustes para tablets */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .sidebar {
+        width: 280px;
+    }
+    
+    .message-content-wrapper {
+        max-width: 70%;
+    }
+}
+
+/* Mejora la visualización en todos los dispositivos móviles */
+@media (max-width: 768px) {
+    * {
+        -webkit-tap-highlight-color: transparent;
+    }
+    
+    :focus {
+        outline: none;
+    }
+    
+    button:active {
+        transform: scale(0.98);
+        transition: transform 0.1s;
+    }
+}
+[file content end]
