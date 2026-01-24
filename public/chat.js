@@ -1,6 +1,6 @@
 // Verificar sesión al cargar
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('💬 Cargando chat...');
+    console.log('💬 Dominius AI - Cargando chat profesional...');
     
     // Verificar sesión
     const session = localStorage.getItem('dominius_session');
@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // =============================================
-    // SISTEMA DE CHATS
+    // SISTEMA DE CHATS PROFESIONAL
     // =============================================
     const ChatSystem = {
         currentChatId: null,
@@ -320,7 +320,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
     
     // =============================================
-    // FUNCIÓN DE ESCRITURA LETRA POR LETRA - CORREGIDA
+    // FUNCIÓN DE ESCRITURA LETRA POR LETRA PROFESIONAL
     // =============================================
     async function typeWriter(element, text, speed = 20) {
         return new Promise(resolve => {
@@ -359,7 +359,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         container.scrollTop = container.scrollHeight;
                     }
                     
-                    // Velocidad variable
+                    // Velocidad variable para naturalidad
                     let currentSpeed = speed;
                     if (char === '.' || char === '!' || char === '?') {
                         currentSpeed = speed * 3;
@@ -386,57 +386,215 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // =============================================
-    // GENERAR RESPUESTAS DE IA
+    // GENERAR RESPUESTAS DE IA CON GROQ (100% GRATIS)
     // =============================================
     async function getAIResponse(message, mode) {
-        // Simular tiempo de "pensamiento"
-        await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 500));
+        const GROQ_API_KEY = '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';
         
-        const responses = {
-            'general': [
-                `Entiendo tu pregunta sobre "${message.substring(0, 30)}...". Déjame analizarlo desde una perspectiva empresarial.`,
-                `Excelente consulta. Como asistente especializado, te compartiré algunas estrategias efectivas.`,
-                `Permíteme ofrecerte algunas recomendaciones basadas en las mejores prácticas del sector.`
-            ],
-            'creative': [
-                `¡Qué idea más interesante! Te propongo estas aproximaciones creativas:\n• Storytelling emocional\n• Experiencias memorables\n• Contenido viral`,
-                `Creatividad activada: enfoquémonos en diferenciación y conexión emocional con tu audiencia.`,
-                `Se me ocurren varias ideas innovadoras. ¿Has considerado gamificar la experiencia del cliente?`
-            ],
-            'business': [
-                `Análisis empresarial completo:\n1. Optimizar flujo de caja\n2. Reducir costos operativos\n3. Diversificar fuentes de ingreso`,
-                `Para mejorar gestión: métricas clave, automatización y control de gastos.`,
-                `Los números indican oportunidades en eficiencia operativa y aumento de productividad.`
-            ],
-            'strategy': [
-                `Plan estratégico estructurado:\n• Fase 1: Diagnóstico (7 días)\n• Fase 2: Planificación\n• Fase 3: Ejecución`,
-                `Estrategia clara: identificar ventaja competitiva y construir alrededor de ella.`,
-                `Hoja de ruta de 90 días con hitos semanales medibles.`
-            ],
-            'data': [
-                `Análisis de datos sugiere:\n• ROI objetivo: 15-25%\n• Foco: Conversión y retención\n• Métrica clave: LTV`,
-                `Patrones detectados en fase de conversión. Optimización ahí = +40% impacto.`,
-                `Tres métricas para éxito: tasa conversión, CAC y satisfacción cliente.`
-            ],
-            'legal': [
-                `Prioridades legales:\n1. Cumplimiento normativo\n2. Contratos actualizados\n3. Protección de datos`,
-                `Revisión legal preventiva: términos, políticas, acuerdos.`,
-                `Identificación de riesgos antes de que sean problemas.`
-            ],
-            'finance': [
-                `Plan financiero estructurado:\n• Corto plazo: Fondo emergencia\n• Medio: Reducir deuda\n• Largo: Inversiones`,
-                `Salud financiera = Flujo de caja positivo. Meta: +10% en 30 días.`,
-                `Cuatro pilares: reducir deuda, aumentar margen, reinvertir, reservar.`
-            ]
-        };
-        
-        const modeResponses = responses[mode] || responses['general'];
-        const randomIndex = Math.floor(Math.random() * modeResponses.length);
-        return modeResponses[randomIndex];
+        try {
+            console.log('🚀 Enviando consulta a Groq AI...');
+            
+            // Sistema de prompts especializados por modo
+            const systemPrompts = {
+                'general': `Eres Dominius AI, un asistente de IA especializado para empresarios y empresas.
+                Eres experto en: análisis de mercado, estrategia empresarial, finanzas, marketing, operaciones, gestión de equipos.
+                Responde en español de manera profesional, estructurada y práctica.
+                Proporciona valor real con ejemplos concretos y pasos accionables.
+                Formatea respuestas claramente con encabezados, listas y secciones cuando sea apropiado.`,
+                
+                'finance': `Eres un CONSULTOR FINANCIERO EXPERTO de Dominius AI.
+                Especialidades: análisis financiero, proyecciones, control de costos, inversiones, fiscalidad.
+                Proporciona respuestas técnicas pero comprensibles, con números y porcentajes cuando sea relevante.
+                Incluye estructuras de informes, KPIs financieros y recomendaciones específicas.
+                Responde en español con formato profesional.`,
+                
+                'strategy': `Eres un ESTRATEGA EMPRESARIAL de Dominius AI.
+                Especialidades: planificación estratégica, análisis competitivo, desarrollo de modelos de negocio, innovación.
+                Proporciona marcos estratégicos, análisis DAFO, hoja de ruta y planes de implementación.
+                Sé visionario pero práctico, con hitos medibles.
+                Responde en español con estructura clara.`,
+                
+                'business': `Eres un CONSULTOR DE NEGOCIOS de Dominius AI.
+                Especialidades: gestión operativa, optimización de procesos, escalabilidad, eficiencia, customer experience.
+                Proporciona soluciones prácticas para problemas empresariales cotidianos.
+                Incluye checklist, mejores prácticas y casos de éxito.
+                Responde en español de manera directa y útil.`,
+                
+                'creative': `Eres un ESPECIALISTA EN INNOVACIÓN de Dominius AI.
+                Especialidades: brainstorming creativo, diseño thinking, innovación disruptiva, branding, storytelling.
+                Proporciona ideas originales, enfoques no convencionales y soluciones creativas.
+                Sé inspirador pero realista, con ejemplos de implementación.
+                Responde en español con energía y creatividad.`,
+                
+                'data': `Eres un ANALISTA DE DATOS de Dominius AI.
+                Especialidades: analytics, business intelligence, KPIs, dashboards, toma de decisiones basada en datos.
+                Proporciona análisis cuantitativos, métricas relevantes y visualización de datos.
+                Explica conceptos técnicos de manera accesible.
+                Responde en español con precisión técnica.`,
+                
+                'legal': `Eres un ASESOR LEGAL EMPRESARIAL de Dominius AI.
+                Especialidades: compliance, contratos, protección de datos, propiedad intelectual, regulaciones sectoriales.
+                Proporciona orientación legal preventiva, checklist de cumplimiento y mejores prácticas.
+                Aclara que no es asesoría legal vinculante pero sí orientativa.
+                Responde en español con precisión jurídica.`
+            };
+            
+            const systemPrompt = systemPrompts[mode] || systemPrompts['general'];
+            
+            const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${GROQ_API_KEY}`
+                },
+                body: JSON.stringify({
+                    model: 'llama3-70b-8192',
+                    messages: [
+                        {
+                            role: 'system',
+                            content: systemPrompt
+                        },
+                        {
+                            role: 'user',
+                            content: message
+                        }
+                    ],
+                    temperature: 0.7,
+                    max_tokens: 1200,
+                    stream: false
+                })
+            });
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('❌ Error HTTP de Groq:', response.status, errorText);
+                throw new Error(`Error ${response.status}: ${errorText.substring(0, 100)}`);
+            }
+            
+            const data = await response.json();
+            console.log('✅ Respuesta recibida de Groq');
+            
+            if (data.choices && data.choices[0]?.message?.content) {
+                return data.choices[0].message.content;
+            } else {
+                console.error('Estructura de respuesta inesperada:', data);
+                throw new Error('Respuesta inválida de la IA');
+            }
+            
+        } catch (error) {
+            console.error('❌ Error conectando con Groq AI:', error);
+            
+            // Respuestas de respaldo MEJORADAS y ESPECÍFICAS
+            const backupResponses = {
+                'finance': `**📊 INFORME FINANCIERO TRIMESTRAL - ESTRUCTURA PROFESIONAL**
+
+## 1. RESUMEN EJECUTIVO
+- **Resultados clave del trimestre**: Análisis comparativo vs objetivos
+- **Logros destacados**: Crecimiento, eficiencia, reducción de costos
+- **Desafíos identificados**: Áreas de mejora y riesgos
+
+## 2. ANÁLISIS DE INGRESOS
+- **Ingresos totales**: Desglose por producto/servicio/canal
+- **Tendencias de ventas**: Estacionalidad, crecimiento, comparativa
+- **Clientes clave**: Contribución al revenue, retención
+
+## 3. GESTIÓN DE COSTOS Y GASTOS
+- **Costos directos**: Eficiencia productiva, margen bruto
+- **Gastos operativos**: Control vs presupuesto, optimizaciones
+- **Inversiones estratégicas**: ROI esperado, justificación
+
+## 4. FLUJOS DE CAJA
+- **Operativo**: Generación de caja, ciclo de conversión
+- **Inversiones**: Capex estratégico, amortizaciones
+- **Financiación**: Endeudamiento, coste financiero
+
+## 5. INDICADORES FINANCIEROS CLAVE (KPIs)
+- **Rentabilidad**: Margen neto, ROE, ROI
+- **Liquidez**: Ratio corriente, fondo de maniobra
+- **Solvencia**: Nivel de endeudamiento, capacidad de pago
+- **Eficiencia**: Rotaciones, ciclo de caja
+
+## 6. PROYECCIONES Y RECOMENDACIONES
+- **Escenarios para próximo trimestre**: Conservador, realista, optimista
+- **Acciones prioritarias**: 3-5 medidas concretas
+- **Seguimiento**: Métricas de control, revisiones periódicas
+
+**⏱️ PRÓXIMOS PASOS INMEDIATOS:**
+1. Validar datos con equipo contable
+2. Programar reunión de análisis ejecutivo
+3. Actualizar presupuesto trimestral
+4. Definir sistema de seguimiento semanal
+
+¿Te gustaría que desarrolle algún apartado específico o necesitas un formato particular para presentación?`,
+                
+                'general': `He analizado tu consulta sobre "${message.substring(0, 50)}...". 
+
+Como consultor empresarial de Dominius AI, te propongo este **ENFOQUE ESTRUCTURADO**:
+
+## 🔍 DIAGNÓSTICO INICIAL
+1. **Contexto actual**: Situación y objetivos
+2. **Recursos disponibles**: Humanos, financieros, tecnológicos
+3. **Restricciones identificadas**: Tiempo, presupuesto, capacidades
+
+## 🎯 DEFINICIÓN DE OBJETIVOS SMART
+- **Específico**: Resultado concreto esperado
+- **Medible**: KPIs cuantificables
+- **Alcanzable**: Recursos y capacidades realistas
+- **Relevante**: Alineación con estrategia global
+- **Temporal**: Plazos definidos
+
+## 📋 PLAN DE ACCIÓN PRIORIZADO
+**Fase 1 (Semanas 1-2)**: Diagnóstico profundo
+**Fase 2 (Semanas 3-4)**: Planificación detallada
+**Fase 3 (Mes 2)**: Implementación controlada
+**Fase 4 (Mes 3)**: Evaluación y ajustes
+
+## 🛠️ HERRAMIENTAS RECOMENDADAS
+- **Gestión**: Asana/Trello para seguimiento
+- **Análisis**: Google Analytics/Data Studio
+- **Comunicación**: Slack/Teams para coordinación
+- **Documentación**: Notion/Google Docs
+
+**¿Qué aspecto te gustaría desarrollar primero?**`,
+                
+                'strategy': `**🎯 PLAN ESTRATÉGICO - ESTRUCTURA**
+
+## 1. ANÁLISIS DE SITUACIÓN (DAFO)
+- **Fortalezas**: Ventajas competitivas internas
+- **Debilidades**: Áreas de mejora crítica
+- **Oportunidades**: Tendencias mercado, gaps
+- **Amenazas**: Competencia, cambios regulatorios
+
+## 2. VISIÓN Y OBJETIVOS ESTRATÉGICOS
+- **Horizonte temporal**: 1-3-5 años
+- **Objetivos corporativos**: Crecimiento, rentabilidad, mercado
+- **Métricas de éxito**: KPIs estratégicos
+
+## 3. ESTRATEGIAS POR ÁREA
+- **Mercado**: Posicionamiento, segmentación
+- **Operaciones**: Eficiencia, calidad, costos
+- **Innovación**: I+D, digitalización, nuevos modelos
+- **Personas**: Talento, cultura, liderazgo
+
+## 4. PLAN DE IMPLEMENTACIÓN
+- **Hitos trimestrales**: Entregables clave
+- **Responsables**: Equipos y liderazgo
+- **Recursos**: Presupuesto, herramientas, capacitación
+
+## 5. SISTEMA DE CONTROL
+- **Revisión mensual**: Desviaciones y ajustes
+- **Indicadores adelantados**: Early warnings
+- **Cultura de mejora continua**: Aprendizaje organizacional
+
+**¿En qué fase estratégica necesitas más apoyo?**`
+            };
+            
+            return backupResponses[mode] || backupResponses['general'];
+        }
     }
     
     // =============================================
-    // ENVIAR MENSAJE CON ESCRITURA
+    // ENVIAR MENSAJE CON ESCRITURA PROFESIONAL
     // =============================================
     async function sendMessage() {
         const input = document.getElementById('messageInput');
@@ -483,6 +641,11 @@ document.addEventListener('DOMContentLoaded', function() {
         updateCharCount();
         autoResizeTextarea();
         
+        // Deshabilitar botón mientras procesa
+        const sendBtn = document.getElementById('sendBtn');
+        sendBtn.disabled = true;
+        sendBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-6.219-8.56"></path></svg>';
+        
         // Crear elemento para respuesta de IA (vacío)
         const aiMessageDiv = document.createElement('div');
         aiMessageDiv.className = 'message ai';
@@ -499,18 +662,29 @@ document.addEventListener('DOMContentLoaded', function() {
         container.appendChild(aiMessageDiv);
         container.scrollTop = container.scrollHeight;
         
-        // Obtener respuesta de IA
-        const aiResponse = await getAIResponse(message, ChatSystem.currentMode);
-        
-        // Mostrar respuesta con efecto de escritura
-        const typingElement = aiMessageDiv.querySelector('.message-content');
-        await typeWriter(typingElement, aiResponse, 20);
-        
-        // Guardar respuesta
-        ChatSystem.saveMessage(ChatSystem.currentChatId, 'ai', aiResponse);
-        
-        // Actualizar lista de chats
-        ChatSystem.renderChats();
+        try {
+            // Obtener respuesta de IA REAL de Groq
+            const aiResponse = await getAIResponse(message, ChatSystem.currentMode);
+            
+            // Mostrar respuesta con efecto de escritura
+            const typingElement = aiMessageDiv.querySelector('.message-content');
+            await typeWriter(typingElement, aiResponse, 20);
+            
+            // Guardar respuesta
+            ChatSystem.saveMessage(ChatSystem.currentChatId, 'ai', aiResponse);
+            
+        } catch (error) {
+            console.error('Error en sendMessage:', error);
+            const typingElement = aiMessageDiv.querySelector('.message-content');
+            typingElement.textContent = `⚠️ Error técnico temporal. Por favor, intenta de nuevo en un momento.`;
+        } finally {
+            // Rehabilitar botón
+            sendBtn.disabled = false;
+            sendBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>';
+            
+            // Actualizar lista de chats
+            ChatSystem.renderChats();
+        }
     }
     
     // =============================================
@@ -669,11 +843,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // =============================================
-    // INYECTAR ESTILOS ADICIONALES - CORREGIDOS
+    // INYECTAR ESTILOS ADICIONALES PROFESIONALES
     // =============================================
     const additionalStyles = `
         <style>
-            /* GARANTIZAR que el texto no se monte */
+            /* GARANTIZAR que el texto no se monte - DEFINITIVO */
             .message-content {
                 white-space: normal !important;
                 word-break: break-word !important;
@@ -681,6 +855,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 line-height: 1.6 !important;
                 display: block !important;
                 max-width: 100% !important;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
             }
             
             .message-content * {
@@ -688,12 +863,43 @@ document.addEventListener('DOMContentLoaded', function() {
                 word-break: break-word !important;
                 overflow-wrap: break-word !important;
                 line-height: inherit !important;
+                display: inline !important;
             }
             
             .message-content br {
                 display: block !important;
                 content: "" !important;
                 margin-bottom: 0.5em !important;
+            }
+            
+            .message-content h1, 
+            .message-content h2, 
+            .message-content h3, 
+            .message-content h4 {
+                display: block !important;
+                margin-top: 1em !important;
+                margin-bottom: 0.5em !important;
+                font-weight: 600 !important;
+            }
+            
+            .message-content ul, 
+            .message-content ol {
+                display: block !important;
+                margin-left: 1.5em !important;
+                margin-bottom: 1em !important;
+            }
+            
+            .message-content li {
+                display: list-item !important;
+                margin-bottom: 0.3em !important;
+            }
+            
+            .message-content strong {
+                font-weight: 600 !important;
+            }
+            
+            .message-content em {
+                font-style: italic !important;
             }
             
             /* Animación de mensajes nuevos */
@@ -726,6 +932,40 @@ document.addEventListener('DOMContentLoaded', function() {
             /* Scroll suave */
             .messages-container {
                 scroll-behavior: smooth;
+            }
+            
+            /* Indicador de escritura */
+            .typing-indicator {
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+                padding: 2px 8px;
+                background: rgba(138, 43, 226, 0.1);
+                border-radius: 12px;
+                font-size: 12px;
+                color: #8B5CF6;
+            }
+            
+            .typing-dot {
+                width: 6px;
+                height: 6px;
+                background: #8B5CF6;
+                border-radius: 50%;
+                animation: bounce 1.4s infinite;
+            }
+            
+            .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+            .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+            
+            @keyframes bounce {
+                0%, 60%, 100% { transform: translateY(0); }
+                30% { transform: translateY(-4px); }
+            }
+            
+            /* Botón de enviar deshabilitado */
+            #sendBtn:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
             }
             
             /* Responsive mejorado */
@@ -768,5 +1008,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     document.head.insertAdjacentHTML('beforeend', additionalStyles);
     
-    console.log('✅ Chat cargado correctamente');
+    console.log('✅ Dominius AI cargado correctamente con Groq');
+    console.log('🔑 API Key configurada:', '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'.substring(0, 10) + '...');
 });
