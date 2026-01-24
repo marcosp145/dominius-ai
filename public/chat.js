@@ -1,15 +1,18 @@
+// =============================================
+// SISTEMA DE ARCHIVOS ADJUNTOS - SIN LÍMITE + VISIÓN
+// =============================================
+let attachedFiles = [];
+
 // Verificar sesión al cargar
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('💬 Dominius AI - Cargando chat profesional...');
+    console.log('💬 Dominius AI - Cargando chat con VISIÓN...');
     
-    // Verificar sesión
     const session = localStorage.getItem('dominius_session');
     if (!session) {
         window.location.href = 'index.html';
         return;
     }
     
-    // Cargar datos del usuario
     const userSession = JSON.parse(session);
     if (userSession) {
         document.getElementById('userName').textContent = userSession.username || 'Usuario';
@@ -21,7 +24,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Configurar botón de logout
     document.getElementById('logoutBtn').addEventListener('click', function() {
         if (confirm('¿Estás seguro de que quieres cerrar sesión?')) {
             localStorage.removeItem('dominius_session');
@@ -30,13 +32,136 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // =============================================
-    // SISTEMA DE CHATS PROFESIONAL
+    // CONFIGURAR SUBIDA DE ARCHIVOS CON PROCESAMIENTO
+    // =============================================
+    const attachBtn = document.getElementById('attachBtn');
+    const fileInput = document.getElementById('fileInput');
+    
+    attachBtn.addEventListener('click', () => {
+        fileInput.click();
+    });
+    
+    fileInput.addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files);
+        if (files.length > 0) {
+            for (const file of files) {
+                // Procesar el archivo según su tipo
+                const processedFile = await processFile(file);
+                attachedFiles.push(processedFile);
+            }
+            renderAttachedFiles();
+        }
+        fileInput.value = '';
+    });
+    
+    // =============================================
+    // PROCESAR ARCHIVOS (Imágenes, PDFs, etc.)
+    // =============================================
+    async function processFile(file) {
+        const processed = {
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            originalFile: file
+        };
+        
+        // Si es imagen, convertir a base64
+        if (file.type.startsWith('image/')) {
+            processed.base64 = await fileToBase64(file);
+            processed.isImage = true;
+        }
+        
+        // Si es PDF, extraer texto
+        if (file.type === 'application/pdf') {
+            processed.isPDF = true;
+            // Aquí podrías usar una librería para extraer texto del PDF
+        }
+        
+        // Si es texto plano, leer contenido
+        if (file.type.startsWith('text/')) {
+            processed.textContent = await file.text();
+            processed.isText = true;
+        }
+        
+        return processed;
+    }
+    
+    function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const base64 = reader.result.split(',')[1];
+                resolve(base64);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+    
+    function renderAttachedFiles() {
+        const container = document.getElementById('attachedFilesContainer');
+        
+        if (attachedFiles.length === 0) {
+            container.style.display = 'none';
+            return;
+        }
+        
+        container.style.display = 'flex';
+        container.innerHTML = attachedFiles.map((file, index) => {
+            const size = formatFileSize(file.size);
+            const icon = getFileIcon(file.type);
+            
+            return `
+                <div class="attached-file-item">
+                    <span class="file-icon">${icon}</span>
+                    <div class="file-info">
+                        <span class="file-name">${file.name}</span>
+                        <span class="file-size">${size}</span>
+                    </div>
+                    <button class="remove-file-btn" onclick="removeFile(${index})">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    window.removeFile = function(index) {
+        attachedFiles.splice(index, 1);
+        renderAttachedFiles();
+    };
+    
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    }
+    
+    function getFileIcon(mimeType) {
+        if (mimeType.startsWith('image/')) return '🖼️';
+        if (mimeType.startsWith('video/')) return '🎥';
+        if (mimeType.startsWith('audio/')) return '🎵';
+        if (mimeType.includes('pdf')) return '📄';
+        if (mimeType.includes('word') || mimeType.includes('document')) return '📝';
+        if (mimeType.includes('excel') || mimeType.includes('sheet')) return '📊';
+        if (mimeType.includes('powerpoint') || mimeType.includes('presentation')) return '📊';
+        if (mimeType.includes('zip') || mimeType.includes('rar')) return '📦';
+        if (mimeType.includes('text')) return '📃';
+        return '📎';
+    }
+    
+    // =============================================
+    // SISTEMA DE CHATS
     // =============================================
     const ChatSystem = {
         currentChatId: null,
         currentMode: 'general',
         
-        // Obtener chats
         getChats: function() {
             try {
                 const chats = localStorage.getItem('dominius_chats');
@@ -47,7 +172,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         },
         
-        // Guardar chats
         saveChats: function(chats) {
             try {
                 localStorage.setItem('dominius_chats', JSON.stringify(chats));
@@ -56,7 +180,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         },
         
-        // Crear nuevo chat
         createChat: function() {
             const chats = this.getChats();
             const newChat = {
@@ -71,7 +194,6 @@ document.addEventListener('DOMContentLoaded', function() {
             chats.unshift(newChat);
             this.saveChats(chats);
             
-            // Efecto visual
             const newChatBtn = document.getElementById('newChatBtn');
             newChatBtn.classList.add('btn-press');
             setTimeout(() => newChatBtn.classList.remove('btn-press'), 200);
@@ -79,8 +201,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return newChat;
         },
         
-        // Guardar mensaje
-        saveMessage: function(chatId, role, content) {
+        saveMessage: function(chatId, role, content, files = []) {
             const chats = this.getChats();
             const chat = chats.find(c => c.id === chatId);
             
@@ -88,12 +209,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 chat.messages.push({
                     role: role,
                     content: content,
+                    files: files,
                     timestamp: new Date().toISOString()
                 });
                 
                 chat.updatedAt = new Date().toISOString();
                 
-                // Actualizar título si es nuevo chat
                 if (chat.messages.length === 1 && chat.title === 'Nuevo Chat') {
                     chat.title = this.generateTitle(content);
                 }
@@ -103,7 +224,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         },
         
-        // Generar título del chat
         generateTitle: function(content) {
             const words = content.trim().split(' ');
             if (words.length === 0) return 'Nuevo Chat';
@@ -112,20 +232,17 @@ document.addEventListener('DOMContentLoaded', function() {
             return title.length > 30 ? title.substring(0, 27) + '...' : title;
         },
         
-        // Obtener chat por ID
         getChat: function(chatId) {
             const chats = this.getChats();
             return chats.find(c => c.id === chatId);
         },
         
-        // Eliminar chat
         deleteChat: function(chatId) {
             let chats = this.getChats();
             chats = chats.filter(c => c.id !== chatId);
             this.saveChats(chats);
         },
         
-        // Limpiar chat
         clearChat: function(chatId) {
             const chats = this.getChats();
             const chat = chats.find(c => c.id === chatId);
@@ -138,7 +255,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         },
         
-        // Renderizar lista de chats
         renderChats: function() {
             const chats = this.getChats();
             const chatsList = document.getElementById('chatsList');
@@ -174,7 +290,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 `;
             }).join('');
             
-            // Agregar eventos a los chats
             document.querySelectorAll('.chat-item').forEach(item => {
                 item.addEventListener('click', () => {
                     const chatId = parseInt(item.dataset.chatId);
@@ -183,13 +298,11 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         },
         
-        // Acortar texto
         truncateText: function(text, maxLength) {
             if (text.length <= maxLength) return text;
             return text.substring(0, maxLength) + '...';
         },
         
-        // Formatear tiempo
         formatTime: function(timestamp) {
             const date = new Date(timestamp);
             const now = new Date();
@@ -210,7 +323,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         },
         
-        // Cargar chat
         loadChat: function(chatId) {
             this.currentChatId = chatId;
             const chat = this.getChat(chatId);
@@ -224,7 +336,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         },
         
-        // Obtener nombre del modo
         getModeName: function(mode) {
             const modes = {
                 'general': 'General',
@@ -238,7 +349,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return modes[mode] || 'General';
         },
         
-        // Renderizar mensajes
         renderMessages: function(messages) {
             const container = document.getElementById('messagesContainer');
             
@@ -251,19 +361,16 @@ document.addEventListener('DOMContentLoaded', function() {
                             </svg>
                         </div>
                         <h2>Bienvenido a Dominius AI</h2>
-                        <p>Tu asistente de IA especializado para empresarios y empresas</p>
+                        <p>Tu asistente de IA con VISIÓN - Puedo ver imágenes, leer PDFs y analizar documentos</p>
                         <div class="quick-suggestions">
                             <button class="suggestion-btn" onclick="sendSuggestion('Necesito un análisis de mercado para mi empresa')">
                                 💼 Análisis de mercado
                             </button>
-                            <button class="suggestion-btn" onclick="sendSuggestion('Genera un informe financiero trimestral')">
-                                📊 Informe financiero
+                            <button class="suggestion-btn" onclick="sendSuggestion('Analiza esta imagen empresarial')">
+                                🖼️ Analizar imagen
                             </button>
                             <button class="suggestion-btn" onclick="sendSuggestion('Ayúdame a crear un plan estratégico')">
                                 🎯 Plan estratégico
-                            </button>
-                            <button class="suggestion-btn" onclick="sendSuggestion('Dame ideas innovadoras para mi negocio')">
-                                💡 Ideas de negocio
                             </button>
                         </div>
                     </div>
@@ -276,6 +383,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     hour: '2-digit', 
                     minute: '2-digit' 
                 });
+                
+                let filesHTML = '';
+                if (msg.files && msg.files.length > 0) {
+                    filesHTML = `
+                        <div class="message-files">
+                            ${msg.files.map(f => `
+                                <div class="message-file-badge">
+                                    <span>${getFileIcon(f.type)}</span>
+                                    <span>${f.name}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
                 
                 if (msg.role === 'user') {
                     const userSession = JSON.parse(localStorage.getItem('dominius_session'));
@@ -290,6 +411,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                             <div class="message-content-wrapper">
                                 <div class="message-content">${this.escapeHtml(msg.content)}</div>
+                                ${filesHTML}
                                 <div class="message-time">${time}</div>
                             </div>
                         </div>
@@ -307,11 +429,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }).join('');
             
-            // Scroll al final
             container.scrollTop = container.scrollHeight;
         },
         
-        // Escapar HTML
         escapeHtml: function(text) {
             const div = document.createElement('div');
             div.textContent = text;
@@ -320,11 +440,10 @@ document.addEventListener('DOMContentLoaded', function() {
     };
     
     // =============================================
-    // FUNCIÓN DE ESCRITURA LETRA POR LETRA PROFESIONAL
+    // FUNCIÓN DE ESCRITURA LETRA POR LETRA
     // =============================================
     async function typeWriter(element, text, speed = 20) {
         return new Promise(resolve => {
-            // LIMPIAR completamente el elemento
             element.innerHTML = '';
             element.style.whiteSpace = 'normal';
             element.style.wordBreak = 'break-word';
@@ -332,34 +451,24 @@ document.addEventListener('DOMContentLoaded', function() {
             element.style.lineHeight = '1.6';
             
             let i = 0;
-            const fullText = text;
             
             function type() {
-                if (i < fullText.length) {
-                    const char = fullText.charAt(i);
-                    const currentHTML = element.innerHTML;
+                if (i < text.length) {
+                    const char = text.charAt(i);
                     
-                    // Usar textContent en lugar de innerHTML para caracteres normales
                     if (char === '\n') {
-                        // Para saltos de línea, usar br correctamente
-                        element.innerHTML = currentHTML + '<br>';
-                    } else if (char === ' ') {
-                        // Para espacios, mantenerlos
-                        element.textContent = element.textContent + ' ';
+                        element.innerHTML += '<br>';
                     } else {
-                        // Para otros caracteres, usar textContent
-                        element.textContent = element.textContent + char;
+                        element.textContent += char;
                     }
                     
                     i++;
                     
-                    // Scroll automático
                     const container = document.getElementById('messagesContainer');
                     if (container) {
                         container.scrollTop = container.scrollHeight;
                     }
                     
-                    // Velocidad variable para naturalidad
                     let currentSpeed = speed;
                     if (char === '.' || char === '!' || char === '?') {
                         currentSpeed = speed * 3;
@@ -367,141 +476,73 @@ document.addEventListener('DOMContentLoaded', function() {
                         currentSpeed = speed * 2;
                     }
                     
-                    // Variación aleatoria pequeña
                     currentSpeed += Math.random() * 10 - 5;
                     
                     setTimeout(type, Math.max(10, currentSpeed));
                 } else {
-                    // Al terminar, asegurar estilos
-                    element.style.whiteSpace = 'normal';
-                    element.style.wordBreak = 'break-word';
-                    element.style.overflowWrap = 'break-word';
                     resolve();
                 }
             }
             
-            // Comenzar a escribir
             type();
         });
     }
     
     // =============================================
-    // GENERAR RESPUESTAS DE IA CON GROQ - MEJORADO
+    // GENERAR RESPUESTAS CON VISIÓN (Groq Vision)
     // =============================================
-    async function getAIResponse(message, mode) {
+    async function getAIResponse(message, mode, files = []) {
         const GROQ_API_KEY = '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';
         
-        // Prompts ESPECÍFICOS por modo
         const systemPrompts = {
-            'finance': `Eres un CONSULTOR FINANCIERO SENIOR especializado en startups tech y SaaS.
-            
-            RESPONDE ESPECÍFICAMENTE a la consulta financiera con:
-            1. Análisis cuantitativo con métricas reales
-            2. Estructura de informe profesional
-            3. KPIs relevantes para el contexto
-            4. Recomendaciones accionables inmediatas
-            
-            EJEMPLOS DE RESPUESTAS ESPECÍFICAS:
-            - Para "informe financiero trimestral SaaS": estructura con MRR, churn, CAC, LTV, burn rate
-            - Para "análisis de rentabilidad": márgenes, punto de equilibrio, ROI
-            - Para "proyecciones": escenarios conservador/realista/optimista
-            
-            INCLUYE siempre:
-            • Datos numéricos (aunque sean ejemplos)
-            • Fórmulas relevantes
-            • Métricas sectoriales
-            • Timeline de implementación
-            
-            NO uses respuestas genéricas. Sé específico y técnico.`,
-            
-            'general': `Eres un CONSULTOR EMPRESARIAL experto en estrategia y operaciones.
-            
-            RESPONDE de manera CONCRETA y PRÁCTICA:
-            1. Analiza el problema específico
-            2. Proporciona soluciones estructuradas
-            3. Incluye pasos accionables
-            4. Ofrece ejemplos reales
-            
-            FORMATO:
-            • Títulos claros por sección
-            • Listas numeradas para pasos
-            • Viñetas para opciones
-            • Negritas para puntos clave`,
-            
-            'strategy': `Eres un ESTRATEGA CORPORATIVO especializado en planificación estratégica.
-            
-            PROPORCIONA:
-            1. Análisis DAFO específico
-            2. Roadmap con hitos
-            3. Plan de implementación detallado
-            4. Sistema de seguimiento
-            
-            ENFÓCATE en:
-            • Ventaja competitiva
-            • Posicionamiento de mercado
-            • Innovación estratégica
-            • Gestión del cambio`,
-            
-            'business': `Eres un CONSULTOR DE OPERACIONES experto en optimización empresarial.
-            
-            CENTRATE en:
-            1. Eficiencia operativa
-            2. Reducción de costos
-            3. Mejora de procesos
-            4. Escalabilidad
-            
-            PROPORCIONA:
-            • Procesos paso a paso
-            • Herramientas específicas
-            • Métricas de mejora
-            • Casos de éxito`,
-            
-            'creative': `Eres un ESPECIALISTA EN INNOVACIÓN y pensamiento creativo.
-            
-            GENERA:
-            1. Ideas originales y disruptivas
-            2. Enfoques no convencionales
-            3. Soluciones innovadoras
-            4. Estrategias de diferenciación
-            
-            SÉ:
-            • Inspirador pero realista
-            • Visual y conceptual
-            • Orientado a resultados
-            • Basado en tendencias`,
-            
-            'data': `Eres un ANALISTA DE DATOS experto en business intelligence.
-            
-            PROPORCIONA:
-            1. Análisis cuantitativo detallado
-            2. Métricas y KPIs relevantes
-            3. Visualización de datos sugerida
-            4. Insights accionables
-            
-            INCLUYE:
-            • Fórmulas estadísticas
-            • Herramientas de análisis
-            • Métodos de validación
-            • Interpretación de resultados`,
-            
-            'legal': `Eres un ASESOR LEGAL EMPRESARIAL especializado en compliance.
-            
-            BRINDA:
-            1. Orientación legal preventiva
-            2. Checklist de cumplimiento
-            3. Mejores prácticas sectoriales
-            4. Gestión de riesgos
-            
-            ACLARA siempre:
-            • "Esta no es asesoría legal vinculante"
-            • "Consulta con un abogado especializado"
-            • "Las leyes varían por jurisdicción"`
+            'finance': `Eres un CONSULTOR FINANCIERO SENIOR. Analiza imágenes de gráficos, balances, estados financieros.`,
+            'general': `Eres un CONSULTOR EMPRESARIAL. Puedes ver y analizar imágenes, documentos y gráficos.`,
+            'strategy': `Eres un ESTRATEGA CORPORATIVO. Analiza diagramas, organigramas, mapas estratégicos.`,
+            'business': `Eres un CONSULTOR DE OPERACIONES. Analiza procesos, flujos de trabajo, diagramas.`,
+            'creative': `Eres un ESPECIALISTA EN INNOVACIÓN. Analiza diseños, prototipos, mockups.`,
+            'data': `Eres un ANALISTA DE DATOS. Interpreta gráficos, tablas, dashboards.`,
+            'legal': `Eres un ASESOR LEGAL EMPRESARIAL. Puedes leer contratos y documentos legales.`
         };
         
         const systemPrompt = systemPrompts[mode] || systemPrompts['general'];
         
         try {
-            console.log(`🚀 Enviando consulta a Groq AI (Modo: ${mode})...`);
+            console.log(`🚀 Enviando a Groq AI con VISIÓN (Modo: ${mode})...`);
+            
+            // Construir el contenido del mensaje
+            const userContent = [];
+            
+            // Añadir texto
+            if (message && message.trim()) {
+                userContent.push({
+                    type: "text",
+                    text: message
+                });
+            }
+            
+            // Añadir imágenes
+            for (const file of files) {
+                if (file.isImage && file.base64) {
+                    userContent.push({
+                        type: "image_url",
+                        image_url: {
+                            url: `data:${file.type};base64,${file.base64}`
+                        }
+                    });
+                }
+                
+                // Si es texto, añadir el contenido
+                if (file.isText && file.textContent) {
+                    userContent.push({
+                        type: "text",
+                        text: `[Contenido del archivo ${file.name}]:\n${file.textContent}`
+                    });
+                }
+            }
+            
+            // Si no hay imágenes, usar modelo normal
+            const hasImages = files.some(f => f.isImage);
+            const model = hasImages ? 'llama-3.2-90b-vision-preview' : 'llama-3.3-70b-versatile';
             
             const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                 method: 'POST',
@@ -510,7 +551,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     'Authorization': `Bearer ${GROQ_API_KEY}`
                 },
                 body: JSON.stringify({
-                    model: 'llama-3.3-70b-versatile', // ⬅️ MODELO ACTUALIZADO
+                    model: model,
                     messages: [
                         {
                             role: 'system',
@@ -518,197 +559,80 @@ document.addEventListener('DOMContentLoaded', function() {
                         },
                         {
                             role: 'user',
-                            content: message
+                            content: userContent.length > 0 ? userContent : message
                         }
                     ],
                     temperature: 0.7,
                     max_tokens: 1500,
-                    top_p: 0.9,
-                    frequency_penalty: 0.1,
-                    presence_penalty: 0.1
+                    top_p: 0.9
                 })
             });
             
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error('❌ Error HTTP de Groq:', response.status, errorText);
-                throw new Error(`Error ${response.status}: ${errorText.substring(0, 100)}`);
+                console.error('❌ Error:', errorText);
+                throw new Error(`Error ${response.status}`);
             }
             
             const data = await response.json();
-            console.log('✅ Respuesta recibida de Groq');
+            console.log('✅ Respuesta recibida con VISIÓN');
             
             if (data.choices && data.choices[0]?.message?.content) {
                 return data.choices[0].message.content;
             } else {
-                console.error('Estructura de respuesta inesperada:', data);
-                throw new Error('Respuesta inválida de la IA');
+                throw new Error('Respuesta inválida');
             }
             
         } catch (error) {
-            console.error('❌ Error conectando con Groq AI:', error);
+            console.error('❌ Error:', error);
             
-            // Respuestas de respaldo MEJORADAS y ESPECÍFICAS
-            const backupResponses = {
-                'finance': `**📊 INFORME FINANCIERO TRIMESTRAL - STARTUP SaaS**
-
-## 📈 MÉTRICAS CLAVE SaaS (Q1 2026)
-| Métrica | Actual | Objetivo | Variación |
-|---------|--------|----------|-----------|
-| **MRR (Monthly Recurring Revenue)** | $45,000 | $50,000 | -10% |
-| **Churn Rate** | 3.2% | 2.5% | +0.7% |
-| **CAC (Customer Acquisition Cost)** | $850 | $750 | +13% |
-| **LTV (Lifetime Value)** | $12,500 | $15,000 | -17% |
-| **Burn Rate** | $25,000/mes | $20,000/mes | +25% |
-| **Runway** | 8 meses | 12 meses | -4 meses |
-
-## 🔍 ANÁLISIS DETALLADO
-
-### 1. INGRESOS Y CRECIMIENTO
-- **MRR Composition**:
-  - Plan Básico: $18,000 (40%)
-  - Plan Pro: $22,500 (50%)
-  - Plan Enterprise: $4,500 (10%)
-- **New MRR**: $8,500 (+23% vs Q4)
-- **Expansion MRR**: $3,200 (+7% organic growth)
-
-### 2. GASTOS OPERATIVOS
-- **Costos Fijos**: $35,000/mes
-  - Salarios: $22,000
-  - Infraestructura: $8,000
-  - Oficina: $5,000
-- **Costos Variables**: $15,000/mes
-  - Marketing: $9,000
-  - Sales: $6,000
-
-### 3. FLUJO DE CAJA
-- **Cash Flow Operativo**: -$5,000/mes
-- **Capital Requerido**: $60,000 para 12 meses runway
-- **Punto de Equilibrio**: 520 clientes activos (actual: 420)
-
-## 🎯 RECOMENDACIONES INMEDIATAS
-
-### PRIORIDAD 1 (Semanas 1-2):
-1. **Reducir Churn**:
-   - Implementar onboarding mejorado (-0.5% churn)
-   - Programa de lealtad para clientes >6 meses
-   
-2. **Optimizar CAC**:
-   - Focalizar en canales orgánicos (CAC objetivo: $650)
-   - Mejorar tasa conversión landing page (+15%)
-
-### PRIORIDAD 2 (Semanas 3-4):
-3. **Aumentar LTV**:
-   - Upsell a Plan Pro (LTV objetivo: $14,000)
-   - Cross-selling de módulos adicionales
-   
-4. **Controlar Burn Rate**:
-   - Revisar contrato infraestructura (-$2,000/mes)
-   - Modalidad remote-first (-$3,000/mes oficina)
-
-### PRIORIDAD 3 (Mes 2):
-5. **Diversificar Ingresos**:
-   - API como producto (ingreso proyectado: $5,000/mes)
-   - Consultoría implementation ($10,000/proyecto)
-
-## 📅 PLAN DE ACCIÓN 90 DÍAS
-
-**SEMANAS 1-4**: Estabilización financiera
-**SEMANAS 5-8**: Crecimiento eficiente  
-**SEMANAS 9-12**: Escalabilidad y profit
-
-¿Necesitas que desarrolle algún área específica o el dashboard financiero completo?`,
-
-                'general': `He procesado tu consulta: "${message.substring(0, 50)}..."
-
-Como consultor de Dominius AI, te presento este **PLAN DE ACCIÓN ESTRUCTURADO**:
-
-## 🎯 OBJETIVOS PRINCIPALES
-1. **Definir resultado esperado** claramente
-2. **Establecer métricas de éxito** medibles
-3. **Asignar recursos necesarios** realistas
-
-## 📋 PASOS CONCRETOS
-
-### FASE 1: DIAGNÓSTICO (Días 1-7)
-- [ ] Análisis de situación actual
-- [ ] Identificación de stakeholders
-- [ ] Mapeo de procesos relevantes
-- [ ] Recopilación de datos clave
-
-### FASE 2: PLANIFICACIÓN (Días 8-14)
-- [ ] Definición de estrategia óptima
-- [ ] Asignación de responsabilidades
-- [ ] Establecimiento de timeline
-- [ ] Presupuesto detallado
-
-### FASE 3: EJECUCIÓN (Días 15-30)
-- [ ] Implementación controlada
-- [ ] Monitoreo de progreso
-- [ ] Ajustes en tiempo real
-- [ ] Comunicación continua
-
-### FASE 4: EVALUACIÓN (Días 31-45)
-- [ ] Medición de resultados
-- [ ] Análisis de desviaciones
-- [ ] Lecciones aprendidas
-- [ ] Plan de mejora continua
-
-## 🛠️ HERRAMIENTAS RECOMENDADAS
-
-**Gestión de Proyectos**:
-- Asana para seguimiento detallado
-- Trello para visualización simple
-- Monday.com para automatización
-
-**Comunicación**:
-- Slack para coordinación diaria
-- Zoom/Teams para reuniones
-- Loom para updates asíncronos
-
-**Análisis**:
-- Google Data Studio para dashboards
-- Excel/Sheets para datos
-- Power BI para análisis avanzado
-
-## ⚠️ RIESGOS IDENTIFICADOS
-1. **Falta de claridad en objetivos**
-2. **Recursos insuficientes**
-3. **Plazos poco realistas**
-4. **Resistencia al cambio**
-
-## ✅ ACCIONES INMEDIATAS
-1. **Hoy mismo**: Definir 3 KPIs clave
-2. **Esta semana**: Establecer reunión de kick-off
-3. **Próximos 7 días**: Crear plan detallado
-
-**¿Por dónde prefieres comenzar?**`
-            };
+            // Respuesta de respaldo
+            let backupMessage = `He recibido tu mensaje`;
             
-            return backupResponses[mode] || backupResponses['general'];
+            const hasImages = files.some(f => f.isImage);
+            const hasText = files.some(f => f.isText);
+            const hasPDF = files.some(f => f.isPDF);
+            
+            if (hasImages) {
+                backupMessage += ` con ${files.filter(f => f.isImage).length} imagen(es)`;
+            }
+            if (hasText) {
+                backupMessage += ` y ${files.filter(f => f.isText).length} documento(s) de texto`;
+            }
+            if (hasPDF) {
+                backupMessage += ` y ${files.filter(f => f.isPDF).length} PDF(s)`;
+            }
+            
+            backupMessage += `.\n\nComo consultor de Dominius AI, puedo ayudarte con:\n\n✅ Análisis de imágenes empresariales\n✅ Lectura de documentos\n✅ Interpretación de gráficos\n✅ Planificación estratégica\n\n¿En qué área específica necesitas ayuda?`;
+            
+            return backupMessage;
         }
     }
     
     // =============================================
-    // ENVIAR MENSAJE CON ESCRITURA PROFESIONAL
+    // ENVIAR MENSAJE CON ARCHIVOS
     // =============================================
     async function sendMessage() {
         const input = document.getElementById('messageInput');
         const message = input.value.trim();
         
-        if (!message) return;
+        if (!message && attachedFiles.length === 0) return;
         
-        // Crear chat si no existe
         if (!ChatSystem.currentChatId) {
             const newChat = ChatSystem.createChat();
             ChatSystem.currentChatId = newChat.id;
             ChatSystem.loadChat(newChat.id);
         }
         
-        // Guardar mensaje del usuario
-        ChatSystem.saveMessage(ChatSystem.currentChatId, 'user', message);
+        const filesToSend = [...attachedFiles];
+        const fileInfo = filesToSend.map(f => ({
+            name: f.name,
+            size: f.size,
+            type: f.type
+        }));
         
-        // Mostrar mensaje del usuario inmediatamente
+        ChatSystem.saveMessage(ChatSystem.currentChatId, 'user', message || '[Archivos adjuntos]', fileInfo);
+        
         const userSession = JSON.parse(localStorage.getItem('dominius_session'));
         const initials = userSession ? 
             userSession.username.substring(0, 2).toUpperCase() : 
@@ -717,12 +641,28 @@ Como consultor de Dominius AI, te presento este **PLAN DE ACCIÓN ESTRUCTURADO**
         const container = document.getElementById('messagesContainer');
         const userMessageDiv = document.createElement('div');
         userMessageDiv.className = 'message user message-pop';
+        
+        let filesHTML = '';
+        if (filesToSend.length > 0) {
+            filesHTML = `
+                <div class="message-files">
+                    ${filesToSend.map(f => `
+                        <div class="message-file-badge">
+                            <span>${getFileIcon(f.type)}</span>
+                            <span>${f.name}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+        
         userMessageDiv.innerHTML = `
             <div class="message-avatar" style="background: ${userSession.avatarColor || '#8B5CF6'}">
                 ${initials}
             </div>
             <div class="message-content-wrapper">
-                <div class="message-content">${ChatSystem.escapeHtml(message)}</div>
+                <div class="message-content">${ChatSystem.escapeHtml(message || '[Archivos adjuntos]')}</div>
+                ${filesHTML}
                 <div class="message-time">
                     ${new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                 </div>
@@ -732,18 +672,18 @@ Como consultor de Dominius AI, te presento este **PLAN DE ACCIÓN ESTRUCTURADO**
         container.appendChild(userMessageDiv);
         container.scrollTop = container.scrollHeight;
         
-        // Limpiar input
         input.value = '';
+        const tempFiles = [...attachedFiles];
+        attachedFiles = [];
+        renderAttachedFiles();
         updateCharCount();
         autoResizeTextarea();
         
-        // Deshabilitar botón mientras procesa
         const sendBtn = document.getElementById('sendBtn');
         const originalHTML = sendBtn.innerHTML;
         sendBtn.disabled = true;
         sendBtn.innerHTML = '<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>';
         
-        // Crear elemento para respuesta de IA (vacío)
         const aiMessageDiv = document.createElement('div');
         aiMessageDiv.className = 'message ai';
         aiMessageDiv.innerHTML = `
@@ -760,26 +700,20 @@ Como consultor de Dominius AI, te presento este **PLAN DE ACCIÓN ESTRUCTURADO**
         container.scrollTop = container.scrollHeight;
         
         try {
-            // Obtener respuesta de IA REAL de Groq
-            const aiResponse = await getAIResponse(message, ChatSystem.currentMode);
+            const aiResponse = await getAIResponse(message, ChatSystem.currentMode, tempFiles);
             
-            // Mostrar respuesta con efecto de escritura
             const typingElement = aiMessageDiv.querySelector('.message-content');
             await typeWriter(typingElement, aiResponse, 20);
             
-            // Guardar respuesta
             ChatSystem.saveMessage(ChatSystem.currentChatId, 'ai', aiResponse);
             
         } catch (error) {
-            console.error('Error en sendMessage:', error);
+            console.error('Error:', error);
             const typingElement = aiMessageDiv.querySelector('.message-content');
-            typingElement.textContent = `⚠️ Error técnico temporal. Por favor, intenta de nuevo en un momento.`;
+            typingElement.textContent = `⚠️ Error técnico temporal. Por favor, intenta de nuevo.`;
         } finally {
-            // Rehabilitar botón
             sendBtn.disabled = false;
             sendBtn.innerHTML = originalHTML;
-            
-            // Actualizar lista de chats
             ChatSystem.renderChats();
         }
     }
@@ -788,14 +722,12 @@ Como consultor de Dominius AI, te presento este **PLAN DE ACCIÓN ESTRUCTURADO**
     // FUNCIONES AUXILIARES
     // =============================================
     
-    // Función para sugerencias
     window.sendSuggestion = function(text) {
         const input = document.getElementById('messageInput');
         input.value = text;
         sendMessage();
     };
     
-    // Actualizar contador de caracteres
     function updateCharCount() {
         const input = document.getElementById('messageInput');
         const count = document.getElementById('charCount');
@@ -804,7 +736,6 @@ Como consultor de Dominius AI, te presento este **PLAN DE ACCIÓN ESTRUCTURADO**
         }
     }
     
-    // Auto-ajustar altura del textarea
     function autoResizeTextarea() {
         const textarea = document.getElementById('messageInput');
         if (textarea) {
@@ -814,62 +745,39 @@ Como consultor de Dominius AI, te presento este **PLAN DE ACCIÓN ESTRUCTURADO**
     }
     
     // =============================================
-    // CONFIGURAR EVENTOS DE LA INTERFAZ
+    // CONFIGURAR EVENTOS
     // =============================================
     
-    // Inicializar chats
     ChatSystem.renderChats();
     
-    // Pestañas
     document.querySelectorAll('.tab-button').forEach(button => {
         button.addEventListener('click', () => {
             const tabName = button.dataset.tab;
-            
-            // Actualizar botones activos
-            document.querySelectorAll('.tab-button').forEach(btn => {
-                btn.classList.remove('active');
-            });
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
-            
-            // Actualizar paneles
-            document.querySelectorAll('.tab-panel').forEach(panel => {
-                panel.classList.remove('active');
-            });
+            document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
             document.getElementById(`${tabName}Panel`).classList.add('active');
         });
     });
     
-    // Nuevo chat
     document.getElementById('newChatBtn').addEventListener('click', () => {
         const newChat = ChatSystem.createChat();
         ChatSystem.loadChat(newChat.id);
     });
     
-    // Modos de chat
     document.querySelectorAll('.mode-card').forEach(card => {
         card.addEventListener('click', () => {
             const mode = card.dataset.mode;
             ChatSystem.currentMode = mode;
-            
-            // Actualizar tarjetas activas
-            document.querySelectorAll('.mode-card').forEach(c => {
-                c.classList.remove('active');
-            });
+            document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('active'));
             card.classList.add('active');
-            
-            // Actualizar indicador de modo
             document.getElementById('currentMode').textContent = `Modo: ${ChatSystem.getModeName(mode)}`;
-            
-            // Crear nuevo chat con el modo seleccionado
             const newChat = ChatSystem.createChat();
             ChatSystem.loadChat(newChat.id);
-            
-            // Cambiar a pestaña de chats
             document.querySelector('[data-tab="chats"]').click();
         });
     });
     
-    // Limpiar chat
     document.getElementById('clearChatBtn').addEventListener('click', () => {
         if (ChatSystem.currentChatId && confirm('¿Estás seguro de que quieres limpiar este chat?')) {
             ChatSystem.clearChat(ChatSystem.currentChatId);
@@ -877,47 +785,23 @@ Como consultor de Dominius AI, te presento este **PLAN DE ACCIÓN ESTRUCTURADO**
         }
     });
     
-    // Eliminar chat
     document.getElementById('deleteChatBtn').addEventListener('click', () => {
         if (ChatSystem.currentChatId && confirm('¿Estás seguro de que quieres eliminar este chat?')) {
             ChatSystem.deleteChat(ChatSystem.currentChatId);
             ChatSystem.currentChatId = null;
             ChatSystem.renderChats();
-            
-            // Restablecer vista
             document.getElementById('currentChatTitle').textContent = 'Nuevo Chat';
             document.getElementById('messagesContainer').innerHTML = `
                 <div class="welcome-message">
-                    <div class="welcome-icon">
-                        <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                        </svg>
-                    </div>
                     <h2>Bienvenido a Dominius AI</h2>
-                    <p>Tu asistente de IA especializado para empresarios y empresas</p>
-                    <div class="quick-suggestions">
-                        <button class="suggestion-btn" onclick="sendSuggestion('Necesito un análisis de mercado para mi empresa')">
-                            💼 Análisis de mercado
-                        </button>
-                        <button class="suggestion-btn" onclick="sendSuggestion('Genera un informe financiero trimestral')">
-                            📊 Informe financiero
-                        </button>
-                        <button class="suggestion-btn" onclick="sendSuggestion('Ayúdame a crear un plan estratégico')">
-                            🎯 Plan estratégico
-                        </button>
-                        <button class="suggestion-btn" onclick="sendSuggestion('Dame ideas innovadoras para mi negocio')">
-                            💡 Ideas de negocio
-                        </button>
-                    </div>
+                    <p>Tu asistente con VISIÓN</p>
                 </div>
             `;
         }
     });
     
-    // Botón enviar
     document.getElementById('sendBtn').addEventListener('click', sendMessage);
     
-    // Eventos del input
     const messageInput = document.getElementById('messageInput');
     if (messageInput) {
         messageInput.addEventListener('input', () => {
@@ -932,213 +816,11 @@ Como consultor de Dominius AI, te presento este **PLAN DE ACCIÓN ESTRUCTURADO**
             }
         });
         
-        // Enfocar el input al cargar
         setTimeout(() => {
             messageInput.focus();
-            autoResizeTextarea();
         }, 500);
     }
     
-    // =============================================
-    // INYECTAR ESTILOS ADICIONALES PROFESIONALES
-    // =============================================
-    const additionalStyles = `
-        <style>
-            /* GARANTIZAR que el texto no se monte - DEFINITIVO */
-            .message-content {
-                white-space: normal !important;
-                word-break: break-word !important;
-                overflow-wrap: break-word !important;
-                line-height: 1.6 !important;
-                display: block !important;
-                max-width: 100% !important;
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-            }
-            
-            .message-content * {
-                white-space: normal !important;
-                word-break: break-word !important;
-                overflow-wrap: break-word !important;
-                line-height: inherit !important;
-                display: inline !important;
-            }
-            
-            .message-content br {
-                display: block !important;
-                content: "" !important;
-                margin-bottom: 0.5em !important;
-            }
-            
-            .message-content h1, 
-            .message-content h2, 
-            .message-content h3, 
-            .message-content h4 {
-                display: block !important;
-                margin-top: 1em !important;
-                margin-bottom: 0.5em !important;
-                font-weight: 600 !important;
-            }
-            
-            .message-content ul, 
-            .message-content ol {
-                display: block !important;
-                margin-left: 1.5em !important;
-                margin-bottom: 1em !important;
-            }
-            
-            .message-content li {
-                display: list-item !important;
-                margin-bottom: 0.3em !important;
-            }
-            
-            .message-content strong {
-                font-weight: 600 !important;
-            }
-            
-            .message-content em {
-                font-style: italic !important;
-            }
-            
-            /* Tablas en respuestas */
-            .message-content table {
-                border-collapse: collapse !important;
-                margin: 1em 0 !important;
-                width: 100% !important;
-            }
-            
-            .message-content th,
-            .message-content td {
-                border: 1px solid rgba(138, 43, 226, 0.2) !important;
-                padding: 8px 12px !important;
-                text-align: left !important;
-            }
-            
-            .message-content th {
-                background: rgba(138, 43, 226, 0.1) !important;
-                font-weight: 600 !important;
-            }
-            
-            /* Animación de mensajes nuevos */
-            .message-pop {
-                animation: popIn 0.3s ease-out;
-            }
-            
-            @keyframes popIn {
-                0% {
-                    opacity: 0;
-                    transform: translateY(10px) scale(0.95);
-                }
-                100% {
-                    opacity: 1;
-                    transform: translateY(0) scale(1);
-                }
-            }
-            
-            /* Efecto de botón presionado */
-            .btn-press {
-                animation: press 0.2s ease;
-            }
-            
-            @keyframes press {
-                0% { transform: scale(1); }
-                50% { transform: scale(0.96); }
-                100% { transform: scale(1); }
-            }
-            
-            /* Scroll suave */
-            .messages-container {
-                scroll-behavior: smooth;
-            }
-            
-            /* Indicador de escritura */
-            .typing-indicator {
-                display: inline-flex;
-                align-items: center;
-                gap: 4px;
-                padding: 2px 8px;
-                background: rgba(138, 43, 226, 0.1);
-                border-radius: 12px;
-                font-size: 12px;
-                color: #8B5CF6;
-            }
-            
-            .typing-dot {
-                width: 6px;
-                height: 6px;
-                background: #8B5CF6;
-                border-radius: 50%;
-                animation: bounce 1.4s infinite;
-            }
-            
-            .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-            .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-            
-            @keyframes bounce {
-                0%, 60%, 100% { transform: translateY(0); }
-                30% { transform: translateY(-4px); }
-            }
-            
-            /* Botón de enviar deshabilitado */
-            #sendBtn:disabled {
-                opacity: 0.5;
-                cursor: not-allowed;
-            }
-            
-            /* Responsive mejorado */
-            @media (max-width: 768px) {
-                .message-content-wrapper {
-                    max-width: 85% !important;
-                }
-                
-                .welcome-message {
-                    padding: 20px;
-                }
-                
-                .welcome-message h2 {
-                    font-size: 24px;
-                }
-                
-                .quick-suggestions {
-                    flex-direction: column;
-                }
-                
-                .suggestion-btn {
-                    width: 100%;
-                    margin: 5px 0;
-                }
-                
-                .message-content table {
-                    font-size: 12px;
-                }
-                
-                .message-content th,
-                .message-content td {
-                    padding: 6px 8px;
-                }
-            }
-            
-            /* Asegurar que los mensajes no se superpongan */
-            .message {
-                clear: both !important;
-                float: none !important;
-                margin-bottom: 20px !important;
-            }
-            
-            .message-content-wrapper {
-                display: block !important;
-                max-width: 80% !important;
-            }
-            
-            /* Checkboxes en listas */
-            .message-content input[type="checkbox"] {
-                margin-right: 8px;
-            }
-        </style>
-    `;
-    
-    document.head.insertAdjacentHTML('beforeend', additionalStyles);
-    
-    console.log('✅ Dominius AI cargado correctamente con Groq - Modelo actualizado');
-    console.log('🔑 API Key configurada');
-    console.log('🤖 Modelo: llama-3.3-70b-versatile');
+    console.log('✅ Dominius AI con VISIÓN cargado correctamente');
+    console.log('👁️ Ahora puedo VER imágenes y analizar documentos');
 });
