@@ -386,60 +386,122 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // =============================================
-    // GENERAR RESPUESTAS DE IA CON GROQ (100% GRATIS)
+    // GENERAR RESPUESTAS DE IA CON GROQ - MEJORADO
     // =============================================
     async function getAIResponse(message, mode) {
         const GROQ_API_KEY = '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';
         
+        // Prompts ESPECÍFICOS por modo
+        const systemPrompts = {
+            'finance': `Eres un CONSULTOR FINANCIERO SENIOR especializado en startups tech y SaaS.
+            
+            RESPONDE ESPECÍFICAMENTE a la consulta financiera con:
+            1. Análisis cuantitativo con métricas reales
+            2. Estructura de informe profesional
+            3. KPIs relevantes para el contexto
+            4. Recomendaciones accionables inmediatas
+            
+            EJEMPLOS DE RESPUESTAS ESPECÍFICAS:
+            - Para "informe financiero trimestral SaaS": estructura con MRR, churn, CAC, LTV, burn rate
+            - Para "análisis de rentabilidad": márgenes, punto de equilibrio, ROI
+            - Para "proyecciones": escenarios conservador/realista/optimista
+            
+            INCLUYE siempre:
+            • Datos numéricos (aunque sean ejemplos)
+            • Fórmulas relevantes
+            • Métricas sectoriales
+            • Timeline de implementación
+            
+            NO uses respuestas genéricas. Sé específico y técnico.`,
+            
+            'general': `Eres un CONSULTOR EMPRESARIAL experto en estrategia y operaciones.
+            
+            RESPONDE de manera CONCRETA y PRÁCTICA:
+            1. Analiza el problema específico
+            2. Proporciona soluciones estructuradas
+            3. Incluye pasos accionables
+            4. Ofrece ejemplos reales
+            
+            FORMATO:
+            • Títulos claros por sección
+            • Listas numeradas para pasos
+            • Viñetas para opciones
+            • Negritas para puntos clave`,
+            
+            'strategy': `Eres un ESTRATEGA CORPORATIVO especializado en planificación estratégica.
+            
+            PROPORCIONA:
+            1. Análisis DAFO específico
+            2. Roadmap con hitos
+            3. Plan de implementación detallado
+            4. Sistema de seguimiento
+            
+            ENFÓCATE en:
+            • Ventaja competitiva
+            • Posicionamiento de mercado
+            • Innovación estratégica
+            • Gestión del cambio`,
+            
+            'business': `Eres un CONSULTOR DE OPERACIONES experto en optimización empresarial.
+            
+            CENTRATE en:
+            1. Eficiencia operativa
+            2. Reducción de costos
+            3. Mejora de procesos
+            4. Escalabilidad
+            
+            PROPORCIONA:
+            • Procesos paso a paso
+            • Herramientas específicas
+            • Métricas de mejora
+            • Casos de éxito`,
+            
+            'creative': `Eres un ESPECIALISTA EN INNOVACIÓN y pensamiento creativo.
+            
+            GENERA:
+            1. Ideas originales y disruptivas
+            2. Enfoques no convencionales
+            3. Soluciones innovadoras
+            4. Estrategias de diferenciación
+            
+            SÉ:
+            • Inspirador pero realista
+            • Visual y conceptual
+            • Orientado a resultados
+            • Basado en tendencias`,
+            
+            'data': `Eres un ANALISTA DE DATOS experto en business intelligence.
+            
+            PROPORCIONA:
+            1. Análisis cuantitativo detallado
+            2. Métricas y KPIs relevantes
+            3. Visualización de datos sugerida
+            4. Insights accionables
+            
+            INCLUYE:
+            • Fórmulas estadísticas
+            • Herramientas de análisis
+            • Métodos de validación
+            • Interpretación de resultados`,
+            
+            'legal': `Eres un ASESOR LEGAL EMPRESARIAL especializado en compliance.
+            
+            BRINDA:
+            1. Orientación legal preventiva
+            2. Checklist de cumplimiento
+            3. Mejores prácticas sectoriales
+            4. Gestión de riesgos
+            
+            ACLARA siempre:
+            • "Esta no es asesoría legal vinculante"
+            • "Consulta con un abogado especializado"
+            • "Las leyes varían por jurisdicción"`
+        };
+        
+        const systemPrompt = systemPrompts[mode] || systemPrompts['general'];
+        
         try {
-            console.log('🚀 Enviando consulta a Groq AI...');
-            
-            // Sistema de prompts especializados por modo
-            const systemPrompts = {
-                'general': `Eres Dominius AI, un asistente de IA especializado para empresarios y empresas.
-                Eres experto en: análisis de mercado, estrategia empresarial, finanzas, marketing, operaciones, gestión de equipos.
-                Responde en español de manera profesional, estructurada y práctica.
-                Proporciona valor real con ejemplos concretos y pasos accionables.
-                Formatea respuestas claramente con encabezados, listas y secciones cuando sea apropiado.`,
-                
-                'finance': `Eres un CONSULTOR FINANCIERO EXPERTO de Dominius AI.
-                Especialidades: análisis financiero, proyecciones, control de costos, inversiones, fiscalidad.
-                Proporciona respuestas técnicas pero comprensibles, con números y porcentajes cuando sea relevante.
-                Incluye estructuras de informes, KPIs financieros y recomendaciones específicas.
-                Responde en español con formato profesional.`,
-                
-                'strategy': `Eres un ESTRATEGA EMPRESARIAL de Dominius AI.
-                Especialidades: planificación estratégica, análisis competitivo, desarrollo de modelos de negocio, innovación.
-                Proporciona marcos estratégicos, análisis DAFO, hoja de ruta y planes de implementación.
-                Sé visionario pero práctico, con hitos medibles.
-                Responde en español con estructura clara.`,
-                
-                'business': `Eres un CONSULTOR DE NEGOCIOS de Dominius AI.
-                Especialidades: gestión operativa, optimización de procesos, escalabilidad, eficiencia, customer experience.
-                Proporciona soluciones prácticas para problemas empresariales cotidianos.
-                Incluye checklist, mejores prácticas y casos de éxito.
-                Responde en español de manera directa y útil.`,
-                
-                'creative': `Eres un ESPECIALISTA EN INNOVACIÓN de Dominius AI.
-                Especialidades: brainstorming creativo, diseño thinking, innovación disruptiva, branding, storytelling.
-                Proporciona ideas originales, enfoques no convencionales y soluciones creativas.
-                Sé inspirador pero realista, con ejemplos de implementación.
-                Responde en español con energía y creatividad.`,
-                
-                'data': `Eres un ANALISTA DE DATOS de Dominius AI.
-                Especialidades: analytics, business intelligence, KPIs, dashboards, toma de decisiones basada en datos.
-                Proporciona análisis cuantitativos, métricas relevantes y visualización de datos.
-                Explica conceptos técnicos de manera accesible.
-                Responde en español con precisión técnica.`,
-                
-                'legal': `Eres un ASESOR LEGAL EMPRESARIAL de Dominius AI.
-                Especialidades: compliance, contratos, protección de datos, propiedad intelectual, regulaciones sectoriales.
-                Proporciona orientación legal preventiva, checklist de cumplimiento y mejores prácticas.
-                Aclara que no es asesoría legal vinculante pero sí orientativa.
-                Responde en español con precisión jurídica.`
-            };
-            
-            const systemPrompt = systemPrompts[mode] || systemPrompts['general'];
+            console.log(`🚀 Enviando consulta a Groq AI (Modo: ${mode})...`);
             
             const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                 method: 'POST',
@@ -460,8 +522,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     ],
                     temperature: 0.7,
-                    max_tokens: 1200,
-                    stream: false
+                    max_tokens: 1500,
+                    top_p: 0.9,
+                    frequency_penalty: 0.1,
+                    presence_penalty: 0.1
                 })
             });
             
@@ -486,107 +550,139 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Respuestas de respaldo MEJORADAS y ESPECÍFICAS
             const backupResponses = {
-                'finance': `**📊 INFORME FINANCIERO TRIMESTRAL - ESTRUCTURA PROFESIONAL**
+                'finance': `**📊 INFORME FINANCIERO TRIMESTRAL - STARTUP SaaS**
 
-## 1. RESUMEN EJECUTIVO
-- **Resultados clave del trimestre**: Análisis comparativo vs objetivos
-- **Logros destacados**: Crecimiento, eficiencia, reducción de costos
-- **Desafíos identificados**: Áreas de mejora y riesgos
+## 📈 MÉTRICAS CLAVE SaaS (Q1 2026)
+| Métrica | Actual | Objetivo | Variación |
+|---------|--------|----------|-----------|
+| **MRR (Monthly Recurring Revenue)** | $45,000 | $50,000 | -10% |
+| **Churn Rate** | 3.2% | 2.5% | +0.7% |
+| **CAC (Customer Acquisition Cost)** | $850 | $750 | +13% |
+| **LTV (Lifetime Value)** | $12,500 | $15,000 | -17% |
+| **Burn Rate** | $25,000/mes | $20,000/mes | +25% |
+| **Runway** | 8 meses | 12 meses | -4 meses |
 
-## 2. ANÁLISIS DE INGRESOS
-- **Ingresos totales**: Desglose por producto/servicio/canal
-- **Tendencias de ventas**: Estacionalidad, crecimiento, comparativa
-- **Clientes clave**: Contribución al revenue, retención
+## 🔍 ANÁLISIS DETALLADO
 
-## 3. GESTIÓN DE COSTOS Y GASTOS
-- **Costos directos**: Eficiencia productiva, margen bruto
-- **Gastos operativos**: Control vs presupuesto, optimizaciones
-- **Inversiones estratégicas**: ROI esperado, justificación
+### 1. INGRESOS Y CRECIMIENTO
+- **MRR Composition**:
+  - Plan Básico: $18,000 (40%)
+  - Plan Pro: $22,500 (50%)
+  - Plan Enterprise: $4,500 (10%)
+- **New MRR**: $8,500 (+23% vs Q4)
+- **Expansion MRR**: $3,200 (+7% organic growth)
 
-## 4. FLUJOS DE CAJA
-- **Operativo**: Generación de caja, ciclo de conversión
-- **Inversiones**: Capex estratégico, amortizaciones
-- **Financiación**: Endeudamiento, coste financiero
+### 2. GASTOS OPERATIVOS
+- **Costos Fijos**: $35,000/mes
+  - Salarios: $22,000
+  - Infraestructura: $8,000
+  - Oficina: $5,000
+- **Costos Variables**: $15,000/mes
+  - Marketing: $9,000
+  - Sales: $6,000
 
-## 5. INDICADORES FINANCIEROS CLAVE (KPIs)
-- **Rentabilidad**: Margen neto, ROE, ROI
-- **Liquidez**: Ratio corriente, fondo de maniobra
-- **Solvencia**: Nivel de endeudamiento, capacidad de pago
-- **Eficiencia**: Rotaciones, ciclo de caja
+### 3. FLUJO DE CAJA
+- **Cash Flow Operativo**: -$5,000/mes
+- **Capital Requerido**: $60,000 para 12 meses runway
+- **Punto de Equilibrio**: 520 clientes activos (actual: 420)
 
-## 6. PROYECCIONES Y RECOMENDACIONES
-- **Escenarios para próximo trimestre**: Conservador, realista, optimista
-- **Acciones prioritarias**: 3-5 medidas concretas
-- **Seguimiento**: Métricas de control, revisiones periódicas
+## 🎯 RECOMENDACIONES INMEDIATAS
 
-**⏱️ PRÓXIMOS PASOS INMEDIATOS:**
-1. Validar datos con equipo contable
-2. Programar reunión de análisis ejecutivo
-3. Actualizar presupuesto trimestral
-4. Definir sistema de seguimiento semanal
+### PRIORIDAD 1 (Semanas 1-2):
+1. **Reducir Churn**:
+   - Implementar onboarding mejorado (-0.5% churn)
+   - Programa de lealtad para clientes >6 meses
+   
+2. **Optimizar CAC**:
+   - Focalizar en canales orgánicos (CAC objetivo: $650)
+   - Mejorar tasa conversión landing page (+15%)
 
-¿Te gustaría que desarrolle algún apartado específico o necesitas un formato particular para presentación?`,
-                
-                'general': `He analizado tu consulta sobre "${message.substring(0, 50)}...". 
+### PRIORIDAD 2 (Semanas 3-4):
+3. **Aumentar LTV**:
+   - Upsell a Plan Pro (LTV objetivo: $14,000)
+   - Cross-selling de módulos adicionales
+   
+4. **Controlar Burn Rate**:
+   - Revisar contrato infraestructura (-$2,000/mes)
+   - Modalidad remote-first (-$3,000/mes oficina)
 
-Como consultor empresarial de Dominius AI, te propongo este **ENFOQUE ESTRUCTURADO**:
+### PRIORIDAD 3 (Mes 2):
+5. **Diversificar Ingresos**:
+   - API como producto (ingreso proyectado: $5,000/mes)
+   - Consultoría implementation ($10,000/proyecto)
 
-## 🔍 DIAGNÓSTICO INICIAL
-1. **Contexto actual**: Situación y objetivos
-2. **Recursos disponibles**: Humanos, financieros, tecnológicos
-3. **Restricciones identificadas**: Tiempo, presupuesto, capacidades
+## 📅 PLAN DE ACCIÓN 90 DÍAS
 
-## 🎯 DEFINICIÓN DE OBJETIVOS SMART
-- **Específico**: Resultado concreto esperado
-- **Medible**: KPIs cuantificables
-- **Alcanzable**: Recursos y capacidades realistas
-- **Relevante**: Alineación con estrategia global
-- **Temporal**: Plazos definidos
+**SEMANAS 1-4**: Estabilización financiera
+**SEMANAS 5-8**: Crecimiento eficiente  
+**SEMANAS 9-12**: Escalabilidad y profit
 
-## 📋 PLAN DE ACCIÓN PRIORIZADO
-**Fase 1 (Semanas 1-2)**: Diagnóstico profundo
-**Fase 2 (Semanas 3-4)**: Planificación detallada
-**Fase 3 (Mes 2)**: Implementación controlada
-**Fase 4 (Mes 3)**: Evaluación y ajustes
+¿Necesitas que desarrolle algún área específica o el dashboard financiero completo?`,
+
+                'general': `He procesado tu consulta: "${message.substring(0, 50)}..."
+
+Como consultor de Dominius AI, te presento este **PLAN DE ACCIÓN ESTRUCTURADO**:
+
+## 🎯 OBJETIVOS PRINCIPALES
+1. **Definir resultado esperado** claramente
+2. **Establecer métricas de éxito** medibles
+3. **Asignar recursos necesarios** realistas
+
+## 📋 PASOS CONCRETOS
+
+### FASE 1: DIAGNÓSTICO (Días 1-7)
+- [ ] Análisis de situación actual
+- [ ] Identificación de stakeholders
+- [ ] Mapeo de procesos relevantes
+- [ ] Recopilación de datos clave
+
+### FASE 2: PLANIFICACIÓN (Días 8-14)
+- [ ] Definición de estrategia óptima
+- [ ] Asignación de responsabilidades
+- [ ] Establecimiento de timeline
+- [ ] Presupuesto detallado
+
+### FASE 3: EJECUCIÓN (Días 15-30)
+- [ ] Implementación controlada
+- [ ] Monitoreo de progreso
+- [ ] Ajustes en tiempo real
+- [ ] Comunicación continua
+
+### FASE 4: EVALUACIÓN (Días 31-45)
+- [ ] Medición de resultados
+- [ ] Análisis de desviaciones
+- [ ] Lecciones aprendidas
+- [ ] Plan de mejora continua
 
 ## 🛠️ HERRAMIENTAS RECOMENDADAS
-- **Gestión**: Asana/Trello para seguimiento
-- **Análisis**: Google Analytics/Data Studio
-- **Comunicación**: Slack/Teams para coordinación
-- **Documentación**: Notion/Google Docs
 
-**¿Qué aspecto te gustaría desarrollar primero?**`,
-                
-                'strategy': `**🎯 PLAN ESTRATÉGICO - ESTRUCTURA**
+**Gestión de Proyectos**:
+- Asana para seguimiento detallado
+- Trello para visualización simple
+- Monday.com para automatización
 
-## 1. ANÁLISIS DE SITUACIÓN (DAFO)
-- **Fortalezas**: Ventajas competitivas internas
-- **Debilidades**: Áreas de mejora crítica
-- **Oportunidades**: Tendencias mercado, gaps
-- **Amenazas**: Competencia, cambios regulatorios
+**Comunicación**:
+- Slack para coordinación diaria
+- Zoom/Teams para reuniones
+- Loom para updates asíncronos
 
-## 2. VISIÓN Y OBJETIVOS ESTRATÉGICOS
-- **Horizonte temporal**: 1-3-5 años
-- **Objetivos corporativos**: Crecimiento, rentabilidad, mercado
-- **Métricas de éxito**: KPIs estratégicos
+**Análisis**:
+- Google Data Studio para dashboards
+- Excel/Sheets para datos
+- Power BI para análisis avanzado
 
-## 3. ESTRATEGIAS POR ÁREA
-- **Mercado**: Posicionamiento, segmentación
-- **Operaciones**: Eficiencia, calidad, costos
-- **Innovación**: I+D, digitalización, nuevos modelos
-- **Personas**: Talento, cultura, liderazgo
+## ⚠️ RIESGOS IDENTIFICADOS
+1. **Falta de claridad en objetivos**
+2. **Recursos insuficientes**
+3. **Plazos poco realistas**
+4. **Resistencia al cambio**
 
-## 4. PLAN DE IMPLEMENTACIÓN
-- **Hitos trimestrales**: Entregables clave
-- **Responsables**: Equipos y liderazgo
-- **Recursos**: Presupuesto, herramientas, capacitación
+## ✅ ACCIONES INMEDIATAS
+1. **Hoy mismo**: Definir 3 KPIs clave
+2. **Esta semana**: Establecer reunión de kick-off
+3. **Próximos 7 días**: Crear plan detallado
 
-## 5. SISTEMA DE CONTROL
-- **Revisión mensual**: Desviaciones y ajustes
-- **Indicadores adelantados**: Early warnings
-- **Cultura de mejora continua**: Aprendizaje organizacional
-
-**¿En qué fase estratégica necesitas más apoyo?**`
+**¿Por dónde prefieres comenzar?**`
             };
             
             return backupResponses[mode] || backupResponses['general'];
@@ -643,8 +739,9 @@ Como consultor empresarial de Dominius AI, te propongo este **ENFOQUE ESTRUCTURA
         
         // Deshabilitar botón mientras procesa
         const sendBtn = document.getElementById('sendBtn');
+        const originalHTML = sendBtn.innerHTML;
         sendBtn.disabled = true;
-        sendBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-6.219-8.56"></path></svg>';
+        sendBtn.innerHTML = '<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>';
         
         // Crear elemento para respuesta de IA (vacío)
         const aiMessageDiv = document.createElement('div');
@@ -680,7 +777,7 @@ Como consultor empresarial de Dominius AI, te propongo este **ENFOQUE ESTRUCTURA
         } finally {
             // Rehabilitar botón
             sendBtn.disabled = false;
-            sendBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>';
+            sendBtn.innerHTML = originalHTML;
             
             // Actualizar lista de chats
             ChatSystem.renderChats();
@@ -902,6 +999,25 @@ Como consultor empresarial de Dominius AI, te propongo este **ENFOQUE ESTRUCTURA
                 font-style: italic !important;
             }
             
+            /* Tablas en respuestas */
+            .message-content table {
+                border-collapse: collapse !important;
+                margin: 1em 0 !important;
+                width: 100% !important;
+            }
+            
+            .message-content th,
+            .message-content td {
+                border: 1px solid rgba(138, 43, 226, 0.2) !important;
+                padding: 8px 12px !important;
+                text-align: left !important;
+            }
+            
+            .message-content th {
+                background: rgba(138, 43, 226, 0.1) !important;
+                font-weight: 600 !important;
+            }
+            
             /* Animación de mensajes nuevos */
             .message-pop {
                 animation: popIn 0.3s ease-out;
@@ -990,6 +1106,15 @@ Como consultor empresarial de Dominius AI, te propongo este **ENFOQUE ESTRUCTURA
                     width: 100%;
                     margin: 5px 0;
                 }
+                
+                .message-content table {
+                    font-size: 12px;
+                }
+                
+                .message-content th,
+                .message-content td {
+                    padding: 6px 8px;
+                }
             }
             
             /* Asegurar que los mensajes no se superpongan */
@@ -1003,11 +1128,16 @@ Como consultor empresarial de Dominius AI, te propongo este **ENFOQUE ESTRUCTURA
                 display: block !important;
                 max-width: 80% !important;
             }
+            
+            /* Checkboxes en listas */
+            .message-content input[type="checkbox"] {
+                margin-right: 8px;
+            }
         </style>
     `;
     
     document.head.insertAdjacentHTML('beforeend', additionalStyles);
     
-    console.log('✅ Dominius AI cargado correctamente con Groq');
-    console.log('🔑 API Key configurada:', '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'.substring(0, 10) + '...');
+    console.log('✅ Dominius AI cargado correctamente con Groq - Modos específicos');
+    console.log('🔑 API Key configurada');
 });
