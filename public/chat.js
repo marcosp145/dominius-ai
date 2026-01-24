@@ -1,6 +1,6 @@
 // Verificar sesión al cargar
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('💬 Dominius AI - Cargando chat profesional...');
+    console.log('💬 Dominius AI - Cargando con subida de archivos...');
     
     // Verificar sesión
     const session = localStorage.getItem('dominius_session');
@@ -26,6 +26,86 @@ document.addEventListener('DOMContentLoaded', function() {
         if (confirm('¿Estás seguro de que quieres cerrar sesión?')) {
             localStorage.removeItem('dominius_session');
             window.location.href = 'index.html';
+        }
+    });
+    
+    // =============================================
+    // SISTEMA DE SUBIDA DE ARCHIVOS
+    // =============================================
+    
+    // 1. Configurar botón de subida
+    document.getElementById('uploadBtn').addEventListener('click', () => {
+        document.getElementById('fileInput').click();
+    });
+    
+    // 2. Manejar cuando se selecciona archivo
+    document.getElementById('fileInput').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        // Verificar tamaño (máximo 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            alert('Archivo demasiado grande. Máximo 5MB.');
+            return;
+        }
+        
+        // Mostrar que se está procesando
+        const preview = document.getElementById('filePreview');
+        preview.innerHTML = `<div style="color: #8B5CF6; font-size: 12px;">📁 Procesando ${file.name} (${(file.size/1024).toFixed(1)}KB)...</div>`;
+        
+        try {
+            let fileContent = '';
+            const fileType = file.name.split('.').pop().toLowerCase();
+            
+            // Leer contenido según tipo de archivo
+            if (fileType === 'txt' || fileType === 'json' || fileType === 'csv') {
+                // Archivos de texto simples
+                fileContent = await file.text();
+            } else if (fileType === 'pdf') {
+                // Para PDF, mostramos mensaje especial
+                fileContent = `[ARCHIVO PDF: ${file.name}]\nContenido no extraíble directamente. Por favor, describe lo que contiene el PDF o copia el texto relevante.`;
+            } else if (fileType === 'doc' || fileType === 'docx') {
+                // Para Word
+                fileContent = `[ARCHIVO WORD: ${file.name}]\nPara analizar documentos Word, por favor copia y pega el contenido textual aquí.`;
+            } else if (fileType === 'xlsx' || fileType === 'xls') {
+                // Para Excel
+                fileContent = `[ARCHIVO EXCEL: ${file.name}]\nPara analizar datos de Excel, por favor:\n1. Copia las tablas relevantes\n2. Describe qué datos quieres analizar\n3. O exporta a CSV y súbelo de nuevo`;
+            } else {
+                fileContent = `[ARCHIVO: ${file.name} - Tipo: ${fileType}]\nContenido no procesable directamente. Por favor, describe el contenido.`;
+            }
+            
+            // Limitar contenido a 3000 caracteres
+            if (fileContent.length > 3000) {
+                fileContent = fileContent.substring(0, 3000) + '\n\n... (contenido recortado por tamaño)';
+            }
+            
+            // Añadir al input de mensaje
+            const input = document.getElementById('messageInput');
+            const currentText = input.value.trim();
+            const fileMessage = `\n\n=== ARCHIVO ADJUNTO ===\nNombre: ${file.name}\nTamaño: ${(file.size/1024).toFixed(1)}KB\nTipo: ${fileType}\n\nContenido:\n${fileContent}\n\nPor favor, analiza este archivo:`;
+            
+            if (currentText) {
+                input.value = currentText + fileMessage;
+            } else {
+                input.value = `He subido el archivo "${file.name}". ` + fileMessage;
+            }
+            
+            // Auto-ajustar altura
+            input.style.height = 'auto';
+            input.style.height = Math.min(input.scrollHeight, 200) + 'px';
+            
+            // Mostrar preview exitoso
+            preview.innerHTML = `<div style="color: #10B981; font-size: 12px;">✅ ${file.name} listo para analizar</div>`;
+            
+            // Enfocar el input
+            input.focus();
+            
+            // Resetear input file
+            e.target.value = '';
+            
+        } catch (error) {
+            console.error('Error procesando archivo:', error);
+            preview.innerHTML = `<div style="color: #EF4444; font-size: 12px;">❌ Error procesando ${file.name}</div>`;
         }
     });
     
@@ -401,6 +481,11 @@ document.addEventListener('DOMContentLoaded', function() {
             3. KPIs relevantes para el contexto
             4. Recomendaciones accionables inmediatas
             
+            Si el usuario subió un archivo financiero (balance, excel, etc.):
+            - Analiza los datos proporcionados
+            - Identifica patrones y anomalías
+            - Proporciona insights específicos
+            
             EJEMPLOS DE RESPUESTAS ESPECÍFICAS:
             - Para "informe financiero trimestral SaaS": estructura con MRR, churn, CAC, LTV, burn rate
             - Para "análisis de rentabilidad": márgenes, punto de equilibrio, ROI
@@ -422,6 +507,11 @@ document.addEventListener('DOMContentLoaded', function() {
             3. Incluye pasos accionables
             4. Ofrece ejemplos reales
             
+            Si el usuario subió un archivo:
+            - Analiza su contenido
+            - Extrae información relevante
+            - Proporciona feedback específico
+            
             FORMATO:
             • Títulos claros por sección
             • Listas numeradas para pasos
@@ -435,6 +525,11 @@ document.addEventListener('DOMContentLoaded', function() {
             2. Roadmap con hitos
             3. Plan de implementación detallado
             4. Sistema de seguimiento
+            
+            Si hay documentos adjuntos:
+            - Analiza el contenido estratégico
+            - Identifica gaps y oportunidades
+            - Sugiere mejoras específicas
             
             ENFÓCATE en:
             • Ventaja competitiva
@@ -450,6 +545,11 @@ document.addEventListener('DOMContentLoaded', function() {
             3. Mejora de procesos
             4. Escalabilidad
             
+            Si hay archivos adjuntos (procesos, organigramas, etc.):
+            - Analiza la estructura operativa
+            - Identifica cuellos de botella
+            - Sugiere optimizaciones concretas
+            
             PROPORCIONA:
             • Procesos paso a paso
             • Herramientas específicas
@@ -463,6 +563,11 @@ document.addEventListener('DOMContentLoaded', function() {
             2. Enfoques no convencionales
             3. Soluciones innovadoras
             4. Estrategias de diferenciación
+            
+            Si hay documentos creativos adjuntos:
+            - Analiza el concepto
+            - Sugiere mejoras creativas
+            - Propone extensiones innovadoras
             
             SÉ:
             • Inspirador pero realista
@@ -478,6 +583,11 @@ document.addEventListener('DOMContentLoaded', function() {
             3. Visualización de datos sugerida
             4. Insights accionables
             
+            Si hay archivos de datos adjuntos (CSV, Excel, etc.):
+            - Analiza los datos proporcionados
+            - Identifica patrones estadísticos
+            - Sugiere visualizaciones apropiadas
+            
             INCLUYE:
             • Fórmulas estadísticas
             • Herramientas de análisis
@@ -491,6 +601,11 @@ document.addEventListener('DOMContentLoaded', function() {
             2. Checklist de cumplimiento
             3. Mejores prácticas sectoriales
             4. Gestión de riesgos
+            
+            Si hay documentos legales adjuntos:
+            - Analiza estructura y contenido
+            - Identifica riesgos potenciales
+            - Sugiere cláusulas de protección
             
             ACLARA siempre:
             • "Esta no es asesoría legal vinculante"
@@ -510,7 +625,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     'Authorization': `Bearer ${GROQ_API_KEY}`
                 },
                 body: JSON.stringify({
-                    model: 'llama-3.3-70b-versatile', // ⬅️ MODELO ACTUALIZADO
+                    model: 'llama-3.3-70b-versatile',
                     messages: [
                         {
                             role: 'system',
@@ -548,141 +663,47 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             console.error('❌ Error conectando con Groq AI:', error);
             
-            // Respuestas de respaldo MEJORADAS y ESPECÍFICAS
+            // Respuestas de respaldo MEJORADAS
             const backupResponses = {
                 'finance': `**📊 INFORME FINANCIERO TRIMESTRAL - STARTUP SaaS**
 
-## 📈 MÉTRICAS CLAVE SaaS (Q1 2026)
-| Métrica | Actual | Objetivo | Variación |
-|---------|--------|----------|-----------|
-| **MRR (Monthly Recurring Revenue)** | $45,000 | $50,000 | -10% |
-| **Churn Rate** | 3.2% | 2.5% | +0.7% |
-| **CAC (Customer Acquisition Cost)** | $850 | $750 | +13% |
-| **LTV (Lifetime Value)** | $12,500 | $15,000 | -17% |
-| **Burn Rate** | $25,000/mes | $20,000/mes | +25% |
-| **Runway** | 8 meses | 12 meses | -4 meses |
+He analizado tu consulta financiera. Si has subido un archivo, estoy procesando los datos.
 
-## 🔍 ANÁLISIS DETALLADO
+## 📈 MÉTRICAS CLAVE RECOMENDADAS
+| Área | Métricas a Monitorear |
+|------|----------------------|
+| **Ingresos** | MRR, ARR, Tasa de crecimiento |
+| **Clientes** | Churn, CAC, LTV, NPS |
+| **Operaciones** | Burn rate, Runway, Margen bruto |
+| **Eficiencia** | ROI, ROE, Rotación activos |
 
-### 1. INGRESOS Y CRECIMIENTO
-- **MRR Composition**:
-  - Plan Básico: $18,000 (40%)
-  - Plan Pro: $22,500 (50%)
-  - Plan Enterprise: $4,500 (10%)
-- **New MRR**: $8,500 (+23% vs Q4)
-- **Expansion MRR**: $3,200 (+7% organic growth)
+## 🔍 PRÓXIMOS PASOS:
+1. **Subir datos concretos** (Excel, CSV, balance)
+2. **Especificar período** a analizar
+3. **Definir objetivos** financieros claros
 
-### 2. GASTOS OPERATIVOS
-- **Costos Fijos**: $35,000/mes
-  - Salarios: $22,000
-  - Infraestructura: $8,000
-  - Oficina: $5,000
-- **Costos Variables**: $15,000/mes
-  - Marketing: $9,000
-  - Sales: $6,000
+¿Tienes datos específicos que quieres que analice?`,
+                
+                'general': `He procesado tu consulta. Si has subido un archivo, estoy analizando su contenido.
 
-### 3. FLUJO DE CAJA
-- **Cash Flow Operativo**: -$5,000/mes
-- **Capital Requerido**: $60,000 para 12 meses runway
-- **Punto de Equilibrio**: 520 clientes activos (actual: 420)
+## 🎯 ENFOQUE RECOMENDADO:
 
-## 🎯 RECOMENDACIONES INMEDIATAS
+### 1. DIAGNÓSTICO INICIAL
+- Contexto y objetivos
+- Recursos disponibles
+- Restricciones identificadas
 
-### PRIORIDAD 1 (Semanas 1-2):
-1. **Reducir Churn**:
-   - Implementar onboarding mejorado (-0.5% churn)
-   - Programa de lealtad para clientes >6 meses
-   
-2. **Optimizar CAC**:
-   - Focalizar en canales orgánicos (CAC objetivo: $650)
-   - Mejorar tasa conversión landing page (+15%)
+### 2. ACCIONES INMEDIATAS
+- Definir 3 KPIs clave esta semana
+- Establecer reunión de kick-off
+- Crear plan detallado en 7 días
 
-### PRIORIDAD 2 (Semanas 3-4):
-3. **Aumentar LTV**:
-   - Upsell a Plan Pro (LTV objetivo: $14,000)
-   - Cross-selling de módulos adicionales
-   
-4. **Controlar Burn Rate**:
-   - Revisar contrato infraestructura (-$2,000/mes)
-   - Modalidad remote-first (-$3,000/mes oficina)
+### 3. PARA ARCHIVOS ADJUNTOS:
+- **PDF/DOC**: Copiar texto relevante para análisis profundo
+- **Excel/CSV**: Compartir tablas clave o métricas específicas
+- **Imágenes**: Describir contenido para análisis
 
-### PRIORIDAD 3 (Mes 2):
-5. **Diversificar Ingresos**:
-   - API como producto (ingreso proyectado: $5,000/mes)
-   - Consultoría implementation ($10,000/proyecto)
-
-## 📅 PLAN DE ACCIÓN 90 DÍAS
-
-**SEMANAS 1-4**: Estabilización financiera
-**SEMANAS 5-8**: Crecimiento eficiente  
-**SEMANAS 9-12**: Escalabilidad y profit
-
-¿Necesitas que desarrolle algún área específica o el dashboard financiero completo?`,
-
-                'general': `He procesado tu consulta: "${message.substring(0, 50)}..."
-
-Como consultor de Dominius AI, te presento este **PLAN DE ACCIÓN ESTRUCTURADO**:
-
-## 🎯 OBJETIVOS PRINCIPALES
-1. **Definir resultado esperado** claramente
-2. **Establecer métricas de éxito** medibles
-3. **Asignar recursos necesarios** realistas
-
-## 📋 PASOS CONCRETOS
-
-### FASE 1: DIAGNÓSTICO (Días 1-7)
-- [ ] Análisis de situación actual
-- [ ] Identificación de stakeholders
-- [ ] Mapeo de procesos relevantes
-- [ ] Recopilación de datos clave
-
-### FASE 2: PLANIFICACIÓN (Días 8-14)
-- [ ] Definición de estrategia óptima
-- [ ] Asignación de responsabilidades
-- [ ] Establecimiento de timeline
-- [ ] Presupuesto detallado
-
-### FASE 3: EJECUCIÓN (Días 15-30)
-- [ ] Implementación controlada
-- [ ] Monitoreo de progreso
-- [ ] Ajustes en tiempo real
-- [ ] Comunicación continua
-
-### FASE 4: EVALUACIÓN (Días 31-45)
-- [ ] Medición de resultados
-- [ ] Análisis de desviaciones
-- [ ] Lecciones aprendidas
-- [ ] Plan de mejora continua
-
-## 🛠️ HERRAMIENTAS RECOMENDADAS
-
-**Gestión de Proyectos**:
-- Asana para seguimiento detallado
-- Trello para visualización simple
-- Monday.com para automatización
-
-**Comunicación**:
-- Slack para coordinación diaria
-- Zoom/Teams para reuniones
-- Loom para updates asíncronos
-
-**Análisis**:
-- Google Data Studio para dashboards
-- Excel/Sheets para datos
-- Power BI para análisis avanzado
-
-## ⚠️ RIESGOS IDENTIFICADOS
-1. **Falta de claridad en objetivos**
-2. **Recursos insuficientes**
-3. **Plazos poco realistas**
-4. **Resistencia al cambio**
-
-## ✅ ACCIONES INMEDIATAS
-1. **Hoy mismo**: Definir 3 KPIs clave
-2. **Esta semana**: Establecer reunión de kick-off
-3. **Próximos 7 días**: Crear plan detallado
-
-**¿Por dónde prefieres comenzar?**`
+**¿Qué aspecto del archivo subido te gustaría analizar primero?**`
             };
             
             return backupResponses[mode] || backupResponses['general'];
@@ -722,7 +743,7 @@ Como consultor de Dominius AI, te presento este **PLAN DE ACCIÓN ESTRUCTURADO**
                 ${initials}
             </div>
             <div class="message-content-wrapper">
-                <div class="message-content">${ChatSystem.escapeHtml(message)}</div>
+                <div class="message-content">${ChatSystem.escapeHtml(message.substring(0, 500) + (message.length > 500 ? '...' : ''))}</div>
                 <div class="message-time">
                     ${new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                 </div>
@@ -732,8 +753,9 @@ Como consultor de Dominius AI, te presento este **PLAN DE ACCIÓN ESTRUCTURADO**
         container.appendChild(userMessageDiv);
         container.scrollTop = container.scrollHeight;
         
-        // Limpiar input
+        // Limpiar input y preview
         input.value = '';
+        document.getElementById('filePreview').innerHTML = '';
         updateCharCount();
         autoResizeTextarea();
         
@@ -809,7 +831,7 @@ Como consultor de Dominius AI, te presento este **PLAN DE ACCIÓN ESTRUCTURADO**
         const textarea = document.getElementById('messageInput');
         if (textarea) {
             textarea.style.height = 'auto';
-            textarea.style.height = Math.min(textarea.scrollHeight, 150) + 'px';
+            textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
         }
     }
     
@@ -940,11 +962,11 @@ Como consultor de Dominius AI, te presento este **PLAN DE ACCIÓN ESTRUCTURADO**
     }
     
     // =============================================
-    // INYECTAR ESTILOS ADICIONALES PROFESIONALES
+    // INYECTAR ESTILOS ADICIONALES
     // =============================================
     const additionalStyles = `
         <style>
-            /* GARANTIZAR que el texto no se monte - DEFINITIVO */
+            /* GARANTIZAR que el texto no se monte */
             .message-content {
                 white-space: normal !important;
                 word-break: break-word !important;
@@ -952,7 +974,6 @@ Como consultor de Dominius AI, te presento este **PLAN DE ACCIÓN ESTRUCTURADO**
                 line-height: 1.6 !important;
                 display: block !important;
                 max-width: 100% !important;
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
             }
             
             .message-content * {
@@ -960,7 +981,6 @@ Como consultor de Dominius AI, te presento este **PLAN DE ACCIÓN ESTRUCTURADO**
                 word-break: break-word !important;
                 overflow-wrap: break-word !important;
                 line-height: inherit !important;
-                display: inline !important;
             }
             
             .message-content br {
@@ -969,72 +989,39 @@ Como consultor de Dominius AI, te presento este **PLAN DE ACCIÓN ESTRUCTURADO**
                 margin-bottom: 0.5em !important;
             }
             
-            .message-content h1, 
-            .message-content h2, 
-            .message-content h3, 
-            .message-content h4 {
-                display: block !important;
-                margin-top: 1em !important;
-                margin-bottom: 0.5em !important;
-                font-weight: 600 !important;
+            /* Botón de subida de archivos */
+            #uploadBtn {
+                background: transparent;
+                border: none;
+                color: #9ca3af;
+                cursor: pointer;
+                padding: 8px;
+                border-radius: 8px;
+                transition: all 0.3s ease;
             }
             
-            .message-content ul, 
-            .message-content ol {
-                display: block !important;
-                margin-left: 1.5em !important;
-                margin-bottom: 1em !important;
+            #uploadBtn:hover {
+                background: rgba(138, 43, 226, 0.1);
+                color: #a78bfa;
             }
             
-            .message-content li {
-                display: list-item !important;
-                margin-bottom: 0.3em !important;
+            /* Preview de archivos */
+            #filePreview {
+                min-height: 20px;
+                font-size: 12px;
+                padding: 5px 10px;
             }
             
-            .message-content strong {
-                font-weight: 600 !important;
-            }
-            
-            .message-content em {
-                font-style: italic !important;
-            }
-            
-            /* Tablas en respuestas */
-            .message-content table {
-                border-collapse: collapse !important;
-                margin: 1em 0 !important;
-                width: 100% !important;
-            }
-            
-            .message-content th,
-            .message-content td {
-                border: 1px solid rgba(138, 43, 226, 0.2) !important;
-                padding: 8px 12px !important;
-                text-align: left !important;
-            }
-            
-            .message-content th {
-                background: rgba(138, 43, 226, 0.1) !important;
-                font-weight: 600 !important;
-            }
-            
-            /* Animación de mensajes nuevos */
+            /* Animaciones */
             .message-pop {
                 animation: popIn 0.3s ease-out;
             }
             
             @keyframes popIn {
-                0% {
-                    opacity: 0;
-                    transform: translateY(10px) scale(0.95);
-                }
-                100% {
-                    opacity: 1;
-                    transform: translateY(0) scale(1);
-                }
+                0% { opacity: 0; transform: translateY(10px) scale(0.95); }
+                100% { opacity: 1; transform: translateY(0) scale(1); }
             }
             
-            /* Efecto de botón presionado */
             .btn-press {
                 animation: press 0.2s ease;
             }
@@ -1084,7 +1071,7 @@ Como consultor de Dominius AI, te presento este **PLAN DE ACCIÓN ESTRUCTURADO**
                 cursor: not-allowed;
             }
             
-            /* Responsive mejorado */
+            /* Responsive */
             @media (max-width: 768px) {
                 .message-content-wrapper {
                     max-width: 85% !important;
@@ -1106,15 +1093,6 @@ Como consultor de Dominius AI, te presento este **PLAN DE ACCIÓN ESTRUCTURADO**
                     width: 100%;
                     margin: 5px 0;
                 }
-                
-                .message-content table {
-                    font-size: 12px;
-                }
-                
-                .message-content th,
-                .message-content td {
-                    padding: 6px 8px;
-                }
             }
             
             /* Asegurar que los mensajes no se superpongan */
@@ -1128,17 +1106,11 @@ Como consultor de Dominius AI, te presento este **PLAN DE ACCIÓN ESTRUCTURADO**
                 display: block !important;
                 max-width: 80% !important;
             }
-            
-            /* Checkboxes en listas */
-            .message-content input[type="checkbox"] {
-                margin-right: 8px;
-            }
         </style>
     `;
     
     document.head.insertAdjacentHTML('beforeend', additionalStyles);
     
-    console.log('✅ Dominius AI cargado correctamente con Groq - Modelo actualizado');
-    console.log('🔑 API Key configurada');
-    console.log('🤖 Modelo: llama-3.3-70b-versatile');
+    console.log('✅ Dominius AI cargado con subida de archivos');
+    console.log('📁 Formatos soportados: txt, pdf, doc, docx, xlsx, csv, json');
 });
