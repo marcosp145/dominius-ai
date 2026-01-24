@@ -320,45 +320,62 @@ document.addEventListener('DOMContentLoaded', function() {
     };
     
     // =============================================
-    // FUNCIÓN DE ESCRITURA LETRA POR LETRA
+    // FUNCIÓN DE ESCRITURA LETRA POR LETRA - CORREGIDA
     // =============================================
     async function typeWriter(element, text, speed = 20) {
         return new Promise(resolve => {
-            let i = 0;
+            // LIMPIAR completamente el elemento
             element.innerHTML = '';
+            element.style.whiteSpace = 'normal';
+            element.style.wordBreak = 'break-word';
+            element.style.overflowWrap = 'break-word';
+            element.style.lineHeight = '1.6';
+            
+            let i = 0;
+            const fullText = text;
             
             function type() {
-                if (i < text.length) {
-                    const char = text.charAt(i);
+                if (i < fullText.length) {
+                    const char = fullText.charAt(i);
+                    const currentHTML = element.innerHTML;
                     
-                    // Manejar saltos de línea
+                    // Usar textContent en lugar de innerHTML para caracteres normales
                     if (char === '\n') {
-                        element.innerHTML += '<br>';
+                        // Para saltos de línea, usar br correctamente
+                        element.innerHTML = currentHTML + '<br>';
+                    } else if (char === ' ') {
+                        // Para espacios, mantenerlos
+                        element.textContent = element.textContent + ' ';
                     } else {
-                        element.innerHTML += char;
+                        // Para otros caracteres, usar textContent
+                        element.textContent = element.textContent + char;
                     }
                     
                     i++;
                     
-                    // Velocidad variable para efecto más natural
-                    let currentSpeed = speed;
+                    // Scroll automático
+                    const container = document.getElementById('messagesContainer');
+                    if (container) {
+                        container.scrollTop = container.scrollHeight;
+                    }
                     
-                    // Pausas en puntuación
+                    // Velocidad variable
+                    let currentSpeed = speed;
                     if (char === '.' || char === '!' || char === '?') {
                         currentSpeed = speed * 3;
                     } else if (char === ',' || char === ';') {
                         currentSpeed = speed * 2;
                     }
                     
-                    // Pequeña variación aleatoria
+                    // Variación aleatoria pequeña
                     currentSpeed += Math.random() * 10 - 5;
-                    
-                    // Scroll automático mientras escribe
-                    const container = document.getElementById('messagesContainer');
-                    container.scrollTop = container.scrollHeight;
                     
                     setTimeout(type, Math.max(10, currentSpeed));
                 } else {
+                    // Al terminar, asegurar estilos
+                    element.style.whiteSpace = 'normal';
+                    element.style.wordBreak = 'break-word';
+                    element.style.overflowWrap = 'break-word';
                     resolve();
                 }
             }
@@ -652,24 +669,31 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // =============================================
-    // INYECTAR ESTILOS ADICIONALES
+    // INYECTAR ESTILOS ADICIONALES - CORREGIDOS
     // =============================================
     const additionalStyles = `
         <style>
-            /* Efecto de escritura */
-            .typing-cursor {
-                display: inline-block;
-                width: 2px;
-                height: 1.2em;
-                background-color: #8B5CF6;
-                margin-left: 2px;
-                animation: blink 1s infinite;
-                vertical-align: middle;
+            /* GARANTIZAR que el texto no se monte */
+            .message-content {
+                white-space: normal !important;
+                word-break: break-word !important;
+                overflow-wrap: break-word !important;
+                line-height: 1.6 !important;
+                display: block !important;
+                max-width: 100% !important;
             }
             
-            @keyframes blink {
-                0%, 100% { opacity: 1; }
-                50% { opacity: 0; }
+            .message-content * {
+                white-space: normal !important;
+                word-break: break-word !important;
+                overflow-wrap: break-word !important;
+                line-height: inherit !important;
+            }
+            
+            .message-content br {
+                display: block !important;
+                content: "" !important;
+                margin-bottom: 0.5em !important;
             }
             
             /* Animación de mensajes nuevos */
@@ -688,19 +712,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             
-            /* Mejoras para el área de mensajes */
-            .message-content-wrapper {
-                max-width: 80%;
-            }
-            
-            .message.user .message-content-wrapper {
-                margin-left: auto;
-            }
-            
-            .message.ai .message-content-wrapper {
-                margin-right: auto;
-            }
-            
             /* Efecto de botón presionado */
             .btn-press {
                 animation: press 0.2s ease;
@@ -717,24 +728,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 scroll-behavior: smooth;
             }
             
-            /* Estado de escritura */
-            .writing {
-                position: relative;
-            }
-            
-            .writing::after {
-                content: '|';
-                position: absolute;
-                right: -5px;
-                color: #8B5CF6;
-                font-weight: bold;
-                animation: blink 0.7s infinite;
-            }
-            
             /* Responsive mejorado */
             @media (max-width: 768px) {
                 .message-content-wrapper {
-                    max-width: 85%;
+                    max-width: 85% !important;
                 }
                 
                 .welcome-message {
@@ -753,6 +750,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     width: 100%;
                     margin: 5px 0;
                 }
+            }
+            
+            /* Asegurar que los mensajes no se superpongan */
+            .message {
+                clear: both !important;
+                float: none !important;
+                margin-bottom: 20px !important;
+            }
+            
+            .message-content-wrapper {
+                display: block !important;
+                max-width: 80% !important;
             }
         </style>
     `;

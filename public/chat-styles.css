@@ -542,7 +542,7 @@ body {
     transform: translateY(-2px);
 }
 
-/* Message Bubbles */
+/* Message Bubbles - ARREGLADO EL TEXTO MONTADO */
 .message {
     display: flex;
     gap: 15px;
@@ -587,14 +587,18 @@ body {
     color: #a78bfa;
 }
 
+/* ESTA ES LA PARTE ARREGLADA - TEXTO NO SE MONTA */
 .message-content {
     max-width: 75%;
     padding: 12px 18px;
     border-radius: 18px;
-    line-height: 1.6;
+    line-height: 1.6 !important;
     font-size: 14.5px;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    display: block !important;
 }
 
 .message.user .message-content {
@@ -928,7 +932,9 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
     background: rgba(138, 43, 226, 0.5);
-}/* Efecto de escritura mejorado */
+}
+
+/* Efecto de escritura mejorado */
 .typing {
     position: relative;
 }
@@ -983,7 +989,9 @@ body {
 
 #messageInput:focus {
     transform: translateY(-1px);
-}/* Efecto de escritura */
+}
+
+/* Efecto de escritura */
 @keyframes typing {
     from { width: 0 }
     to { width: 100% }
@@ -1055,4 +1063,57 @@ body {
 
 .logout-btn:hover {
     background: rgba(239, 68, 68, 0.2);
+}/* === SOLUCIÓN DEFINITIVA AL TEXTO MONTADO === */
+
+/* 1. Fuerza que TODO el texto se comporte bien */
+.message-content *,
+.message-content div,
+.message-content p,
+.message-content span {
+    display: inline !important;
+    line-height: 1.6 !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+    max-width: 100% !important;
+}
+
+/* 2. Resetea cualquier posición/flotación que cause montado */
+.message, .message-content {
+    position: relative !important;
+    float: none !important;
+    clear: both !important;
+    overflow: visible !important;
+}
+
+/* 3. Fuerza que cada línea sea un bloque */
+.message-content br {
+    display: block !important;
+    content: "" !important;
+    margin-top: 0.5em !important;
+}
+
+/* 4. Si hay spans o divs dentro, que no rompan */
+.message-content > * {
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* 5. Último recurso: reset completo */
+.message-content {
+    all: unset !important;
+    display: block !important;
+    max-width: 75% !important;
+    padding: 12px 18px !important;
+    border-radius: 18px !important;
+    line-height: 1.6 !important;
+    font-size: 14.5px !important;
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+    background: rgba(138, 43, 226, 0.1) !important;
+    color: #fff !important;
+    margin: 0 !important;
 }
