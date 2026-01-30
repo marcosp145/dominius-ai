@@ -9,7 +9,25 @@
     <link rel="stylesheet" href="mobile.css">
     <!-- EmailJS SDK -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-</head>
+</head><!-- Agregar esto antes del </body> -->
+<div class="particles" id="particles"></div>
+
+<script>
+// Generar partículas flotantes
+document.addEventListener('DOMContentLoaded', function() {
+    const particlesContainer = document.getElementById('particles');
+    if (particlesContainer) {
+        for (let i = 0; i < 50; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.animationDelay = Math.random() * 15 + 's';
+            particle.style.animationDuration = (10 + Math.random() * 10) + 's';
+            particlesContainer.appendChild(particle);
+        }
+    }
+});
+</script>
 <body>
     <div class="background"></div>
 
