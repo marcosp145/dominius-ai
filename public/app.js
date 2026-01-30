@@ -610,4 +610,23 @@ function showRecoveryCodeScreen(userId) {
     }
     
     showScreen('recoveryCodeScreen');
-}
+}// Agregar efectos de carga premium
+document.addEventListener('DOMContentLoaded', function() {
+    // Efecto de carga suave
+    document.body.style.opacity = '0';
+    document.body.style.transition = 'opacity 0.5s ease';
+    
+    setTimeout(() => {
+        document.body.style.opacity = '1';
+    }, 100);
+    
+    // Efecto en botones al hacer click
+    document.querySelectorAll('button').forEach(button => {
+        button.addEventListener('click', function() {
+            this.style.transform = 'scale(0.98)';
+            setTimeout(() => {
+                this.style.transform = '';
+            }, 150);
+        });
+    });
+});
