@@ -446,4 +446,92 @@ body {
         padding: 15px 20px !important;
         font-size: 14px !important;
     }
+}/* ============================================= */
+/* AJUSTES MOBILE EN EL CSS PRINCIPAL */
+/* ============================================= */
+
+@media (max-width: 768px) {
+    /* Pantalla de bienvenida móvil */
+    .welcome-screen {
+        padding: 20px !important;
+    }
+    
+    .text-line.line1 { 
+        font-size: 40px !important; 
+        letter-spacing: 4px !important;
+        text-shadow: 0 0 20px rgba(138, 43, 226, 0.6) !important;
+    }
+    
+    .text-line.line2 { 
+        font-size: 18px !important; 
+        letter-spacing: 2px !important;
+        margin: 10px 0 !important;
+    }
+    
+    .text-line.line3 { 
+        font-size: 14px !important; 
+        margin-top: 30px !important;
+        text-align: center !important;
+        padding: 0 15px !important;
+    }
+    
+    /* Login boxes móvil */
+    .login-box {
+        width: 90% !important;
+        max-width: 90% !important;
+        padding: 30px 25px !important;
+        margin: 15px !important;
+        border-radius: 20px !important;
+    }
+    
+    .login-title {
+        font-size: 28px !important;
+        margin-bottom: 25px !important;
+    }
+    
+    .input-group {
+        margin-bottom: 15px !important;
+    }
+    
+    .input-group input {
+        padding: 14px 16px !important;
+        font-size: 16px !important;
+        border-radius: 10px !important;
+    }
+    
+    .login-button {
+        padding: 16px !important;
+        font-size: 16px !important;
+        border-radius: 10px !important;
+        margin-top: 15px !important;
+    }
+    
+    .form-footer {
+        font-size: 13px !important;
+        margin-top: 20px !important;
+        flex-wrap: wrap !important;
+        gap: 5px !important;
+    }
+    
+    /* Notificaciones móvil */
+    .notification {
+        top: 15px !important;
+        left: 15px !important;
+        right: 15px !important;
+        width: auto !important;
+        padding: 15px 20px !important;
+        font-size: 14px !important;
+        border-radius: 10px !important;
+    }
+    
+    /* Loading overlay móvil */
+    .loading-overlay p {
+        font-size: 16px !important;
+        margin-top: 15px !important;
+    }
+    
+    .spinner {
+        width: 50px !important;
+        height: 50px !important;
+    }
 }
