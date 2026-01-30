@@ -392,4 +392,58 @@ body {
         right: 10px;
         width: auto;
     }
+}/* ============================================= */
+/* AJUSTES PARA MÓVIL EN EL CSS PRINCIPAL */
+/* ============================================= */
+
+@media (max-width: 768px) {
+    /* Pantalla de bienvenida móvil */
+    .text-line.line1 { 
+        font-size: 40px !important; 
+        letter-spacing: 4px !important;
+    }
+    
+    .text-line.line2 { 
+        font-size: 18px !important; 
+        letter-spacing: 2px !important;
+        margin: 10px 0 !important;
+    }
+    
+    .text-line.line3 { 
+        font-size: 14px !important; 
+        margin-top: 30px !important;
+    }
+    
+    /* Login boxes móvil */
+    .login-box {
+        width: 90% !important;
+        padding: 30px 25px !important;
+        margin: 15px !important;
+        border-radius: 20px !important;
+    }
+    
+    .login-title {
+        font-size: 28px !important;
+        margin-bottom: 25px !important;
+    }
+    
+    .input-group input {
+        padding: 14px 16px !important;
+        font-size: 16px !important;
+    }
+    
+    .login-button {
+        padding: 15px !important;
+        font-size: 16px !important;
+    }
+    
+    /* Notificaciones móvil */
+    .notification {
+        top: 15px !important;
+        left: 15px !important;
+        right: 15px !important;
+        width: auto !important;
+        padding: 15px 20px !important;
+        font-size: 14px !important;
+    }
 }
