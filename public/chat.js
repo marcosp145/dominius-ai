@@ -5,6 +5,11 @@
 let attachedFiles = [];
 let currentChatId = null;
 let currentMode = 'general';
+let isAIResponding = false;
+let currentTypingAnimation = null;
+let stopTyping = false;
+let isAIPaused = false;
+let pauseResumeCallback = null;
 
 // 🔑 TU API KEY DE GROQ (GRATIS)
 const GROQ_API_KEY = "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";
@@ -26,6 +31,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initUserData();
     initEvents();
     loadChatsList();
+    initParticles();
     
     // Auto-focus en input
     setTimeout(() => {
@@ -142,12 +148,32 @@ function initEvents() {
             e.preventDefault();
             sendUserMessage();
         }
+        
+        // Permitir scroll con teclas mientras escribe la IA
+        if (isAIResponding && (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'PageUp' || e.key === 'PageDown')) {
+            // Permitir scroll normal
+            return true;
+        }
     });
     
     messageInput.addEventListener('input', function() {
         updateCharCount();
         autoResizeTextarea();
     });
+    
+    // Permitir scroll mientras la IA escribe
+    const messagesContainer = document.getElementById('messagesContainer');
+    if (messagesContainer) {
+        messagesContainer.addEventListener('wheel', function(e) {
+            // Siempre permitir scroll
+            return true;
+        });
+        
+        messagesContainer.addEventListener('touchmove', function(e) {
+            // Siempre permitir scroll táctil
+            return true;
+        });
+    }
 }
 
 // =============================================
@@ -372,7 +398,7 @@ function showMessages(messages) {
             <div class="welcome-message">
                 <div class="welcome-icon">🤖</div>
                 <h2>¡Hola! Soy Dominius AI</h2>
-                <p>Tu asistente con IA REAL y gratis. Pregúntame lo que necesites.</p>
+                <p>Tu asistente empresarial de élite. Transformo ideas en resultados estratégicos. ¿En qué puedo potenciar tu negocio hoy?</p>
                 <div class="quick-suggestions">
                     <button class="suggestion-btn" onclick="quickAction('Necesito un análisis de mercado para un restaurante')">
                         📊 Análisis de mercado
@@ -500,13 +526,13 @@ function deleteCurrentChat() {
         <div class="welcome-message">
             <div class="welcome-icon">🤖</div>
             <h2>¡Hola! Soy Dominius AI</h2>
-            <p>Tu asistente con IA real y gratis. Pregúntame lo que necesites.</p>
+            <p>Tu asistente empresarial de élite. Transformo ideas en resultados estratégicos. ¿En qué puedo potenciar tu negocio hoy?</p>
         </div>
     `;
 }
 
 // =============================================
-// BOTÓN COPIAR
+// BOTÓN COPIAR Y PARAR
 // =============================================
 function addCopyButton(messageDiv) {
     // Verificar si ya tiene botón
@@ -621,128 +647,19 @@ function getSmartResponse(userMessage) {
     
     // Respuestas empresariales inteligentes
     if (lower.includes('análisis') || lower.includes('analisis') || lower.includes('mercado')) {
-        return `📊 **ANÁLISIS DE MERCADO - GUÍA RÁPIDA**
-
-**PASOS INMEDIATOS PARA TU ANÁLISIS:**
-
-1. **DEFINE TU PRODUCTO/SERVICIO:**
-   - ¿Qué ofreces exactamente?
-   - Precio aproximado: ______
-   - Diferencial único: ______
-
-2. **COMPETENCIA DIRECTA (busca en Google Maps):**
-   - Nombres de 3 competidores cercanos
-   - Sus precios principales
-   - Sus puntos débiles visibles
-
-3. **CLIENTE IDEAL:**
-   - Edad: ______
-   - Ingresos aproximados: ______
-   - Problema que resuelves: ______
-
-4. **DATOS RÁPIDOS PARA HOY:**
-   - Busca en Google Trends tu sector
-   - Revisa grupos de Facebook locales
-   - Mira comentarios en Google Reviews
-
-**¿Quieres que profundice en alguno de estos puntos específicos?**`;
+        return `📊 **ANÁLISIS DE MERCADO - GUÍA RÁPIDA**\n\n**PASOS INMEDIATOS PARA TU ANÁLISIS:**\n\n1. **DEFINE TU PRODUCTO/SERVICIO:**\n   - ¿Qué ofreces exactamente?\n   - Precio aproximado: ______\n   - Diferencial único: ______\n\n2. **COMPETENCIA DIRECTA (busca en Google Maps):**\n   - Nombres de 3 competidores cercanos\n   - Sus precios principales\n   - Sus puntos débiles visibles\n\n3. **CLIENTE IDEAL:**\n   - Edad: ______\n   - Ingresos aproximados: ______\n   - Problema que resuelves: ______\n\n4. **DATOS RÁPIDOS PARA HOY:**\n   - Busca en Google Trends tu sector\n   - Revisa grupos de Facebook locales\n   - Mira comentarios en Google Reviews\n\n**¿Quieres que profundice en alguno de estos puntos específicos?**`;
     }
     
     if (lower.includes('código') || lower.includes('codigo') || lower.includes('html') || lower.includes('css') || lower.includes('javascript') || lower.includes('programación') || lower.includes('programacion')) {
-        return `💻 **CÓDIGO FUNCIONAL - LISTO PARA USAR**
-
-\`\`\`html
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Landing Page Profesional</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Arial', sans-serif; line-height: 1.6; }
-        .hero { 
-            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-            color: white;
-            padding: 100px 20px;
-            text-align: center;
-        }
-        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
-        h1 { font-size: 3rem; margin-bottom: 20px; }
-        p { font-size: 1.2rem; margin-bottom: 30px; max-width: 700px; margin-left: auto; margin-right: auto; }
-        .btn {
-            display: inline-block;
-            background: #10b981;
-            color: white;
-            padding: 15px 30px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 1.1rem;
-            transition: transform 0.3s;
-        }
-        .btn:hover { transform: translateY(-3px); }
-        @media (max-width: 768px) {
-            h1 { font-size: 2rem; }
-            .hero { padding: 60px 20px; }
-        }
-    </style>
-</head>
-<body>
-    <section class="hero">
-        <div class="container">
-            <h1>Transforma tu Presencia Digital</h1>
-            <p>Soluciones tecnológicas que generan resultados reales y crecimiento sostenible para tu empresa.</p>
-            <a href="#contacto" class="btn">Comenzar Ahora →</a>
-        </div>
-    </section>
-</body>
-</html>
-\`\`\`
-
-**¿Necesitas algo más específico? Dime exactamente qué funcionalidad necesitas.**`;
+        return `💻 **CÓDIGO FUNCIONAL - LISTO PARA USAR**\n\n\`\`\`html\n<!DOCTYPE html>\n<html lang="es">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>Landing Page Profesional</title>\n    <style>\n        * { margin: 0; padding: 0; box-sizing: border-box; }\n        body { font-family: 'Arial', sans-serif; line-height: 1.6; }\n        .hero { \n            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);\n            color: white;\n            padding: 100px 20px;\n            text-align: center;\n        }\n        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }\n        h1 { font-size: 3rem; margin-bottom: 20px; }\n        p { font-size: 1.2rem; margin-bottom: 30px; max-width: 700px; margin-left: auto; margin-right: auto; }\n        .btn {\n            display: inline-block;\n            background: #10b981;\n            color: white;\n            padding: 15px 30px;\n            border-radius: 8px;\n            text-decoration: none;\n            font-weight: bold;\n            font-size: 1.1rem;\n            transition: transform 0.3s;\n        }\n        .btn:hover { transform: translateY(-3px); }\n        @media (max-width: 768px) {\n            h1 { font-size: 2rem; }\n            .hero { padding: 60px 20px; }\n        }\n    </style>\n</head>\n<body>\n    <section class="hero">\n        <div class="container">\n            <h1>Transforma tu Presencia Digital</h1>\n            <p>Soluciones tecnológicas que generan resultados reales y crecimiento sostenible para tu empresa.</p>\n            <a href="#contacto" class="btn">Comenzar Ahora →</a>\n        </div>\n    </section>\n</body>\n</html>\n\`\`\`\n\n**¿Necesitas algo más específico? Dime exactamente qué funcionalidad necesitas.**`;
     }
     
     if (lower.includes('plan de negocio') || lower.includes('startup') || lower.includes('emprendimiento')) {
-        return `📋 **PLAN DE NEGOCIO - ESTRUCTURA BÁSICA**
-
-**RESUMEN EJECUTIVO (1 párrafo):**
-- Problema que resuelves: ______
-- Solución que ofreces: ______
-- Mercado objetivo: ______
-- Ventaja competitiva: ______
-- Equipo clave: ______
-- Necesidad de financiación: ______
-
-**ANÁLISIS DE MERCADO (datos a buscar hoy):**
-1. **Tamaño de mercado:** Búsqueda en Google "mercado [tu sector] España 2024"
-2. **Competencia directa:** 3-5 nombres con sus precios
-3. **Tendencias:** Google Trends últimos 12 meses
-4. **Clientes potenciales:** Grupos de Facebook/foros específicos
-
-**PROYECCIONES FINANCIERAS (primer año):**
-- Mes 1-3: Desarrollo/Preparación → Inversión: ______
-- Mes 4-6: Lanzamiento → Ingresos estimados: ______
-- Mes 7-12: Crecimiento → Meta de ingresos: ______
-
-**¿Quieres que desarrolle alguna sección específica con más detalle?**`;
+        return `📋 **PLAN DE NEGOCIO - ESTRUCTURA BÁSICA**\n\n**RESUMEN EJECUTIVO (1 párrafo):**\n- Problema que resuelves: ______\n- Solución que ofreces: ______\n- Mercado objetivo: ______\n- Ventaja competitiva: ______\n- Equipo clave: ______\n- Necesidad de financiación: ______\n\n**ANÁLISIS DE MERCADO (datos a buscar hoy):**\n1. **Tamaño de mercado:** Búsqueda en Google "mercado [tu sector] España 2024"\n2. **Competencia directe:** 3-5 nombres con sus precios\n3. **Tendencias:** Google Trends últimos 12 meses\n4. **Clientes potenciales:** Grupos de Facebook/foros específicos\n\n**PROYECCIONES FINANCIERAS (primer año):**\n- Mes 1-3: Desarrollo/Preparación → Inversión: ______\n- Mes 4-6: Lanzamiento → Ingresos estimados: ______\n- Mes 7-12: Crecimiento → Meta de ingresos: ______\n\n**¿Quieres que desarrolle alguna sección específica con más detalle?**`;
     }
     
     // Respuesta por defecto mejorada
-    return `🎯 **¡Perfecto! Para darte la mejor ayuda, dime:**
-
-**SOBRE TU PROYECTO/NECESIDAD:**
-1. ¿Es para un negocio existente o nuevo proyecto?
-2. ¿Qué objetivo concreto quieres lograr?
-3. ¿Qué recursos tienes disponibles (tiempo, presupuesto, equipo)?
-
-**EJEMPLOS DE CONSULTAS ESPECÍFICAS QUE RESUELVO:**
-- "Necesito crear una landing page para vender un curso online de €197"
-- "Analiza el mercado de cafeterías en Barcelona centro para inversión de €50,000"
-- "Genera código para un e-commerce básico de productos artesanales"
-- "Plan de marketing digital para lanzar una app en 3 meses con €5,000"
-
-**¿Cuál es TU situación específica?**`;
+    return `🎯 **¡Perfecto! Para darte la mejor ayuda, dime:**\n\n**SOBRE TU PROYECTO/NECESIDAD:**\n1. ¿Es para un negocio existente o nuevo proyecto?\n2. ¿Qué objetivo concreto quieres lograr?\n3. ¿Qué recursos tienes disponibles (tiempo, presupuesto, equipo)?\n\n**EJEMPLOS DE CONSULTAS ESPECÍFICAS QUE RESUELVO:**\n- "Necesito crear una landing page para vender un curso online de €197"\n- "Analiza el mercado de cafeterías en Barcelona centro para inversión de €50,000"\n- "Genera código para un e-commerce básico de productos artesanales"\n- "Plan de marketing digital para lanzar una app en 3 meses con €5,000"\n\n**¿Cuál es TU situación específica?**`;
 }
 
 // =============================================
@@ -804,9 +721,40 @@ function formatAIResponse(text) {
 }
 
 // =============================================
-// ENVIAR MENSAJE
+// FUNCIONES DE CONTROL DE ESCRITURA
+// =============================================
+function togglePauseWriting() {
+    if (isAIPaused) {
+        // Reanudar
+        isAIPaused = false;
+        if (pauseResumeCallback) {
+            pauseResumeCallback();
+            pauseResumeCallback = null;
+        }
+    } else {
+        // Pausar
+        isAIPaused = true;
+    }
+}
+
+function stopAIWriting() {
+    stopTyping = true;
+    isAIPaused = false;
+    if (currentTypingAnimation) {
+        clearTimeout(currentTypingAnimation);
+        currentTypingAnimation = null;
+    }
+}
+
+// =============================================
+// ENVIAR MENSAJE (VERSIÓN MEJORADA)
 // =============================================
 async function sendUserMessage() {
+    if (isAIResponding && !isAIPaused) {
+        alert('La IA está respondiendo. Usa el botón ⏸️ para pausar.');
+        return;
+    }
+    
     const input = document.getElementById('messageInput');
     const sendBtn = document.getElementById('sendBtn');
     const container = document.getElementById('messagesContainer');
@@ -873,19 +821,43 @@ async function sendUserMessage() {
             <div class="message-content-wrapper">
                 <div class="message-content" id="typingAI"></div>
                 <div class="message-time">${new Date().toLocaleTimeString('es-ES', {hour: '2-digit', minute: '2-digit'})}</div>
+                <div class="ai-controls">
+                    <button class="control-btn pause" title="Pausar escritura">⏸️</button>
+                    <button class="control-btn stop" title="Detener escritura">⏹️</button>
+                </div>
             </div>
         `;
         container.appendChild(aiMessageDiv);
         
         const typingElement = aiMessageDiv.querySelector('#typingAI');
+        const controlsDiv = aiMessageDiv.querySelector('.ai-controls');
+        const pauseBtn = controlsDiv.querySelector('.control-btn.pause');
+        const stopBtn = controlsDiv.querySelector('.control-btn.stop');
+        
+        // Configurar controles
+        pauseBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            togglePauseWriting();
+        });
+        
+        stopBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            stopAIWriting();
+        });
+        
+        // Marcar que la IA está respondiendo
+        isAIResponding = true;
+        isAIPaused = false;
+        stopTyping = false;
         
         // Obtener respuesta de Groq (IA real)
         const aiResponse = await getAIResponse(message);
         
-        // Mostrar respuesta con efecto de escritura
-        await typeAIResponse(typingElement, aiResponse);
+        // Mostrar respuesta con efecto de escritura lento
+        await typeAIResponseWithControls(typingElement, aiResponse, pauseBtn, stopBtn);
         
-        // Añadir botón de copiar
+        // Añadir botón de copiar (reemplazar controles)
+        controlsDiv.remove();
         addCopyButton(typingElement);
         
         // Guardar respuesta AI
@@ -919,6 +891,12 @@ async function sendUserMessage() {
             </svg>
         `;
         
+        // Resetear estado
+        isAIResponding = false;
+        isAIPaused = false;
+        stopTyping = false;
+        pauseResumeCallback = null;
+        
         // Scroll al final
         container.scrollTop = container.scrollHeight;
         
@@ -927,7 +905,7 @@ async function sendUserMessage() {
     }
 }
 
-async function typeAIResponse(element, text) {
+async function typeAIResponseWithControls(element, text, pauseBtn, stopBtn) {
     return new Promise(resolve => {
         if (!element || !text) {
             resolve();
@@ -938,25 +916,72 @@ async function typeAIResponse(element, text) {
         element.innerHTML = '';
         
         function type() {
+            if (stopTyping) {
+                resolve();
+                return;
+            }
+            
+            if (isAIPaused) {
+                // Cambiar botón a reanudar
+                pauseBtn.innerHTML = '▶️';
+                pauseBtn.className = 'control-btn resume';
+                pauseBtn.title = 'Reanudar escritura';
+                
+                // Esperar a que se reanude
+                pauseResumeCallback = () => {
+                    pauseBtn.innerHTML = '⏸️';
+                    pauseBtn.className = 'control-btn pause';
+                    pauseBtn.title = 'Pausar escritura';
+                    setTimeout(type, 100);
+                };
+                return;
+            }
+            
             if (i < text.length) {
                 const partialText = text.substring(0, i + 1);
                 element.innerHTML = formatAIResponse(partialText);
                 i++;
                 
-                // Scroll suave
+                // Scroll suave pero permitiendo al usuario moverse
                 const container = document.getElementById('messagesContainer');
                 if (container) {
-                    container.scrollTop = container.scrollHeight;
+                    // Solo hacer scroll automático si el usuario está cerca del final
+                    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+                    if (isNearBottom) {
+                        container.scrollTop = container.scrollHeight;
+                    }
                 }
                 
-                setTimeout(type, 10);
+                // Velocidad variable para parecer más natural
+                let speed = 20; // ms por caracter base
+                
+                // Más lento para puntos y comas
+                if (text.charAt(i) === '.' || text.charAt(i) === '!' || text.charAt(i) === '?') {
+                    speed = 100;
+                } else if (text.charAt(i) === ',' || text.charAt(i) === ';') {
+                    speed = 50;
+                } else if (text.charAt(i) === ' ') {
+                    speed = 10;
+                }
+                
+                // Pausas aleatorias para parecer más humano
+                if (i % 50 === 0) {
+                    speed = 100 + Math.random() * 200;
+                }
+                
+                currentTypingAnimation = setTimeout(type, speed);
             } else {
+                currentTypingAnimation = null;
                 resolve();
             }
         }
         
         type();
     });
+}
+
+async function typeAIResponseSlowly(element, text) {
+    return typeAIResponseWithControls(element, text, null, null);
 }
 
 // =============================================
@@ -973,24 +998,107 @@ window.quickAction = function(text) {
 };
 
 // =============================================
-// ANIMACIONES
+// PARTÍCULAS EN FONDO
 // =============================================
-document.addEventListener('DOMContentLoaded', function() {
-    // Efecto de aparición para mensajes nuevos
-    const observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-            if (mutation.addedNodes.length) {
-                mutation.addedNodes.forEach(function(node) {
-                    if (node.classList && node.classList.contains('message')) {
-                        node.style.animation = 'messageSlideIn 0.4s ease-out';
-                    }
-                });
-            }
-        });
+function initParticles() {
+    const particlesContainer = document.createElement('div');
+    particlesContainer.id = 'particles';
+    particlesContainer.style.position = 'absolute';
+    particlesContainer.style.top = '0';
+    particlesContainer.style.left = '0';
+    particlesContainer.style.width = '100%';
+    particlesContainer.style.height = '100%';
+    particlesContainer.style.pointerEvents = 'none';
+    particlesContainer.style.zIndex = '0';
+    particlesContainer.style.overflow = 'hidden';
+    
+    const chatArea = document.querySelector('.chat-area');
+    if (chatArea) {
+        chatArea.appendChild(particlesContainer);
+        
+        // Crear partículas
+        for (let i = 0; i < 25; i++) {
+            createParticle(particlesContainer, i);
+        }
+    }
+}
+
+function createParticle(container, index) {
+    const particle = document.createElement('div');
+    particle.className = 'particle';
+    
+    // Posición aleatoria
+    particle.style.left = Math.random() * 100 + '%';
+    particle.style.top = Math.random() * 100 + '%';
+    
+    // Tamaño aleatorio pequeño
+    const size = 1 + Math.random() * 1.5;
+    particle.style.width = size + 'px';
+    particle.style.height = size + 'px';
+    
+    // Opacidad aleatoria
+    const opacity = 0.2 + Math.random() * 0.4;
+    particle.style.opacity = opacity;
+    
+    // Color morado tenue
+    const colors = [
+        'rgba(138, 92, 246, 0.6)',
+        'rgba(167, 139, 250, 0.5)',
+        'rgba(196, 181, 253, 0.4)'
+    ];
+    particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+    
+    // Animación con delay aleatorio
+    const duration = 15 + Math.random() * 15;
+    const delay = Math.random() * 20;
+    
+    particle.style.animation = `floatParticle ${duration}s linear ${delay}s infinite`;
+    
+    container.appendChild(particle);
+    
+    // Recrear partícula cuando termine la animación
+    setTimeout(() => {
+        if (particle.parentNode === container) {
+            particle.remove();
+            createParticle(container, index);
+        }
+    }, (duration + delay) * 1000);
+}
+
+// =============================================
+// FIX PARA MÓVIL
+// =============================================
+function fixMobileIssues() {
+    // Prevenir zoom en inputs en iOS
+    document.addEventListener('touchstart', function(e) {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+            // Permitir zoom solo en inputs
+        }
+    }, { passive: true });
+    
+    // Mejorar táctil en botones
+    document.querySelectorAll('button').forEach(btn => {
+        btn.style.webkitTapHighlightColor = 'transparent';
+        btn.style.touchAction = 'manipulation';
     });
     
-    const messagesContainer = document.getElementById('messagesContainer');
-    if (messagesContainer) {
-        observer.observe(messagesContainer, { childList: true });
+    // Asegurar que el input funcione en móvil
+    const messageInput = document.getElementById('messageInput');
+    if (messageInput) {
+        messageInput.addEventListener('touchstart', function(e) {
+            this.focus();
+        }, { passive: true });
+        
+        // Forzar repaint en iOS
+        messageInput.addEventListener('focus', function() {
+            setTimeout(() => {
+                this.style.transform = 'translateZ(0)';
+            }, 10);
+        });
     }
-});
+}
+
+// Inicializar fixes para móvil
+if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+    document.addEventListener('DOMContentLoaded', fixMobileIssues);
+}
