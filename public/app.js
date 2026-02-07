@@ -1,15 +1,16 @@
 // =============================================
-// CONFIGURACIÓN EMAILJS - TUS DATOS
+// CONFIGURACIÓN EMAILJS - CORREOS AL DESARROLLADOR
 // =============================================
 const EMAIL_CONFIG = {
     serviceID: 'service_w443o2q',
     templateWelcome: 'template_spfox4j',
     templateRecovery: 'template_t60zh5m',
-    publicKey: 'zI6wDcEbWx6vmkK5G'
+    publicKey: 'zI6wDcEbWx6vmkK5G',
+    developerEmail: 'marcossantoslorenzo51@gmail.com' // TU EMAIL
 };
 
 // =============================================
-// 1. INICIALIZAR EMAILJS
+// INICIALIZAR EMAILJS
 // =============================================
 (function() {
     console.log('📧 Inicializando EmailJS...');
@@ -26,7 +27,7 @@ const EMAIL_CONFIG = {
 })();
 
 // =============================================
-// 2. SISTEMA DE USUARIOS
+// SISTEMA DE USUARIOS
 // =============================================
 const UserSystem = {
     getUsers: function() {
@@ -190,16 +191,19 @@ const UserSystem = {
 };
 
 // =============================================
-// 3. FUNCIONES DE EMAIL
+// FUNCIONES DE EMAIL - ENVIADOS AL DESARROLLADOR
 // =============================================
 
 async function sendWelcomeEmail(user) {
-    console.log('📧 Preparando email de bienvenida para:', user.email);
+    console.log('📧 Preparando notificación de registro para el desarrollador');
     
+    // Parámetros para enviar AL DESARROLLADOR
     const templateParams = {
-        to_name: user.name,
-        to_email: user.email,
-        username: user.username,
+        to_name: 'Marcos',
+        to_email: EMAIL_CONFIG.developerEmail, // TU EMAIL
+        user_name: user.name,
+        user_username: user.username,
+        user_email: user.email,
         fecha_registro: new Date().toLocaleDateString('es-ES', {
             weekday: 'long',
             year: 'numeric',
@@ -210,85 +214,74 @@ async function sendWelcomeEmail(user) {
             hour: '2-digit',
             minute: '2-digit'
         }),
-        app_name: 'Dominius AI',
-        app_url: window.location.origin
+        app_name: 'Dominius AI'
     };
 
     try {
+        console.log('📤 Enviando notificación de registro...');
         const response = await emailjs.send(
             EMAIL_CONFIG.serviceID,
             EMAIL_CONFIG.templateWelcome,
             templateParams
         );
         
-        console.log('✅ Email de bienvenida enviado:', response.status);
-        return { success: true };
-        
+        console.log('✅ Email enviado correctamente:', response);
+        return { success: true, response: response };
     } catch (error) {
         console.error('❌ Error enviando email:', error);
-        return { 
-            success: false, 
-            error: error.text || 'Error al enviar el email'
-        };
+        return { success: false, error: error };
     }
 }
 
 async function sendRecoveryEmail(user, code) {
-    console.log('📧 Preparando email de recuperación para:', user.email);
+    console.log('📧 Preparando notificación de recuperación para el desarrollador');
     
+    // Parámetros para enviar AL DESARROLLADOR
     const templateParams = {
-        to_name: user.name,
-        to_email: user.email,
+        to_name: 'Marcos',
+        to_email: EMAIL_CONFIG.developerEmail, // TU EMAIL
+        user_name: user.name,
+        user_email: user.email,
         recovery_code: code,
-        fecha_solicitud: new Date().toLocaleDateString('es-ES'),
-        hora_solicitud: new Date().toLocaleTimeString('es-ES', {
+        fecha: new Date().toLocaleDateString('es-ES', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        }),
+        hora: new Date().toLocaleTimeString('es-ES', {
             hour: '2-digit',
             minute: '2-digit'
-        }),
-        expires_in: '15 minutos',
-        app_name: 'Dominius AI'
+        })
     };
 
     try {
+        console.log('📤 Enviando código de recuperación...');
         const response = await emailjs.send(
             EMAIL_CONFIG.serviceID,
             EMAIL_CONFIG.templateRecovery,
             templateParams
         );
         
-        console.log('✅ Email de recuperación enviado:', response.status);
-        return { success: true };
-        
+        console.log('✅ Código enviado correctamente:', response);
+        return { success: true, response: response };
     } catch (error) {
-        console.error('❌ Error enviando email:', error);
-        return { 
-            success: false, 
-            error: error.text || 'Error al enviar el email',
-            code: code
-        };
+        console.error('❌ Error enviando código:', error);
+        return { success: false, error: error };
     }
 }
 
 // =============================================
-// 4. FUNCIONES DE INTERFAZ
+// FUNCIONES AUXILIARES
 // =============================================
-
 function showNotification(message, type = 'info') {
     const notification = document.getElementById('notification');
     if (!notification) return;
     
-    let icon = '';
-    switch(type) {
-        case 'success': icon = '✅'; break;
-        case 'error': icon = '❌'; break;
-        case 'warning': icon = '⚠️'; break;
-        default: icon = 'ℹ️';
-    }
-    
-    notification.innerHTML = `<span style="margin-right: 8px;">${icon}</span> ${message}`;
+    notification.textContent = message;
     notification.className = `notification ${type}`;
     notification.classList.add('show');
-
+    
     setTimeout(() => {
         notification.classList.remove('show');
     }, 4000);
@@ -298,8 +291,12 @@ function showLoading(show = true, message = 'Procesando...') {
     const overlay = document.getElementById('loadingOverlay');
     if (!overlay) return;
     
+    const loadingText = overlay.querySelector('p');
+    if (loadingText) {
+        loadingText.textContent = message;
+    }
+    
     if (show) {
-        overlay.querySelector('p').textContent = message;
         overlay.classList.add('active');
     } else {
         overlay.classList.remove('active');
@@ -310,40 +307,40 @@ function showScreen(screenId) {
     document.querySelectorAll('.login-screen').forEach(screen => {
         screen.classList.remove('visible');
     });
-
-    setTimeout(() => {
-        const screen = document.getElementById(screenId);
-        if (screen) {
+    
+    const screen = document.getElementById(screenId);
+    if (screen) {
+        setTimeout(() => {
             screen.classList.add('visible');
-        }
-    }, 100);
+        }, 100);
+    }
 }
 
 // =============================================
-// 5. CONFIGURACIÓN DE EVENTOS
+// INICIALIZACIÓN DE LA APLICACIÓN
 // =============================================
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 DOM cargado, configurando eventos...');
+    console.log('🚀 Iniciando Dominius AI...');
     
+    // Verificar sesión activa
+    const session = UserSystem.getSession();
+    if (session) {
+        console.log('✅ Sesión activa detectada, redirigiendo al chat...');
+        window.location.href = 'chat.html';
+        return;
+    }
+    
+    // Animación de bienvenida
     setTimeout(() => {
         const welcomeScreen = document.getElementById('welcomeScreen');
         if (welcomeScreen) {
             welcomeScreen.classList.add('hidden');
-            
-            const session = UserSystem.getSession();
-            if (session) {
-                console.log('Sesión encontrada, redirigiendo...');
-                setTimeout(() => {
-                    window.location.href = 'chat.html';
-                }, 1000);
-            } else {
-                console.log('No hay sesión, mostrando login...');
-                setTimeout(() => {
-                    showScreen('loginScreen');
-                }, 500);
-            }
         }
-    }, 4800);
+        
+        setTimeout(() => {
+            showScreen('loginScreen');
+        }, 1500);
+    }, 4000);
     
     // FORMULARIO DE LOGIN
     const loginForm = document.getElementById('loginForm');
@@ -363,18 +360,18 @@ document.addEventListener('DOMContentLoaded', function() {
             
             setTimeout(() => {
                 const result = UserSystem.login(username, password);
+                
                 showLoading(false);
                 
                 if (result.success) {
-                    showNotification(`¡Bienvenido, ${result.user.username}!`, 'success');
-                    
+                    showNotification('¡Bienvenido a Dominius AI!', 'success');
                     setTimeout(() => {
                         window.location.href = 'chat.html';
                     }, 1000);
                 } else {
                     showNotification(result.message, 'error');
                 }
-            }, 1500);
+            }, 1000);
         });
     }
     
@@ -405,20 +402,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            showLoading(true, 'Creando tu cuenta...');
+            if (!email.includes('@') || !email.includes('.')) {
+                showNotification('Email inválido', 'error');
+                return;
+            }
+            
+            showLoading(true, 'Creando cuenta...');
             
             setTimeout(async () => {
                 const result = UserSystem.register(name, username, email, password);
                 
                 if (result.success) {
-                    showLoading(true, 'Enviando email de bienvenida...');
+                    showLoading(true, 'Enviando notificación...');
                     
                     try {
                         const emailResult = await sendWelcomeEmail(result.user);
                         showLoading(false);
                         
                         if (emailResult.success) {
-                            showNotification('¡Cuenta creada! Revisa tu email', 'success');
+                            showNotification('¡Cuenta creada! Notificación enviada', 'success');
                         } else {
                             showNotification('Cuenta creada correctamente', 'success');
                         }
@@ -471,7 +473,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     showLoading(false);
                     
                     if (emailResult.success) {
-                        showNotification('✅ Código enviado a tu email', 'success');
+                        showNotification('✅ Código enviado al administrador', 'success');
                     } else {
                         showNotification(`Tu código es: ${result.code}`, 'info');
                     }
@@ -481,7 +483,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                 } else {
                     showLoading(false);
-                    showNotification('Si el email existe, recibirás un código', 'info');
+                    showNotification('Si el email existe, se enviará un código', 'info');
                     setTimeout(() => {
                         showScreen('loginScreen');
                         forgotForm.reset();
@@ -512,7 +514,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // =============================================
-// 6. PANTALLA DE CÓDIGO DE RECUPERACIÓN
+// PANTALLA DE CÓDIGO DE RECUPERACIÓN
 // =============================================
 function showRecoveryCodeScreen(userId) {
     if (!document.getElementById('recoveryCodeScreen')) {
@@ -520,7 +522,7 @@ function showRecoveryCodeScreen(userId) {
             <div class="login-screen" id="recoveryCodeScreen">
                 <div class="login-box">
                     <h2 class="login-title">Verificar Código</h2>
-                    <p class="forgot-info">Ingresa el código que recibiste en tu email</p>
+                    <p class="forgot-info">Ingresa el código que te proporcionó el administrador</p>
                     <form id="recoveryCodeForm">
                         <div class="input-group">
                             <label>Código de 6 dígitos</label>
@@ -610,23 +612,6 @@ function showRecoveryCodeScreen(userId) {
     }
     
     showScreen('recoveryCodeScreen');
-}// Agregar efectos de carga premium
-document.addEventListener('DOMContentLoaded', function() {
-    // Efecto de carga suave
-    document.body.style.opacity = '0';
-    document.body.style.transition = 'opacity 0.5s ease';
-    
-    setTimeout(() => {
-        document.body.style.opacity = '1';
-    }, 100);
-    
-    // Efecto en botones al hacer click
-    document.querySelectorAll('button').forEach(button => {
-        button.addEventListener('click', function() {
-            this.style.transform = 'scale(0.98)';
-            setTimeout(() => {
-                this.style.transform = '';
-            }, 150);
-        });
-    });
-});
+}
+
+console.log('✅ app.js cargado - Emails configurados para el desarrollador');
