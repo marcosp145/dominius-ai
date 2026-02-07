@@ -1,83 +1,70 @@
 // =============================================
-// DOMINIUS AI - CON IA REAL GRATIS (GROQ)
+// DOMINIUS AI - CHAT MEJORADO
 // =============================================
 
+// Variables globales
 let attachedFiles = [];
 let currentChatId = null;
 let currentMode = 'general';
 let isAIResponding = false;
-let currentTypingAnimation = null;
-let stopTyping = false;
-let isAIPaused = false;
-let pauseResumeCallback = null;
+let stopGeneration = false;
+let currentAIMessage = '';
 
-// 🔑 TU API KEY DE GROQ (GRATIS)
-const GROQ_API_KEY = "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";
+// 🔑 API KEY DE GROQ (GRATIS)
+const GROQ_API_KEY = "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";
 
 // =============================================
-// INICIALIZACIÓN
+// INICIALIZACIÓN PRINCIPAL
 // =============================================
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Dominius AI - Con Groq (IA REAL)...');
+    console.log('🚀 Dominius AI - Iniciando sistema...');
     
-    // Verificar sesión
+    // Verificar sesión activa
     const session = localStorage.getItem('dominius_session');
     if (!session) {
+        console.log('❌ No hay sesión activa, redirigiendo...');
         window.location.href = 'index.html';
         return;
     }
     
-    // Inicializar
+    // Inicializar componentes
     initUserData();
     initEvents();
     loadChatsList();
     initParticles();
     
-    // Auto-focus en input
+    // Auto-focus en el input
     setTimeout(() => {
         const input = document.getElementById('messageInput');
-        if (input) input.focus();
-    }, 1000);
+        if (input) {
+            input.focus();
+            input.value = '';
+            updateCharCount();
+            autoResizeTextarea();
+        }
+    }, 500);
     
-    console.log('✅ Dominius AI - Listo con Groq');
+    console.log('✅ Dominius AI - Sistema listo');
 });
 
 // =============================================
-// FUNCIONES DE USUARIO
-// =============================================
-function initUserData() {
-    try {
-        const userData = JSON.parse(localStorage.getItem('dominius_session'));
-        const userNameEl = document.getElementById('userName');
-        const userInitialsEl = document.getElementById('userInitials');
-        
-        if (userData && userNameEl && userInitialsEl) {
-            userNameEl.textContent = userData.username || 'Usuario';
-            const initials = (userData.username || 'US').substring(0, 2).toUpperCase();
-            userInitialsEl.textContent = initials;
-            
-            if (userData.avatarColor) {
-                userInitialsEl.style.background = userData.avatarColor;
-            }
-        }
-    } catch (e) {
-        console.log('Error cargando usuario:', e);
-    }
-}
-
-// =============================================
-// EVENTOS
+// CONFIGURACIÓN DE EVENTOS
 // =============================================
 function initEvents() {
-    // Logout
-    document.getElementById('logoutBtn').addEventListener('click', function() {
-        if (confirm('¿Estás seguro de cerrar sesión?')) {
-            localStorage.removeItem('dominius_session');
-            window.location.href = 'index.html';
-        }
-    });
+    console.log('⚙️ Configurando eventos...');
     
-    // Tabs
+    // Logout
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function() {
+            if (confirm('¿Estás seguro de cerrar sesión?')) {
+                localStorage.removeItem('dominius_session');
+                window.location.href = 'index.html';
+            }
+        });
+    }
+    
+    // Sistema de pestañas
     document.querySelectorAll('.tab-button').forEach(btn => {
         btn.addEventListener('click', function() {
             document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
@@ -85,107 +72,525 @@ function initEvents() {
             
             this.classList.add('active');
             const tabName = this.getAttribute('data-tab');
-            document.getElementById(tabName + 'Panel').classList.add('active');
+            const panel = document.getElementById(tabName + 'Panel');
+            if (panel) {
+                panel.classList.add('active');
+            }
         });
     });
     
-    // Nuevo chat
-    document.getElementById('newChatBtn').addEventListener('click', createNewChat);
+    // Botón nuevo chat
+    const newChatBtn = document.getElementById('newChatBtn');
+    if (newChatBtn) {
+        newChatBtn.addEventListener('click', createNewChat);
+    }
     
-    // Modos
+    // Modos de IA
     document.querySelectorAll('.mode-card').forEach(card => {
         card.addEventListener('click', function() {
             document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('active'));
             this.classList.add('active');
             
             currentMode = this.getAttribute('data-mode');
-            document.getElementById('currentMode').textContent = 'Modo: ' + getModeName(currentMode);
+            const modeName = getModeName(currentMode);
+            document.getElementById('currentMode').textContent = 'Modo: ' + modeName;
             
-            if (!currentChatId) createNewChat();
+            showNotification(`Modo ${modeName} activado`, 'info');
+            
+            if (!currentChatId) {
+                createNewChat();
+            }
         });
     });
     
-    // Botones chat
-    document.getElementById('clearChatBtn').addEventListener('click', function() {
-        if (currentChatId && confirm('¿Limpiar este chat? Se borrarán todos los mensajes.')) {
-            clearCurrentChat();
-        }
-    });
-    
-    document.getElementById('deleteChatBtn').addEventListener('click', function() {
-        if (currentChatId && confirm('¿Eliminar este chat permanentemente?')) {
-            deleteCurrentChat();
-        }
-    });
-    
-    // Archivos
-    document.getElementById('attachBtn').addEventListener('click', function() {
-        document.getElementById('fileInput').click();
-    });
-    
-    document.getElementById('fileInput').addEventListener('change', function(e) {
-        const files = Array.from(e.target.files || []);
-        files.forEach(file => {
-            attachedFiles.push({
-                name: file.name,
-                size: file.size,
-                type: file.type,
-                file: file
-            });
+    // Botones de acción del chat
+    const clearChatBtn = document.getElementById('clearChatBtn');
+    if (clearChatBtn) {
+        clearChatBtn.addEventListener('click', function() {
+            if (currentChatId && confirm('¿Limpiar este chat?')) {
+                clearCurrentChat();
+            }
         });
-        updateAttachedFiles();
-        e.target.value = '';
-    });
+    }
     
-    // Input de mensaje
+    const deleteChatBtn = document.getElementById('deleteChatBtn');
+    if (deleteChatBtn) {
+        deleteChatBtn.addEventListener('click', function() {
+            if (currentChatId && confirm('¿Eliminar este chat permanentemente?')) {
+                deleteCurrentChat();
+            }
+        });
+    }
+    
+    // Sistema de archivos adjuntos (SIN LÍMITES)
+    const attachBtn = document.getElementById('attachBtn');
+    const fileInput = document.getElementById('fileInput');
+    
+    if (attachBtn && fileInput) {
+        attachBtn.addEventListener('click', function() {
+            fileInput.click();
+        });
+        
+        fileInput.addEventListener('change', async function(e) {
+            const files = Array.from(e.target.files || []);
+            
+            for (const file of files) {
+                // Leer contenido del archivo
+                const content = await readFileContent(file);
+                
+                attachedFiles.push({
+                    name: file.name,
+                    size: file.size,
+                    type: file.type,
+                    content: content
+                });
+            }
+            
+            updateAttachedFiles();
+            e.target.value = '';
+            
+            if (files.length > 0) {
+                showNotification(`✅ ${files.length} archivo(s) adjuntado(s)`, 'success');
+            }
+        });
+    }
+    
+    // Sistema de entrada de mensajes
     const messageInput = document.getElementById('messageInput');
     const sendBtn = document.getElementById('sendBtn');
     
-    sendBtn.addEventListener('click', sendUserMessage);
+    if (sendBtn) {
+        sendBtn.addEventListener('click', function() {
+            if (isAIResponding) {
+                // Detener generación
+                stopGeneration = true;
+                updateSendButton();
+            } else {
+                sendUserMessage();
+            }
+        });
+    }
     
-    messageInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendUserMessage();
-        }
-        
-        // Permitir scroll con teclas mientras escribe la IA
-        if (isAIResponding && (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'PageUp' || e.key === 'PageDown')) {
-            // Permitir scroll normal
-            return true;
-        }
-    });
-    
-    messageInput.addEventListener('input', function() {
-        updateCharCount();
-        autoResizeTextarea();
-    });
-    
-    // Permitir scroll mientras la IA escribe
-    const messagesContainer = document.getElementById('messagesContainer');
-    if (messagesContainer) {
-        messagesContainer.addEventListener('wheel', function(e) {
-            // Siempre permitir scroll
-            return true;
+    if (messageInput) {
+        messageInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if (!isAIResponding) {
+                    sendUserMessage();
+                }
+            }
         });
         
-        messagesContainer.addEventListener('touchmove', function(e) {
-            // Siempre permitir scroll táctil
-            return true;
+        messageInput.addEventListener('input', function() {
+            updateCharCount();
+            autoResizeTextarea();
         });
+    }
+    
+    console.log('✅ Eventos configurados');
+}
+
+// =============================================
+// LEER CONTENIDO DE ARCHIVOS
+// =============================================
+async function readFileContent(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            const content = e.target.result;
+            
+            // Si es texto, devolver como texto
+            if (file.type.startsWith('text/') || 
+                file.type === 'application/json' ||
+                file.name.endsWith('.txt') ||
+                file.name.endsWith('.js') ||
+                file.name.endsWith('.html') ||
+                file.name.endsWith('.css') ||
+                file.name.endsWith('.md')) {
+                resolve(content);
+            } else {
+                // Para archivos binarios, devolver info básica
+                resolve(`[Archivo binario: ${file.name}, ${formatFileSize(file.size)}]`);
+            }
+        };
+        
+        reader.onerror = function() {
+            resolve(`[Error leyendo archivo: ${file.name}]`);
+        };
+        
+        // Leer como texto
+        if (file.type.startsWith('text/') || 
+            file.type === 'application/json' ||
+            file.name.endsWith('.txt') ||
+            file.name.endsWith('.js') ||
+            file.name.endsWith('.html') ||
+            file.name.endsWith('.css') ||
+            file.name.endsWith('.md')) {
+            reader.readAsText(file);
+        } else {
+            resolve(`[Archivo: ${file.name}, ${formatFileSize(file.size)}]`);
+        }
+    });
+}
+
+// =============================================
+// BOTÓN ENVIAR/STOP SIMPLE
+// =============================================
+function updateSendButton() {
+    const sendBtn = document.getElementById('sendBtn');
+    if (!sendBtn) return;
+    
+    if (isAIResponding) {
+        // Modo STOP
+        sendBtn.innerHTML = `
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <rect x="6" y="6" width="12" height="12" rx="2"></rect>
+            </svg>
+        `;
+        sendBtn.title = 'Detener generación';
+        sendBtn.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+    } else {
+        // Modo ENVIAR
+        sendBtn.innerHTML = `
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+        `;
+        sendBtn.title = 'Enviar mensaje';
+        sendBtn.style.background = 'linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)';
     }
 }
 
 // =============================================
-// FUNCIONES BÁSICAS
+// ENVIAR MENSAJE DEL USUARIO
 // =============================================
-window.removeAttachedFile = function(index) {
-    if (index >= 0 && index < attachedFiles.length) {
-        attachedFiles.splice(index, 1);
-        updateAttachedFiles();
+async function sendUserMessage() {
+    const messageInput = document.getElementById('messageInput');
+    if (!messageInput) return;
+    
+    const message = messageInput.value.trim();
+    
+    if (!message && attachedFiles.length === 0) {
+        return;
     }
-};
+    
+    if (!currentChatId) {
+        createNewChat();
+    }
+    
+    // Construir mensaje completo con archivos
+    let fullMessage = message;
+    
+    if (attachedFiles.length > 0) {
+        fullMessage += '\n\n--- Archivos adjuntos ---\n';
+        for (const file of attachedFiles) {
+            fullMessage += `\n📎 ${file.name} (${formatFileSize(file.size)}):\n`;
+            fullMessage += file.content + '\n';
+        }
+    }
+    
+    // Mostrar mensaje del usuario
+    addUserMessage(message, attachedFiles);
+    
+    // Limpiar input y archivos
+    messageInput.value = '';
+    attachedFiles = [];
+    updateAttachedFiles();
+    updateCharCount();
+    autoResizeTextarea();
+    
+    // Guardar en historial
+    saveMessageToChat(currentChatId, 'user', fullMessage);
+    
+    // Obtener respuesta de la IA
+    await getAIResponse(fullMessage);
+}
 
+// =============================================
+// OBTENER RESPUESTA DE LA IA
+// =============================================
+async function getAIResponse(userMessage) {
+    isAIResponding = true;
+    stopGeneration = false;
+    currentAIMessage = '';
+    updateSendButton();
+    
+    const container = document.getElementById('messagesContainer');
+    if (!container) return;
+    
+    // Indicador de escritura
+    const typingDiv = document.createElement('div');
+    typingDiv.className = 'message ai-message';
+    typingDiv.id = 'typingIndicator';
+    typingDiv.innerHTML = `
+        <div class="message-avatar ai-avatar">
+            <span>AI</span>
+        </div>
+        <div class="message-content-wrapper">
+            <div class="typing-indicator">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+        </div>
+    `;
+    container.appendChild(typingDiv);
+    container.scrollTop = container.scrollHeight;
+    
+    try {
+        const chatHistory = getChatHistory(currentChatId);
+        
+        const messages = [
+            {
+                role: 'system',
+                content: getModeSystemPrompt(currentMode)
+            },
+            ...chatHistory.map(msg => ({
+                role: msg.role,
+                content: msg.content
+            })),
+            {
+                role: 'user',
+                content: userMessage
+            }
+        ];
+        
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${GROQ_API_KEY}`
+            },
+            body: JSON.stringify({
+                model: 'llama-3.3-70b-versatile',
+                messages: messages,
+                temperature: 0.7,
+                max_tokens: 8000,
+                stream: true
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Error en la API');
+        }
+        
+        // Eliminar indicador
+        typingDiv.remove();
+        
+        // Crear mensaje de IA
+        const aiMessageDiv = document.createElement('div');
+        aiMessageDiv.className = 'message ai-message';
+        aiMessageDiv.innerHTML = `
+            <div class="message-avatar ai-avatar">
+                <span>AI</span>
+            </div>
+            <div class="message-content-wrapper">
+                <div class="message-content"></div>
+                <div class="message-time">${new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</div>
+            </div>
+        `;
+        container.appendChild(aiMessageDiv);
+        
+        const contentDiv = aiMessageDiv.querySelector('.message-content');
+        
+        // Leer stream
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        
+        while (true) {
+            if (stopGeneration) {
+                currentAIMessage += '\n\n[Generación detenida por el usuario]';
+                break;
+            }
+            
+            const { done, value } = await reader.read();
+            if (done) break;
+            
+            const chunk = decoder.decode(value);
+            const lines = chunk.split('\n');
+            
+            for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                    const data = line.slice(6);
+                    if (data === '[DONE]') continue;
+                    
+                    try {
+                        const json = JSON.parse(data);
+                        const content = json.choices?.[0]?.delta?.content;
+                        
+                        if (content) {
+                            currentAIMessage += content;
+                            contentDiv.innerHTML = formatAIResponse(currentAIMessage);
+                            container.scrollTop = container.scrollHeight;
+                        }
+                    } catch (e) {
+                        // Ignorar errores de parsing
+                    }
+                }
+            }
+        }
+        
+        // Guardar respuesta
+        saveMessageToChat(currentChatId, 'assistant', currentAIMessage);
+        addCopyButton(aiMessageDiv, currentAIMessage);
+        
+    } catch (error) {
+        console.error('Error obteniendo respuesta:', error);
+        
+        typingDiv.remove();
+        
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'message ai-message';
+        errorDiv.innerHTML = `
+            <div class="message-avatar ai-avatar">
+                <span>AI</span>
+            </div>
+            <div class="message-content-wrapper">
+                <div class="message-content">❌ Error al obtener respuesta. Por favor intenta de nuevo.</div>
+            </div>
+        `;
+        container.appendChild(errorDiv);
+    }
+    
+    isAIResponding = false;
+    stopGeneration = false;
+    updateSendButton();
+}
+
+// =============================================
+// FORMATEAR RESPUESTA DE LA IA
+// =============================================
+function formatAIResponse(text) {
+    if (!text) return '';
+    
+    // Convertir bloques de código
+    text = text.replace(/```(\w+)?\n([\s\S]*?)```/g, function(match, lang, code) {
+        return `<pre><code>${escapeHtml(code.trim())}</code></pre>`;
+    });
+    
+    // Convertir código inline
+    text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+    
+    // Convertir negritas
+    text = text.replace(/\*\*([^\*]+)\*\*/g, '<strong>$1</strong>');
+    
+    // Convertir cursivas
+    text = text.replace(/\*([^\*]+)\*/g, '<em>$1</em>');
+    
+    // Convertir saltos de línea
+    text = text.replace(/\n/g, '<br>');
+    
+    return text;
+}
+
+function escapeHtml(text) {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, m => map[m]);
+}
+
+// =============================================
+// AÑADIR MENSAJE DEL USUARIO
+// =============================================
+function addUserMessage(message, files = []) {
+    const container = document.getElementById('messagesContainer');
+    if (!container) return;
+    
+    // Ocultar mensaje de bienvenida
+    const welcomeMsg = container.querySelector('.welcome-message');
+    if (welcomeMsg) {
+        welcomeMsg.style.display = 'none';
+    }
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message user-message';
+    
+    const session = JSON.parse(localStorage.getItem('dominius_session') || '{}');
+    const initials = session.name ? session.name.substring(0, 2).toUpperCase() : 'U';
+    
+    let filesHTML = '';
+    if (files.length > 0) {
+        filesHTML = '<div class="message-files">';
+        for (const file of files) {
+            filesHTML += `<div class="file-tag">📎 ${file.name} (${formatFileSize(file.size)})</div>`;
+        }
+        filesHTML += '</div>';
+    }
+    
+    const timeString = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    
+    messageDiv.innerHTML = `
+        <div class="message-content-wrapper">
+            <div class="message-content">${escapeHtml(message).replace(/\n/g, '<br>')}</div>
+            ${filesHTML}
+            <div class="message-time">${timeString}</div>
+        </div>
+        <div class="message-avatar user-avatar">
+            <span>${initials}</span>
+        </div>
+    `;
+    
+    container.appendChild(messageDiv);
+    container.scrollTop = container.scrollHeight;
+}
+
+// =============================================
+// BOTÓN DE COPIAR
+// =============================================
+function addCopyButton(messageDiv, content) {
+    const contentWrapper = messageDiv.querySelector('.message-content-wrapper');
+    if (!contentWrapper) return;
+    
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'copy-btn';
+    copyBtn.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+    `;
+    copyBtn.title = 'Copiar';
+    
+    copyBtn.addEventListener('click', function() {
+        // Crear elemento temporal para copiar
+        const textArea = document.createElement('textarea');
+        textArea.value = content;
+        textArea.style.position = 'fixed';
+        textArea.style.opacity = '0';
+        document.body.appendChild(textArea);
+        textArea.select();
+        
+        try {
+            document.execCommand('copy');
+            copyBtn.innerHTML = '✓';
+            setTimeout(() => {
+                copyBtn.innerHTML = `
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                `;
+            }, 2000);
+        } catch (err) {
+            console.error('Error copiando:', err);
+        }
+        
+        document.body.removeChild(textArea);
+    });
+    
+    contentWrapper.appendChild(copyBtn);
+}
+
+// =============================================
+// GESTIÓN DE ARCHIVOS ADJUNTOS
+// =============================================
 function updateAttachedFiles() {
     const container = document.getElementById('attachedFilesContainer');
     if (!container) return;
@@ -200,39 +605,261 @@ function updateAttachedFiles() {
     container.innerHTML = '';
     
     attachedFiles.forEach((file, index) => {
-        const size = (file.size / 1024).toFixed(1) + ' KB';
-        const icon = getFileIcon(file.type);
-        
-        const div = document.createElement('div');
-        div.className = 'attached-file-item';
-        div.innerHTML = `
-            <span class="file-icon">${icon}</span>
+        const fileDiv = document.createElement('div');
+        fileDiv.className = 'attached-file-item';
+        fileDiv.innerHTML = `
+            <span class="file-icon">📎</span>
             <div class="file-info">
                 <span class="file-name">${file.name}</span>
-                <span class="file-size">${size}</span>
+                <span class="file-size">${formatFileSize(file.size)}</span>
             </div>
-            <button class="remove-file-btn" onclick="removeAttachedFile(${index})">✕</button>
+            <button class="remove-file-btn" onclick="removeFile(${index})">×</button>
         `;
-        container.appendChild(div);
+        container.appendChild(fileDiv);
     });
 }
 
-function getFileIcon(type) {
-    if (type && type.startsWith('image/')) return '🖼️';
-    if (type && type.includes('pdf')) return '📄';
-    if (type && (type.includes('word') || type.includes('document'))) return '📝';
-    if (type && (type.includes('excel') || type.includes('sheet'))) return '📊';
-    if (type && type.includes('text')) return '📃';
-    return '📎';
+window.removeFile = function(index) {
+    attachedFiles.splice(index, 1);
+    updateAttachedFiles();
+};
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+}
+
+// =============================================
+// GESTIÓN DE CHATS
+// =============================================
+function createNewChat() {
+    const chatId = 'chat_' + Date.now();
+    currentChatId = chatId;
+    
+    const chat = {
+        id: chatId,
+        title: 'Nuevo Chat',
+        mode: currentMode,
+        messages: [],
+        createdAt: new Date().toISOString()
+    };
+    
+    const chats = getChats();
+    chats.unshift(chat);
+    saveChats(chats);
+    
+    loadChatsList();
+    loadChat(chatId);
+    
+    document.getElementById('currentChatTitle').textContent = 'Nuevo Chat';
+}
+
+function loadChat(chatId) {
+    currentChatId = chatId;
+    const chats = getChats();
+    const chat = chats.find(c => c.id === chatId);
+    
+    if (!chat) return;
+    
+    const container = document.getElementById('messagesContainer');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    if (chat.messages.length === 0) {
+        container.innerHTML = `
+            <div class="welcome-message">
+                <div class="welcome-icon">🤖</div>
+                <h2>¡Hola! Soy Dominius AI</h2>
+                <p>Tu asistente empresarial de élite. ¿En qué puedo ayudarte hoy?</p>
+            </div>
+        `;
+    } else {
+        for (const msg of chat.messages) {
+            if (msg.role === 'user') {
+                addUserMessage(msg.content, []);
+            } else if (msg.role === 'assistant') {
+                addAIMessage(msg.content, msg.timestamp);
+            }
+        }
+    }
+    
+    document.getElementById('currentChatTitle').textContent = chat.title;
+    
+    // Marcar como activo en la lista
+    document.querySelectorAll('.chat-item').forEach(item => {
+        item.classList.remove('active');
+        if (item.getAttribute('data-chat-id') === chatId) {
+            item.classList.add('active');
+        }
+    });
+}
+
+function addAIMessage(content, timestamp) {
+    const container = document.getElementById('messagesContainer');
+    if (!container) return;
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message ai-message';
+    
+    const time = timestamp ? new Date(timestamp) : new Date();
+    const timeString = time.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    
+    messageDiv.innerHTML = `
+        <div class="message-avatar ai-avatar">
+            <span>AI</span>
+        </div>
+        <div class="message-content-wrapper">
+            <div class="message-content">${formatAIResponse(content)}</div>
+            <div class="message-time">${timeString}</div>
+        </div>
+    `;
+    
+    container.appendChild(messageDiv);
+    addCopyButton(messageDiv, content);
+    container.scrollTop = container.scrollHeight;
+}
+
+function clearCurrentChat() {
+    const chats = getChats();
+    const chat = chats.find(c => c.id === currentChatId);
+    if (chat) {
+        chat.messages = [];
+        saveChats(chats);
+        loadChat(currentChatId);
+        showNotification('Chat limpiado', 'success');
+    }
+}
+
+function deleteCurrentChat() {
+    let chats = getChats();
+    chats = chats.filter(c => c.id !== currentChatId);
+    saveChats(chats);
+    
+    currentChatId = null;
+    loadChatsList();
+    
+    const container = document.getElementById('messagesContainer');
+    if (container) {
+        container.innerHTML = `
+            <div class="welcome-message">
+                <div class="welcome-icon">🤖</div>
+                <h2>¡Hola! Soy Dominius AI</h2>
+                <p>Crea un nuevo chat para empezar</p>
+            </div>
+        `;
+    }
+    
+    document.getElementById('currentChatTitle').textContent = 'Dominius AI';
+    showNotification('Chat eliminado', 'success');
+}
+
+function loadChatsList() {
+    const chats = getChats();
+    const container = document.getElementById('chatsList');
+    if (!container) return;
+    
+    if (chats.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">No hay chats</p>';
+        return;
+    }
+    
+    container.innerHTML = '';
+    
+    for (const chat of chats) {
+        const chatDiv = document.createElement('div');
+        chatDiv.className = 'chat-item';
+        if (chat.id === currentChatId) {
+            chatDiv.classList.add('active');
+        }
+        chatDiv.setAttribute('data-chat-id', chat.id);
+        
+        const preview = chat.messages.length > 0 
+            ? chat.messages[chat.messages.length - 1].content.substring(0, 50) + '...'
+            : 'Sin mensajes';
+        
+        chatDiv.innerHTML = `
+            <div class="chat-item-title">${chat.title}</div>
+            <div class="chat-item-preview">${preview}</div>
+        `;
+        
+        chatDiv.addEventListener('click', () => loadChat(chat.id));
+        container.appendChild(chatDiv);
+    }
+}
+
+// =============================================
+// SISTEMA DE ALMACENAMIENTO
+// =============================================
+function getChats() {
+    const session = JSON.parse(localStorage.getItem('dominius_session') || '{}');
+    const key = `chats_${session.id}`;
+    const chats = localStorage.getItem(key);
+    return chats ? JSON.parse(chats) : [];
+}
+
+function saveChats(chats) {
+    const session = JSON.parse(localStorage.getItem('dominius_session') || '{}');
+    const key = `chats_${session.id}`;
+    localStorage.setItem(key, JSON.stringify(chats));
+}
+
+function saveMessageToChat(chatId, role, content) {
+    const chats = getChats();
+    const chat = chats.find(c => c.id === chatId);
+    
+    if (chat) {
+        chat.messages.push({
+            role: role,
+            content: content,
+            timestamp: new Date().toISOString()
+        });
+        
+        // Actualizar título del chat con el primer mensaje
+        if (chat.messages.length === 2 && role === 'user') {
+            chat.title = content.substring(0, 30) + (content.length > 30 ? '...' : '');
+            document.getElementById('currentChatTitle').textContent = chat.title;
+        }
+        
+        saveChats(chats);
+        loadChatsList();
+    }
+}
+
+function getChatHistory(chatId) {
+    const chats = getChats();
+    const chat = chats.find(c => c.id === chatId);
+    return chat ? chat.messages : [];
+}
+
+// =============================================
+// UTILIDADES
+// =============================================
+function initUserData() {
+    const session = JSON.parse(localStorage.getItem('dominius_session') || '{}');
+    
+    if (session.name) {
+        const userName = document.getElementById('userName');
+        if (userName) {
+            userName.textContent = session.name;
+        }
+        
+        const userInitials = document.getElementById('userInitials');
+        if (userInitials) {
+            userInitials.textContent = session.name.substring(0, 2).toUpperCase();
+        }
+    }
 }
 
 function updateCharCount() {
     const input = document.getElementById('messageInput');
-    const charCountEl = document.getElementById('charCount');
-    if (!input || !charCountEl) return;
-    
-    const count = input.value.length;
-    charCountEl.textContent = count + ' / 2000';
+    const counter = document.getElementById('charCount');
+    if (input && counter) {
+        counter.textContent = `${input.value.length} / Sin límite`;
+    }
 }
 
 function autoResizeTextarea() {
@@ -244,7 +871,7 @@ function autoResizeTextarea() {
 }
 
 function getModeName(mode) {
-    const modes = {
+    const names = {
         'general': 'General',
         'creative': 'Creativo',
         'business': 'Gestión Empresarial',
@@ -252,736 +879,53 @@ function getModeName(mode) {
         'data': 'Análisis de Datos',
         'code': 'Programación'
     };
-    return modes[mode] || 'General';
+    return names[mode] || 'General';
 }
 
-// =============================================
-// SISTEMA DE CHATS
-// =============================================
-function getChatsFromStorage() {
-    try {
-        const data = localStorage.getItem('dominius_chats');
-        return data ? JSON.parse(data) : [];
-    } catch {
-        return [];
-    }
-}
-
-function saveChatsToStorage(chats) {
-    try {
-        localStorage.setItem('dominius_chats', JSON.stringify(chats));
-    } catch (e) {
-        console.log('Error guardando chats:', e);
-    }
-}
-
-function createNewChat() {
-    const chats = getChatsFromStorage();
-    const newChat = {
-        id: Date.now(),
-        title: 'Nuevo Chat',
-        messages: [],
-        mode: currentMode,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+function getModeSystemPrompt(mode) {
+    const prompts = {
+        'general': `Eres Dominius AI, un asistente de IA avanzado, profesional y amigable. 
+        Proporciona respuestas claras, concisas y útiles. 
+        Si no sabes algo, admítelo honestamente. 
+        Formatea las respuestas para mejor legibilidad.`,
+        
+        'creative': `Eres Dominius AI en modo creativo. 
+        Eres imaginativo, innovador y generas ideas originales. 
+        Piensa fuera de lo convencional y sugiere enfoques únicos. 
+        Inspira creatividad y propón soluciones inusuales.`,
+        
+        'business': `Eres Dominius AI especializado en gestión empresarial. 
+        Proporciona análisis estratégico, consejos prácticos y soluciones empresariales. 
+        Considera ROI, escalabilidad y sostenibilidad en tus recomendaciones.`,
+        
+        'strategy': `Eres Dominius AI experto en estrategia. 
+        Ayudas con planificación a largo plazo, análisis competitivo y desarrollo estratégico. 
+        Piensa de forma holística y considera múltiples escenarios.`,
+        
+        'data': `Eres Dominius AI enfocado en análisis de datos. 
+        Interpreta datos, identificas tendencias y proporcionas insights accionables. 
+        Explica conceptos complejos de forma clara y visual.`,
+        
+        'code': `Eres Dominius AI especializado en programación. 
+        Escribe código limpio, eficiente y bien documentado. 
+        Explica conceptos técnicos claramente y ayuda con debugging. 
+        Considera buenas prácticas y patrones de diseño.`
     };
     
-    chats.unshift(newChat);
-    saveChatsToStorage(chats);
-    
-    currentChatId = newChat.id;
-    loadChat(newChat.id);
-    
-    // Efecto visual
-    const btn = document.getElementById('newChatBtn');
-    btn.style.transform = 'scale(0.95)';
-    setTimeout(() => btn.style.transform = '', 200);
+    return prompts[mode] || prompts['general'];
 }
 
-function loadChat(chatId) {
-    const chats = getChatsFromStorage();
-    const chat = chats.find(c => c.id === chatId);
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
     
-    if (chat) {
-        currentChatId = chatId;
-        currentMode = chat.mode || 'general';
-        
-        document.getElementById('currentChatTitle').textContent = chat.title;
-        document.getElementById('currentMode').textContent = 'Modo: ' + getModeName(currentMode);
-        
-        showMessages(chat.messages);
-        loadChatsList();
-    }
-}
-
-function saveMessageToChat(role, content, files = []) {
-    if (!currentChatId) return false;
-    
-    const chats = getChatsFromStorage();
-    const chatIndex = chats.findIndex(c => c.id === currentChatId);
-    
-    if (chatIndex === -1) return false;
-    
-    const chat = chats[chatIndex];
-    
-    chat.messages.push({
-        role: role,
-        content: content,
-        files: files,
-        timestamp: new Date().toISOString()
-    });
-    
-    if (chat.messages.length === 1 && chat.title === 'Nuevo Chat') {
-        const words = content.substring(0, 30).trim();
-        chat.title = words.length > 25 ? words.substring(0, 22) + '...' : words || 'Nuevo Chat';
-    }
-    
-    chat.updatedAt = new Date().toISOString();
-    chat.mode = currentMode;
-    
-    saveChatsToStorage(chats);
-    loadChatsList();
-    
-    return true;
-}
-
-function loadChatsList() {
-    const chats = getChatsFromStorage();
-    const container = document.getElementById('chatsList');
-    
-    if (!container) return;
-    
-    if (chats.length === 0) {
-        container.innerHTML = `
-            <div class="empty-chats">
-                <div class="empty-icon">💬</div>
-                <p>No hay chats</p>
-                <p class="empty-subtitle">Crea uno nuevo</p>
-            </div>
-        `;
-        return;
-    }
-    
-    let html = '';
-    
-    chats.forEach(chat => {
-        const lastMsg = chat.messages[chat.messages.length - 1];
-        const preview = lastMsg ? shortenText(lastMsg.content, 30) : 'Sin mensajes';
-        const time = formatTime(chat.updatedAt);
-        const activeClass = chat.id === currentChatId ? 'active' : '';
-        
-        html += `
-            <div class="chat-item ${activeClass}" onclick="selectChat(${chat.id})">
-                <div class="chat-item-header">
-                    <span class="chat-item-title">${chat.title}</span>
-                    <span class="chat-item-time">${time}</span>
-                </div>
-                <div class="chat-item-preview">${preview}</div>
-            </div>
-        `;
-    });
-    
-    container.innerHTML = html;
-}
-
-window.selectChat = function(chatId) {
-    loadChat(chatId);
-    document.querySelector('[data-tab="chats"]').click();
-};
-
-function showMessages(messages) {
-    const container = document.getElementById('messagesContainer');
-    if (!container) return;
-    
-    if (!messages || messages.length === 0) {
-        container.innerHTML = `
-            <div class="welcome-message">
-                <div class="welcome-icon">🤖</div>
-                <h2>¡Hola! Soy Dominius AI</h2>
-                <p>Tu asistente empresarial de élite. Transformo ideas en resultados estratégicos. ¿En qué puedo potenciar tu negocio hoy?</p>
-                <div class="quick-suggestions">
-                    <button class="suggestion-btn" onclick="quickAction('Necesito un análisis de mercado para un restaurante')">
-                        📊 Análisis de mercado
-                    </button>
-                    <button class="suggestion-btn" onclick="quickAction('Genera código HTML para una landing page')">
-                        💻 Generar código
-                    </button>
-                    <button class="suggestion-btn" onclick="quickAction('¿Para qué sirves exactamente?')">
-                        🤔 ¿Para qué sirves?
-                    </button>
-                </div>
-            </div>
-        `;
-        return;
-    }
-    
-    let html = '';
-    
-    messages.forEach(msg => {
-        const time = new Date(msg.timestamp).toLocaleTimeString('es-ES', {
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-        
-        if (msg.role === 'user') {
-            const userData = JSON.parse(localStorage.getItem('dominius_session') || '{}');
-            const initials = (userData.username || 'US').substring(0, 2).toUpperCase();
-            const color = userData.avatarColor || '#8B5CF6';
-            
-            html += `
-                <div class="message user">
-                    <div class="message-avatar" style="background: ${color}">${initials}</div>
-                    <div class="message-content-wrapper">
-                        <div class="message-content">${escapeHtml(msg.content)}</div>
-                        <div class="message-time">${time}</div>
-                    </div>
-                </div>
-            `;
-        } else {
-            const formattedContent = formatAIResponse(msg.content);
-            html += `
-                <div class="message ai">
-                    <div class="message-avatar">🤖</div>
-                    <div class="message-content-wrapper">
-                        <div class="message-content">${formattedContent}</div>
-                        <div class="message-time">${time}</div>
-                    </div>
-                </div>
-            `;
-        }
-    });
-    
-    container.innerHTML = html;
-    
-    // Añadir botones de copiar a mensajes AI
-    container.querySelectorAll('.message.ai .message-content').forEach(contentDiv => {
-        addCopyButton(contentDiv);
-    });
-    
-    // Scroll al final
-    container.scrollTop = container.scrollHeight;
-}
-
-function shortenText(text, length) {
-    if (!text) return '';
-    if (text.length <= length) return text;
-    return text.substring(0, length) + '...';
-}
-
-function formatTime(timestamp) {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diff = now - date;
-    
-    const mins = Math.floor(diff / 60000);
-    const hours = Math.floor(diff / 3600000);
-    const days = Math.floor(diff / 86400000);
-    
-    if (mins < 1) return 'Ahora';
-    if (mins < 60) return mins + 'm';
-    if (hours < 24) return hours + 'h';
-    if (days < 7) return days + 'd';
-    
-    return date.getDate() + '/' + (date.getMonth() + 1);
-}
-
-function escapeHtml(text) {
-    if (typeof text !== 'string') return '';
-    return text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-}
-
-function clearCurrentChat() {
-    if (!currentChatId) return;
-    
-    const chats = getChatsFromStorage();
-    const chatIndex = chats.findIndex(c => c.id === currentChatId);
-    
-    if (chatIndex !== -1) {
-        chats[chatIndex].messages = [];
-        chats[chatIndex].title = 'Nuevo Chat';
-        chats[chatIndex].updatedAt = new Date().toISOString();
-        
-        saveChatsToStorage(chats);
-        loadChat(currentChatId);
-    }
-}
-
-function deleteCurrentChat() {
-    if (!currentChatId) return;
-    
-    let chats = getChatsFromStorage();
-    chats = chats.filter(c => c.id !== currentChatId);
-    saveChatsToStorage(chats);
-    
-    currentChatId = null;
-    loadChatsList();
-    
-    document.getElementById('currentChatTitle').textContent = 'Nuevo Chat';
-    document.getElementById('messagesContainer').innerHTML = `
-        <div class="welcome-message">
-            <div class="welcome-icon">🤖</div>
-            <h2>¡Hola! Soy Dominius AI</h2>
-            <p>Tu asistente empresarial de élite. Transformo ideas en resultados estratégicos. ¿En qué puedo potenciar tu negocio hoy?</p>
-        </div>
-    `;
-}
-
-// =============================================
-// BOTÓN COPIAR Y PARAR
-// =============================================
-function addCopyButton(messageDiv) {
-    // Verificar si ya tiene botón
-    if (messageDiv.querySelector('.copy-btn')) return;
-    
-    const copyBtn = document.createElement('button');
-    copyBtn.className = 'copy-btn';
-    copyBtn.innerHTML = '📋';
-    copyBtn.title = 'Copiar mensaje';
-    copyBtn.onclick = function(e) {
-        e.stopPropagation();
-        const text = messageDiv.textContent || messageDiv.innerText;
-        navigator.clipboard.writeText(text).then(() => {
-            copyBtn.innerHTML = '✅';
-            copyBtn.classList.add('copied');
-            
-            setTimeout(() => {
-                copyBtn.innerHTML = '📋';
-                copyBtn.classList.remove('copied');
-            }, 2000);
-        });
-    };
-    
-    messageDiv.appendChild(copyBtn);
-}
-
-window.copyCode = function(button) {
-    const codeBlock = button.parentElement;
-    const code = codeBlock.querySelector('code')?.textContent || '';
-    
-    navigator.clipboard.writeText(code).then(() => {
-        const originalText = button.textContent;
-        button.textContent = '✅ Copiado';
-        button.style.background = '#10b981';
-        
-        setTimeout(() => {
-            button.textContent = originalText;
-            button.style.background = '';
-        }, 2000);
-    });
-};
-
-// =============================================
-// IA REAL - GROQ API (FUNCIONA DE VERDAD)
-// =============================================
-async function getAIResponse(userMessage) {
-    console.log('🤖 Consultando Groq API...');
-    
-    // Sistema prompt según modo
-    const systemPrompts = {
-        'general': `Eres Dominius AI, un asistente empresarial experto en español. Responde de forma clara, directa y útil. Usa emojis relevantes, estructura con viñetas (-) y títulos (##). Sé específico y práctico, no genérico.`,
-        'creative': `Eres Dominius AI en modo creativo. Eres innovador, original y visionario. Genera ideas frescas, propuestas únicas y soluciones creativas. Usa lenguaje inspirador pero concreto.`,
-        'business': `Eres Dominius AI en modo empresarial. Especialista en gestión, análisis, estrategias empresariales. Proporciona datos concretos, pasos accionables, análisis SWOT, métricas.`,
-        'strategy': `Eres Dominius AI en modo estrategia. Experto en planificación estratégica, crecimiento empresarial, posicionamiento. Ofrece planes paso a paso, análisis competitivo, roadmap.`,
-        'data': `Eres Dominius AI en modo análisis de datos. Especialista en KPIs, métricas, dashboards, insights. Proporciona visualizaciones mentales, fórmulas, interpretación de datos.`,
-        'code': `Eres Dominius AI en modo programación. Experto en desarrollo web, software, automatización. Proporciona código funcional, explicaciones técnicas, mejores prácticas.`
-    };
-    
-    const systemPrompt = systemPrompts[currentMode] || systemPrompts.general;
-    
-    try {
-        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${GROQ_API_KEY}`
-            },
-            body: JSON.stringify({
-                model: 'llama-3.3-70b-versatile', // Modelo rápido y potente
-                messages: [
-                    {
-                        role: 'system',
-                        content: systemPrompt
-                    },
-                    {
-                        role: 'user',
-                        content: userMessage
-                    }
-                ],
-                temperature: 0.7,
-                max_tokens: 1500,
-                stream: false
-            })
-        });
-        
-        if (!response.ok) {
-            throw new Error(`Error Groq: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        if (data.choices && data.choices[0] && data.choices[0].message) {
-            console.log('✅ Respuesta recibida de Groq');
-            return data.choices[0].message.content;
-        }
-        
-        throw new Error('No se recibió respuesta válida');
-        
-    } catch (error) {
-        console.error('Error con Groq:', error);
-        
-        // Fallback inteligente personalizado
-        return getSmartResponse(userMessage);
-    }
-}
-
-// =============================================
-// SISTEMA INTELIGENTE DE RESPUESTAS (FALLBACK)
-// =============================================
-function getSmartResponse(userMessage) {
-    const lower = userMessage.toLowerCase().trim();
-    
-    // Respuestas empresariales inteligentes
-    if (lower.includes('análisis') || lower.includes('analisis') || lower.includes('mercado')) {
-        return `📊 **ANÁLISIS DE MERCADO - GUÍA RÁPIDA**\n\n**PASOS INMEDIATOS PARA TU ANÁLISIS:**\n\n1. **DEFINE TU PRODUCTO/SERVICIO:**\n   - ¿Qué ofreces exactamente?\n   - Precio aproximado: ______\n   - Diferencial único: ______\n\n2. **COMPETENCIA DIRECTA (busca en Google Maps):**\n   - Nombres de 3 competidores cercanos\n   - Sus precios principales\n   - Sus puntos débiles visibles\n\n3. **CLIENTE IDEAL:**\n   - Edad: ______\n   - Ingresos aproximados: ______\n   - Problema que resuelves: ______\n\n4. **DATOS RÁPIDOS PARA HOY:**\n   - Busca en Google Trends tu sector\n   - Revisa grupos de Facebook locales\n   - Mira comentarios en Google Reviews\n\n**¿Quieres que profundice en alguno de estos puntos específicos?**`;
-    }
-    
-    if (lower.includes('código') || lower.includes('codigo') || lower.includes('html') || lower.includes('css') || lower.includes('javascript') || lower.includes('programación') || lower.includes('programacion')) {
-        return `💻 **CÓDIGO FUNCIONAL - LISTO PARA USAR**\n\n\`\`\`html\n<!DOCTYPE html>\n<html lang="es">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>Landing Page Profesional</title>\n    <style>\n        * { margin: 0; padding: 0; box-sizing: border-box; }\n        body { font-family: 'Arial', sans-serif; line-height: 1.6; }\n        .hero { \n            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);\n            color: white;\n            padding: 100px 20px;\n            text-align: center;\n        }\n        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }\n        h1 { font-size: 3rem; margin-bottom: 20px; }\n        p { font-size: 1.2rem; margin-bottom: 30px; max-width: 700px; margin-left: auto; margin-right: auto; }\n        .btn {\n            display: inline-block;\n            background: #10b981;\n            color: white;\n            padding: 15px 30px;\n            border-radius: 8px;\n            text-decoration: none;\n            font-weight: bold;\n            font-size: 1.1rem;\n            transition: transform 0.3s;\n        }\n        .btn:hover { transform: translateY(-3px); }\n        @media (max-width: 768px) {\n            h1 { font-size: 2rem; }\n            .hero { padding: 60px 20px; }\n        }\n    </style>\n</head>\n<body>\n    <section class="hero">\n        <div class="container">\n            <h1>Transforma tu Presencia Digital</h1>\n            <p>Soluciones tecnológicas que generan resultados reales y crecimiento sostenible para tu empresa.</p>\n            <a href="#contacto" class="btn">Comenzar Ahora →</a>\n        </div>\n    </section>\n</body>\n</html>\n\`\`\`\n\n**¿Necesitas algo más específico? Dime exactamente qué funcionalidad necesitas.**`;
-    }
-    
-    if (lower.includes('plan de negocio') || lower.includes('startup') || lower.includes('emprendimiento')) {
-        return `📋 **PLAN DE NEGOCIO - ESTRUCTURA BÁSICA**\n\n**RESUMEN EJECUTIVO (1 párrafo):**\n- Problema que resuelves: ______\n- Solución que ofreces: ______\n- Mercado objetivo: ______\n- Ventaja competitiva: ______\n- Equipo clave: ______\n- Necesidad de financiación: ______\n\n**ANÁLISIS DE MERCADO (datos a buscar hoy):**\n1. **Tamaño de mercado:** Búsqueda en Google "mercado [tu sector] España 2024"\n2. **Competencia directe:** 3-5 nombres con sus precios\n3. **Tendencias:** Google Trends últimos 12 meses\n4. **Clientes potenciales:** Grupos de Facebook/foros específicos\n\n**PROYECCIONES FINANCIERAS (primer año):**\n- Mes 1-3: Desarrollo/Preparación → Inversión: ______\n- Mes 4-6: Lanzamiento → Ingresos estimados: ______\n- Mes 7-12: Crecimiento → Meta de ingresos: ______\n\n**¿Quieres que desarrolle alguna sección específica con más detalle?**`;
-    }
-    
-    // Respuesta por defecto mejorada
-    return `🎯 **¡Perfecto! Para darte la mejor ayuda, dime:**\n\n**SOBRE TU PROYECTO/NECESIDAD:**\n1. ¿Es para un negocio existente o nuevo proyecto?\n2. ¿Qué objetivo concreto quieres lograr?\n3. ¿Qué recursos tienes disponibles (tiempo, presupuesto, equipo)?\n\n**EJEMPLOS DE CONSULTAS ESPECÍFICAS QUE RESUELVO:**\n- "Necesito crear una landing page para vender un curso online de €197"\n- "Analiza el mercado de cafeterías en Barcelona centro para inversión de €50,000"\n- "Genera código para un e-commerce básico de productos artesanales"\n- "Plan de marketing digital para lanzar una app en 3 meses con €5,000"\n\n**¿Cuál es TU situación específica?**`;
-}
-
-// =============================================
-// FORMATEO DE RESPUESTAS
-// =============================================
-function formatAIResponse(text) {
-    let formatted = escapeHtml(text);
-    
-    // Mejora de títulos con emojis
-    formatted = formatted.replace(/##\s*(.+?)(\n|$)/g, '<h3 style="color: #a78bfa; margin: 20px 0 10px 0; font-size: 18px; font-weight: 700;">$1</h3>');
-    formatted = formatted.replace(/\*\*(.+?)\*\*/g, '<strong style="color: #c4b5fd;">$1</strong>');
-    
-    // Listas con viñetas
-    const lines = formatted.split('\n');
-    let result = [];
-    let inList = false;
-    
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        
-        if (line.startsWith('- ') || line.startsWith('• ') || line.startsWith('* ')) {
-            if (!inList) {
-                result.push('<ul style="margin: 12px 0 12px 20px; padding: 0;">');
-                inList = true;
-            }
-            const item = line.substring(2);
-            result.push(`<li style="margin-bottom: 8px; padding-left: 5px; color: #e5e7eb;">${item}</li>`);
-        } else if (line.match(/^\d+\.\s/)) {
-            if (!inList) {
-                result.push('<ol style="margin: 12px 0 12px 20px; padding: 0;">');
-                inList = true;
-            }
-            const item = line.replace(/^\d+\.\s/, '');
-            result.push(`<li style="margin-bottom: 8px; padding-left: 5px; color: #e5e7eb;">${item}</li>`);
-        } else {
-            if (inList) {
-                result.push('</ul>');
-                inList = false;
-            }
-            result.push(line);
-        }
-    }
-    
-    if (inList) result.push('</ul>');
-    
-    formatted = result.join('\n');
-    
-    // Bloques de código
-    formatted = formatted.replace(/```(\w+)?\n([\s\S]*?)\n```/g, 
-        '<div class="code-block" style="background: rgba(138, 43, 226, 0.1); padding: 16px; border-radius: 10px; border-left: 4px solid #8b5cf6; margin: 15px 0; position: relative; overflow-x: auto;"><button onclick="copyCode(this)" style="position: absolute; top: 12px; right: 12px; background: rgba(138, 43, 226, 0.3); border: none; border-radius: 6px; color: white; padding: 8px 14px; cursor: pointer; font-size: 13px; z-index: 2;">Copiar código</button><pre style="margin: 0; overflow-x: auto; padding-right: 100px; padding-top: 10px;"><code style="font-family: \'Courier New\', monospace; font-size: 14px; line-height: 1.5; white-space: pre-wrap; color: #e5e7eb;">$2</code></pre></div>');
-    
-    // Código inline
-    formatted = formatted.replace(/`([^`]+)`/g, '<code style="background: rgba(138, 43, 226, 0.15); padding: 3px 8px; border-radius: 4px; font-family: monospace; font-size: 14px; color: #c4b5fd;">$1</code>');
-    
-    // Saltos de línea
-    formatted = formatted.replace(/\n/g, '<br>');
-    
-    return formatted;
-}
-
-// =============================================
-// FUNCIONES DE CONTROL DE ESCRITURA
-// =============================================
-function togglePauseWriting() {
-    if (isAIPaused) {
-        // Reanudar
-        isAIPaused = false;
-        if (pauseResumeCallback) {
-            pauseResumeCallback();
-            pauseResumeCallback = null;
-        }
-    } else {
-        // Pausar
-        isAIPaused = true;
-    }
-}
-
-function stopAIWriting() {
-    stopTyping = true;
-    isAIPaused = false;
-    if (currentTypingAnimation) {
-        clearTimeout(currentTypingAnimation);
-        currentTypingAnimation = null;
-    }
-}
-
-// =============================================
-// ENVIAR MENSAJE (VERSIÓN MEJORADA)
-// =============================================
-async function sendUserMessage() {
-    if (isAIResponding && !isAIPaused) {
-        alert('La IA está respondiendo. Usa el botón ⏸️ para pausar.');
-        return;
-    }
-    
-    const input = document.getElementById('messageInput');
-    const sendBtn = document.getElementById('sendBtn');
-    const container = document.getElementById('messagesContainer');
-    
-    if (!input || !sendBtn || !container) return;
-    
-    const message = input.value.trim();
-    
-    if (!message && attachedFiles.length === 0) {
-        return;
-    }
-    
-    // Deshabilitar input temporalmente
-    input.disabled = true;
-    sendBtn.disabled = true;
-    sendBtn.innerHTML = '...';
-    
-    try {
-        // Crear chat si no existe
-        if (!currentChatId) {
-            createNewChat();
-        }
-        
-        // Guardar mensaje del usuario
-        const fileInfo = attachedFiles.map(f => ({
-            name: f.name,
-            type: f.type,
-            size: f.size
-        }));
-        
-        saveMessageToChat('user', message || '[Archivos adjuntos]', fileInfo);
-        
-        // Mostrar mensaje del usuario
-        const userData = JSON.parse(localStorage.getItem('dominius_session') || '{}');
-        const initials = (userData.username || 'US').substring(0, 2).toUpperCase();
-        const color = userData.avatarColor || '#8B5CF6';
-        
-        const userMessageDiv = document.createElement('div');
-        userMessageDiv.className = 'message user message-pop';
-        userMessageDiv.innerHTML = `
-            <div class="message-avatar" style="background: ${color}">${initials}</div>
-            <div class="message-content-wrapper">
-                <div class="message-content">${escapeHtml(message || '[Archivos adjuntos]')}</div>
-                <div class="message-time">${new Date().toLocaleTimeString('es-ES', {hour: '2-digit', minute: '2-digit'})}</div>
-            </div>
-        `;
-        container.appendChild(userMessageDiv);
-        
-        // Limpiar input
-        input.value = '';
-        attachedFiles = [];
-        updateAttachedFiles();
-        updateCharCount();
-        autoResizeTextarea();
-        
-        // Scroll al nuevo mensaje
-        container.scrollTop = container.scrollHeight;
-        
-        // Crear placeholder para respuesta AI
-        const aiMessageDiv = document.createElement('div');
-        aiMessageDiv.className = 'message ai';
-        aiMessageDiv.innerHTML = `
-            <div class="message-avatar">🤖</div>
-            <div class="message-content-wrapper">
-                <div class="message-content" id="typingAI"></div>
-                <div class="message-time">${new Date().toLocaleTimeString('es-ES', {hour: '2-digit', minute: '2-digit'})}</div>
-                <div class="ai-controls">
-                    <button class="control-btn pause" title="Pausar escritura">⏸️</button>
-                    <button class="control-btn stop" title="Detener escritura">⏹️</button>
-                </div>
-            </div>
-        `;
-        container.appendChild(aiMessageDiv);
-        
-        const typingElement = aiMessageDiv.querySelector('#typingAI');
-        const controlsDiv = aiMessageDiv.querySelector('.ai-controls');
-        const pauseBtn = controlsDiv.querySelector('.control-btn.pause');
-        const stopBtn = controlsDiv.querySelector('.control-btn.stop');
-        
-        // Configurar controles
-        pauseBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            togglePauseWriting();
-        });
-        
-        stopBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            stopAIWriting();
-        });
-        
-        // Marcar que la IA está respondiendo
-        isAIResponding = true;
-        isAIPaused = false;
-        stopTyping = false;
-        
-        // Obtener respuesta de Groq (IA real)
-        const aiResponse = await getAIResponse(message);
-        
-        // Mostrar respuesta con efecto de escritura lento
-        await typeAIResponseWithControls(typingElement, aiResponse, pauseBtn, stopBtn);
-        
-        // Añadir botón de copiar (reemplazar controles)
-        controlsDiv.remove();
-        addCopyButton(typingElement);
-        
-        // Guardar respuesta AI
-        saveMessageToChat('ai', aiResponse);
-        
-    } catch (error) {
-        console.error('Error:', error);
-        
-        // Mostrar mensaje de error
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'message ai';
-        errorDiv.innerHTML = `
-            <div class="message-avatar">🤖</div>
-            <div class="message-content-wrapper">
-                <div class="message-content">⚠️ Error temporal. Por favor, intenta de nuevo.</div>
-                <div class="message-time">${new Date().toLocaleTimeString('es-ES', {hour: '2-digit', minute: '2-digit'})}</div>
-            </div>
-        `;
-        container.appendChild(errorDiv);
-        
-        saveMessageToChat('ai', '⚠️ Error temporal al procesar.');
-        
-    } finally {
-        // Restaurar input
-        input.disabled = false;
-        sendBtn.disabled = false;
-        sendBtn.innerHTML = `
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="22" y1="2" x2="11" y2="13"></line>
-                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-            </svg>
-        `;
-        
-        // Resetear estado
-        isAIResponding = false;
-        isAIPaused = false;
-        stopTyping = false;
-        pauseResumeCallback = null;
-        
-        // Scroll al final
-        container.scrollTop = container.scrollHeight;
-        
-        // Volver a enfocar el input
-        input.focus();
-    }
-}
-
-async function typeAIResponseWithControls(element, text, pauseBtn, stopBtn) {
-    return new Promise(resolve => {
-        if (!element || !text) {
-            resolve();
-            return;
-        }
-        
-        let i = 0;
-        element.innerHTML = '';
-        
-        function type() {
-            if (stopTyping) {
-                resolve();
-                return;
-            }
-            
-            if (isAIPaused) {
-                // Cambiar botón a reanudar
-                pauseBtn.innerHTML = '▶️';
-                pauseBtn.className = 'control-btn resume';
-                pauseBtn.title = 'Reanudar escritura';
-                
-                // Esperar a que se reanude
-                pauseResumeCallback = () => {
-                    pauseBtn.innerHTML = '⏸️';
-                    pauseBtn.className = 'control-btn pause';
-                    pauseBtn.title = 'Pausar escritura';
-                    setTimeout(type, 100);
-                };
-                return;
-            }
-            
-            if (i < text.length) {
-                const partialText = text.substring(0, i + 1);
-                element.innerHTML = formatAIResponse(partialText);
-                i++;
-                
-                // Scroll suave pero permitiendo al usuario moverse
-                const container = document.getElementById('messagesContainer');
-                if (container) {
-                    // Solo hacer scroll automático si el usuario está cerca del final
-                    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
-                    if (isNearBottom) {
-                        container.scrollTop = container.scrollHeight;
-                    }
-                }
-                
-                // Velocidad variable para parecer más natural
-                let speed = 20; // ms por caracter base
-                
-                // Más lento para puntos y comas
-                if (text.charAt(i) === '.' || text.charAt(i) === '!' || text.charAt(i) === '?') {
-                    speed = 100;
-                } else if (text.charAt(i) === ',' || text.charAt(i) === ';') {
-                    speed = 50;
-                } else if (text.charAt(i) === ' ') {
-                    speed = 10;
-                }
-                
-                // Pausas aleatorias para parecer más humano
-                if (i % 50 === 0) {
-                    speed = 100 + Math.random() * 200;
-                }
-                
-                currentTypingAnimation = setTimeout(type, speed);
-            } else {
-                currentTypingAnimation = null;
-                resolve();
-            }
-        }
-        
-        type();
-    });
-}
-
-async function typeAIResponseSlowly(element, text) {
-    return typeAIResponseWithControls(element, text, null, null);
+    setTimeout(() => notification.classList.add('show'), 100);
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 500);
+    }, 3000);
 }
 
 // =============================================
@@ -993,7 +937,8 @@ window.quickAction = function(text) {
         messageInput.value = text;
         autoResizeTextarea();
         updateCharCount();
-        sendUserMessage();
+        messageInput.focus();
+        setTimeout(() => sendUserMessage(), 100);
     }
 };
 
@@ -1003,21 +948,22 @@ window.quickAction = function(text) {
 function initParticles() {
     const particlesContainer = document.createElement('div');
     particlesContainer.id = 'particles';
-    particlesContainer.style.position = 'absolute';
-    particlesContainer.style.top = '0';
-    particlesContainer.style.left = '0';
-    particlesContainer.style.width = '100%';
-    particlesContainer.style.height = '100%';
-    particlesContainer.style.pointerEvents = 'none';
-    particlesContainer.style.zIndex = '0';
-    particlesContainer.style.overflow = 'hidden';
+    particlesContainer.style.cssText = `
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 0;
+        overflow: hidden;
+    `;
     
     const chatArea = document.querySelector('.chat-area');
     if (chatArea) {
         chatArea.appendChild(particlesContainer);
         
-        // Crear partículas
-        for (let i = 0; i < 25; i++) {
+        for (let i = 0; i < 30; i++) {
             createParticle(particlesContainer, i);
         }
     }
@@ -1025,80 +971,36 @@ function initParticles() {
 
 function createParticle(container, index) {
     const particle = document.createElement('div');
-    particle.className = 'particle';
+    particle.style.cssText = `
+        position: absolute;
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 0;
+    `;
     
-    // Posición aleatoria
     particle.style.left = Math.random() * 100 + '%';
     particle.style.top = Math.random() * 100 + '%';
     
-    // Tamaño aleatorio pequeño
-    const size = 1 + Math.random() * 1.5;
+    const size = 1 + Math.random() * 2;
     particle.style.width = size + 'px';
     particle.style.height = size + 'px';
     
-    // Opacidad aleatoria
     const opacity = 0.2 + Math.random() * 0.4;
     particle.style.opacity = opacity;
     
-    // Color morado tenue
     const colors = [
-        'rgba(138, 92, 246, 0.6)',
+        'rgba(139, 92, 246, 0.6)',
         'rgba(167, 139, 250, 0.5)',
-        'rgba(196, 181, 253, 0.4)'
+        'rgba(196, 181, 253, 0.4)',
+        'rgba(124, 58, 237, 0.5)'
     ];
     particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
     
-    // Animación con delay aleatorio
     const duration = 15 + Math.random() * 15;
     const delay = Math.random() * 20;
     
     particle.style.animation = `floatParticle ${duration}s linear ${delay}s infinite`;
-    
     container.appendChild(particle);
-    
-    // Recrear partícula cuando termine la animación
-    setTimeout(() => {
-        if (particle.parentNode === container) {
-            particle.remove();
-            createParticle(container, index);
-        }
-    }, (duration + delay) * 1000);
 }
 
-// =============================================
-// FIX PARA MÓVIL
-// =============================================
-function fixMobileIssues() {
-    // Prevenir zoom en inputs en iOS
-    document.addEventListener('touchstart', function(e) {
-        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-            // Permitir zoom solo en inputs
-        }
-    }, { passive: true });
-    
-    // Mejorar táctil en botones
-    document.querySelectorAll('button').forEach(btn => {
-        btn.style.webkitTapHighlightColor = 'transparent';
-        btn.style.touchAction = 'manipulation';
-    });
-    
-    // Asegurar que el input funcione en móvil
-    const messageInput = document.getElementById('messageInput');
-    if (messageInput) {
-        messageInput.addEventListener('touchstart', function(e) {
-            this.focus();
-        }, { passive: true });
-        
-        // Forzar repaint en iOS
-        messageInput.addEventListener('focus', function() {
-            setTimeout(() => {
-                this.style.transform = 'translateZ(0)';
-            }, 10);
-        });
-    }
-}
-
-// Inicializar fixes para móvil
-if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-    document.addEventListener('DOMContentLoaded', fixMobileIssues);
-}
+console.log('✅ chat.js cargado - Sistema mejorado activo');
