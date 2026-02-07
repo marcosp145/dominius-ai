@@ -4,38 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Dominius AI</title>
-    <!-- CORREGIDO: Sin ./ -->
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="mobile.css">
-    <!-- EmailJS SDK -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-</head><!-- Agregar esto antes del </body> -->
-<div class="particles" id="particles"></div>
-
-<script>
-// Generar partículas flotantes
-document.addEventListener('DOMContentLoaded', function() {
-    const particlesContainer = document.getElementById('particles');
-    if (particlesContainer) {
-        for (let i = 0; i < 50; i++) {
-            const particle = document.createElement('div');
-            particle.className = 'particle';
-            particle.style.left = Math.random() * 100 + '%';
-            particle.style.animationDelay = Math.random() * 15 + 's';
-            particle.style.animationDuration = (10 + Math.random() * 10) + 's';
-            particlesContainer.appendChild(particle);
-        }
-    }
-});
-</script>
+</head>
 <body>
-    <div class="background"></div>
+    <div class="background">
+        <div class="particle-field"></div>
+    </div>
 
-    <!-- Pantalla de bienvenida -->
+    <!-- Pantalla de bienvenida con animaciones épicas -->
     <div class="welcome-screen" id="welcomeScreen">
+        <div class="glow-orb"></div>
         <div class="text-line line1">DOMINIUS AI</div>
         <div class="text-line line2">Tu IA de Confianza</div>
-        <div class="text-line line3">Creada y diseñada por <span>Marcos Santos</span></div>
+        <div class="pulse-ring"></div>
     </div>
 
     <!-- Pantalla de Login -->
@@ -122,7 +105,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <!-- Loading overlay -->
     <div class="loading-overlay" id="loadingOverlay">
         <div class="spinner"></div>
-        <p>Enviando email...</p>
+        <p>Procesando...</p>
     </div>
 
     <script src="app.js"></script>
