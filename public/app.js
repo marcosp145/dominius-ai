@@ -6,7 +6,7 @@ const EMAIL_CONFIG = {
     templateWelcome: 'template_spfox4j',
     templateRecovery: 'template_t60zh5m',
     publicKey: 'zI6wDcEbWx6vmkK5G',
-    developerEmail: 'marcossantoslorenzo51@gmail.com' // TU EMAIL
+    developerEmail: 'marcossantoslorenzo51@gmail.com'
 };
 
 // =============================================
@@ -191,16 +191,14 @@ const UserSystem = {
 };
 
 // =============================================
-// FUNCIONES DE EMAIL - ENVIADOS AL DESARROLLADOR
+// FUNCIONES DE EMAIL
 // =============================================
-
 async function sendWelcomeEmail(user) {
     console.log('📧 Preparando notificación de registro para el desarrollador');
     
-    // Parámetros para enviar AL DESARROLLADOR
     const templateParams = {
         to_name: 'Marcos',
-        to_email: EMAIL_CONFIG.developerEmail, // TU EMAIL
+        to_email: EMAIL_CONFIG.developerEmail,
         user_name: user.name,
         user_username: user.username,
         user_email: user.email,
@@ -236,10 +234,9 @@ async function sendWelcomeEmail(user) {
 async function sendRecoveryEmail(user, code) {
     console.log('📧 Preparando notificación de recuperación para el desarrollador');
     
-    // Parámetros para enviar AL DESARROLLADOR
     const templateParams = {
         to_name: 'Marcos',
-        to_email: EMAIL_CONFIG.developerEmail, // TU EMAIL
+        to_email: EMAIL_CONFIG.developerEmail,
         user_name: user.name,
         user_email: user.email,
         recovery_code: code,
@@ -317,7 +314,7 @@ function showScreen(screenId) {
 }
 
 // =============================================
-// INICIALIZACIÓN DE LA APLICACIÓN
+// INICIALIZACIÓN DE LA APLICACIÓN (INTRO BREVE)
 // =============================================
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Iniciando Dominius AI...');
@@ -330,7 +327,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
     
-    // Animación de bienvenida
+    // INTRO ÉPICA BREVE: 2 segundos mostrando + 1 segundo transición
     setTimeout(() => {
         const welcomeScreen = document.getElementById('welcomeScreen');
         if (welcomeScreen) {
@@ -339,8 +336,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         setTimeout(() => {
             showScreen('loginScreen');
-        }, 1500);
-    }, 4000);
+        }, 1000); // 1 segundo de transición
+    }, 2000); // 2 segundos de animación
     
     // FORMULARIO DE LOGIN
     const loginForm = document.getElementById('loginForm');
