@@ -24,7 +24,7 @@ body {
     height: 100%;
     background: linear-gradient(135deg, #0a0a0a 0%, #1a0633 25%, #2d0a5a 50%, #1a0633 75%, #0a0a0a 100%);
     background-size: 400% 400%;
-    animation: gradientMove 20s ease infinite;
+    animation: gradientMove 25s ease infinite;
     z-index: 1;
 }
 
@@ -35,7 +35,6 @@ body {
     75% { background-position: 50% 100%; }
 }
 
-/* Campo de partículas */
 .particle-field {
     position: absolute;
     width: 100%;
@@ -52,7 +51,7 @@ body {
     border-radius: 50%;
     filter: blur(80px);
     opacity: 0.3;
-    animation: float 15s ease-in-out infinite;
+    animation: float 20s ease-in-out infinite;
 }
 
 .particle-field::before {
@@ -66,7 +65,7 @@ body {
     background: radial-gradient(circle, #a78bfa 0%, transparent 70%);
     bottom: -100px;
     right: -100px;
-    animation-delay: 7s;
+    animation-delay: 10s;
 }
 
 @keyframes float {
@@ -75,17 +74,20 @@ body {
     66% { transform: translate(-100px, 100px) scale(0.9); }
 }
 
-/* ========== PANTALLA DE BIENVENIDA ÉPICA ========== */
+/* ========== PANTALLA DE BIENVENIDA ÉPICA – 100% VISIBLE ========== */
 .welcome-screen {
     position: fixed;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    z-index: 10;
-    transition: opacity 1.5s ease-out, transform 1.5s ease-out;
+    z-index: 999999 !important; /* FORZADO */
+    background: radial-gradient(circle at center, #0a0a0a 0%, #000000 100%);
+    transition: opacity 1s ease-out, transform 1s ease-out;
 }
 
 .welcome-screen.hidden {
@@ -94,64 +96,51 @@ body {
     pointer-events: none;
 }
 
-/* Orbe brillante de fondo */
 .glow-orb {
     position: absolute;
-    width: 600px;
-    height: 600px;
+    width: 500px;
+    height: 500px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(139, 92, 246, 0.3) 0%, transparent 70%);
-    filter: blur(60px);
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.4) 0%, transparent 70%);
+    filter: blur(80px);
     animation: pulse 4s ease-in-out infinite;
     z-index: -1;
 }
 
 @keyframes pulse {
-    0%, 100% { 
-        transform: scale(1);
-        opacity: 0.3;
-    }
-    50% { 
-        transform: scale(1.2);
-        opacity: 0.6;
-    }
+    0%, 100% { transform: scale(1); opacity: 0.4; }
+    50% { transform: scale(1.3); opacity: 0.8; }
 }
 
-/* Anillo de pulso */
 .pulse-ring {
     position: absolute;
-    width: 300px;
-    height: 300px;
-    border: 3px solid rgba(139, 92, 246, 0.5);
+    width: 250px;
+    height: 250px;
+    border: 3px solid rgba(139, 92, 246, 0.6);
     border-radius: 50%;
-    animation: ringPulse 3s ease-out infinite;
+    animation: ringPulse 4s ease-out infinite;
     z-index: -1;
 }
 
 @keyframes ringPulse {
-    0% {
-        transform: scale(0.5);
-        opacity: 1;
-    }
-    100% {
-        transform: scale(2);
-        opacity: 0;
-    }
+    0% { transform: scale(0.5); opacity: 1; }
+    100% { transform: scale(1.8); opacity: 0; }
 }
 
-/* Texto con animación épica */
 .text-line {
     font-size: 60px;
     font-weight: 700;
-    color: transparent;
-    background: linear-gradient(135deg, #fff 0%, #b794f6 50%, #7c3aed 100%);
+    color: white; /* FALLBACK SEGURO */
+    background: linear-gradient(135deg, #ffffff 0%, #c4b5fd 50%, #8b5cf6 100%);
     -webkit-background-clip: text;
     background-clip: text;
+    color: transparent; /* Si falla, se ve blanco */
     opacity: 0;
     transform: translateY(50px) scale(0.8);
-    margin: 15px 0;
+    margin: 10px 0;
     text-align: center;
     position: relative;
+    text-shadow: 0 0 30px rgba(139, 92, 246, 0.7);
 }
 
 .text-line::after {
@@ -165,37 +154,33 @@ body {
     -webkit-background-clip: text;
     background-clip: text;
     filter: blur(20px);
-    opacity: 0.5;
+    opacity: 0.6;
     z-index: -1;
 }
 
 .text-line.line1 {
-    font-size: 90px;
+    font-size: 80px;
     font-weight: 900;
-    letter-spacing: 12px;
+    letter-spacing: 10px;
     text-transform: uppercase;
-    animation: epicSlideIn 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.5s forwards;
+    animation: epicSlideIn 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.2s forwards;
     text-shadow: 
-        0 0 40px rgba(139, 92, 246, 0.8),
-        0 0 80px rgba(139, 92, 246, 0.5),
-        0 0 120px rgba(139, 92, 246, 0.3);
+        0 0 40px rgba(139, 92, 246, 0.9),
+        0 0 80px rgba(139, 92, 246, 0.6);
 }
 
 .text-line.line2 {
-    font-size: 32px;
-    font-weight: 300;
-    letter-spacing: 5px;
-    animation: epicSlideIn 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) 1.5s forwards;
-    text-shadow: 0 0 30px rgba(167, 139, 250, 0.6);
+    font-size: 28px;
+    font-weight: 400;
+    letter-spacing: 4px;
+    animation: epicSlideIn 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) 1s forwards;
+    text-shadow: 0 0 30px rgba(167, 139, 250, 0.8);
 }
 
 @keyframes epicSlideIn {
     0% {
         opacity: 0;
-        transform: translateY(50px) scale(0.8);
-    }
-    60% {
-        transform: translateY(-10px) scale(1.05);
+        transform: translateY(40px) scale(0.8);
     }
     100% {
         opacity: 1;
@@ -203,15 +188,17 @@ body {
     }
 }
 
-/* ========== LOGIN SCREEN CON TRANSICIONES ========== */
+/* ========== LOGIN SCREEN ========== */
 .login-screen {
     position: fixed;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 10;
+    z-index: 100;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.8s ease-in;
@@ -223,10 +210,10 @@ body {
 }
 
 .login-box {
-    background: rgba(10, 10, 10, 0.9);
-    padding: 50px 60px;
+    background: rgba(10, 10, 10, 0.95);
+    padding: 45px 55px;
     border-radius: 30px;
-    border: 2px solid rgba(139, 92, 246, 0.5);
+    border: 2px solid rgba(139, 92, 246, 0.6);
     box-shadow: 
         0 0 80px rgba(139, 92, 246, 0.5),
         inset 0 0 80px rgba(139, 92, 246, 0.1),
@@ -235,7 +222,7 @@ body {
     width: 450px;
     max-height: 90vh;
     overflow-y: auto;
-    animation: boxAppear 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    animation: boxAppear 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     position: relative;
 }
 
@@ -263,9 +250,6 @@ body {
         opacity: 0;
         transform: scale(0.7) translateY(50px);
     }
-    60% {
-        transform: scale(1.03) translateY(-5px);
-    }
     100% {
         opacity: 1;
         transform: scale(1) translateY(0);
@@ -274,7 +258,7 @@ body {
 
 .login-title {
     text-align: center;
-    font-size: 38px;
+    font-size: 36px;
     font-weight: 800;
     background: linear-gradient(135deg, #fff 0%, #a78bfa 50%, #8b5cf6 100%);
     -webkit-background-clip: text;
@@ -283,7 +267,7 @@ body {
     margin-bottom: 30px;
     letter-spacing: 3px;
     text-shadow: 0 0 40px rgba(139, 92, 246, 0.5);
-    animation: titleGlow 2s ease-in-out infinite;
+    animation: titleGlow 3s ease-in-out infinite;
 }
 
 @keyframes titleGlow {
@@ -299,7 +283,6 @@ body {
     line-height: 1.6;
 }
 
-/* ========== INPUTS CON EFECTOS ========== */
 .input-group {
     margin-bottom: 22px;
     position: relative;
@@ -362,7 +345,6 @@ body {
     user-select: none;
 }
 
-/* ========== BOTÓN ÉPICO ========== */
 .login-button {
     width: 100%;
     padding: 18px;
@@ -417,7 +399,6 @@ body {
     transform: none;
 }
 
-/* ========== FOOTER LINKS ========== */
 .form-footer {
     text-align: center;
     margin-top: 25px;
@@ -457,7 +438,6 @@ body {
     color: #4b5563;
 }
 
-/* ========== NOTIFICACIONES ÉPICAS ========== */
 .notification {
     position: fixed;
     top: 30px;
@@ -499,7 +479,6 @@ body {
     box-shadow: 0 10px 40px rgba(139, 92, 246, 0.4);
 }
 
-/* ========== LOADING OVERLAY ========== */
 .loading-overlay {
     position: fixed;
     top: 0;
@@ -551,7 +530,6 @@ body {
     50% { opacity: 1; }
 }
 
-/* ========== SCROLLBAR PERSONALIZADO ========== */
 ::-webkit-scrollbar {
     width: 10px;
 }
@@ -570,38 +548,30 @@ body {
     background: linear-gradient(180deg, #a78bfa, #c4b5fd);
 }
 
-/* ========== RESPONSIVE MÓVIL ========== */
 @media (max-width: 768px) {
     .glow-orb {
         width: 300px;
         height: 300px;
     }
-    
     .pulse-ring {
         width: 150px;
         height: 150px;
     }
-    
     .text-line.line1 { 
         font-size: 48px;
         letter-spacing: 6px;
     }
-    
     .text-line.line2 { 
         font-size: 20px;
         letter-spacing: 3px;
     }
-    
     .login-box {
         width: 90%;
         padding: 35px 25px;
-        border-radius: 25px;
     }
-    
     .login-title {
         font-size: 30px;
     }
-    
     .notification {
         top: 15px;
         left: 15px;
@@ -616,7 +586,6 @@ body {
         font-size: 36px;
         letter-spacing: 4px;
     }
-    
     .text-line.line2 { 
         font-size: 16px;
         letter-spacing: 2px;
