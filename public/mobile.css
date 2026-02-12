@@ -3,12 +3,10 @@
 /* ============================================= */
 
 @media (max-width: 768px) {
-    /* ========== RESET COMPLETO ========== */
     * {
         -webkit-tap-highlight-color: transparent;
         -webkit-touch-callout: none;
     }
-    
     html, body {
         width: 100%;
         height: 100%;
@@ -19,18 +17,13 @@
         margin: 0;
         padding: 0;
     }
-    
     body {
         display: flex;
         flex-direction: column;
     }
-    
-    /* ========== OCULTAR SIDEBAR COMPLETAMENTE ========== */
     .sidebar {
         display: none !important;
     }
-    
-    /* ========== CHAT AREA = 100% ========== */
     .chat-area {
         width: 100% !important;
         height: 100% !important;
@@ -40,8 +33,6 @@
         flex-direction: column !important;
         background: linear-gradient(135deg, rgba(10, 10, 10, 0.98) 0%, rgba(26, 6, 51, 0.98) 100%) !important;
     }
-    
-    /* ========== HEADER FIJO Y COMPACTO ========== */
     .chat-header {
         flex-shrink: 0 !important;
         display: flex !important;
@@ -55,12 +46,10 @@
         box-shadow: 0 1px 10px rgba(139, 92, 246, 0.15) !important;
         z-index: 100 !important;
     }
-    
     .chat-title {
         flex: 1 !important;
         min-width: 0 !important;
     }
-    
     .chat-title h2 {
         font-size: 16px !important;
         font-weight: 700 !important;
@@ -74,7 +63,6 @@
         color: transparent !important;
         animation: none !important;
     }
-    
     .current-mode {
         font-size: 11px !important;
         color: #a78bfa !important;
@@ -83,13 +71,11 @@
         overflow: hidden !important;
         text-overflow: ellipsis !important;
     }
-    
     .chat-actions {
         display: flex !important;
         gap: 8px !important;
         flex-shrink: 0 !important;
     }
-    
     .action-btn {
         width: 36px !important;
         height: 36px !important;
@@ -102,18 +88,14 @@
         justify-content: center !important;
         transition: all 0.2s ease !important;
     }
-    
     .action-btn:active {
         background: rgba(139, 92, 246, 0.3) !important;
         transform: scale(0.95) !important;
     }
-    
     .action-btn svg {
         width: 18px !important;
         height: 18px !important;
     }
-    
-    /* ========== CONTENEDOR DE MENSAJES ========== */
     .messages-container {
         flex: 1 !important;
         overflow-y: auto !important;
@@ -125,35 +107,22 @@
         gap: 16px !important;
         scroll-behavior: smooth !important;
     }
-    
-    /* ========== BURBUJAS DE MENSAJES ========== */
     .message {
         display: flex !important;
         gap: 10px !important;
         max-width: 100% !important;
         animation: fadeInUp 0.3s ease !important;
     }
-    
     @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(10px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
     }
-    
-    /* Mensaje del usuario (derecha) */
     .user-message {
         flex-direction: row-reverse !important;
     }
-    
     .user-message .message-content-wrapper {
         align-items: flex-end !important;
     }
-    
     .user-message .message-content {
         background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%) !important;
         color: #fff !important;
@@ -165,16 +134,12 @@
         word-wrap: break-word !important;
         box-shadow: 0 2px 10px rgba(139, 92, 246, 0.3) !important;
     }
-    
-    /* Mensaje de la IA (izquierda) */
     .ai-message {
         flex-direction: row !important;
     }
-    
     .ai-message .message-content-wrapper {
         align-items: flex-start !important;
     }
-    
     .ai-message .message-content {
         background: rgba(30, 30, 40, 0.9) !important;
         border: 1px solid rgba(139, 92, 246, 0.3) !important;
@@ -187,8 +152,6 @@
         word-wrap: break-word !important;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2) !important;
     }
-    
-    /* Avatar */
     .message-avatar {
         width: 34px !important;
         height: 34px !important;
@@ -201,31 +164,24 @@
         font-size: 13px !important;
         flex-shrink: 0 !important;
     }
-    
     .user-avatar {
         background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%) !important;
         box-shadow: 0 2px 8px rgba(139, 92, 246, 0.4) !important;
     }
-    
     .ai-avatar {
         background: rgba(139, 92, 246, 0.25) !important;
         border: 2px solid rgba(139, 92, 246, 0.5) !important;
         box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3) !important;
     }
-    
-    /* Tiempo del mensaje */
     .message-time {
         font-size: 10px !important;
         color: #9ca3af !important;
         margin-top: 4px !important;
         padding: 0 4px !important;
     }
-    
     .user-message .message-time {
         text-align: right !important;
     }
-    
-    /* Botón de copiar */
     .copy-btn {
         position: absolute !important;
         top: 6px !important;
@@ -242,30 +198,28 @@
         opacity: 0.7 !important;
         transition: all 0.2s ease !important;
     }
-    
     .copy-btn:active {
         opacity: 1 !important;
         transform: scale(0.9) !important;
     }
-    
     .copy-btn svg {
         width: 14px !important;
         height: 14px !important;
     }
-    
-    /* ========== MENSAJE DE BIENVENIDA ========== */
     .welcome-message {
         text-align: center !important;
         padding: 30px 16px !important;
         margin: auto !important;
         max-width: 100% !important;
     }
-    
-    .welcome-icon {
+    .welcome-logo {
+        display: flex !important;
+        justify-content: center !important;
+        margin-bottom: 16px !important;
+    }
+    .da-logo {
         width: 70px !important;
         height: 70px !important;
-        font-size: 36px !important;
-        margin: 0 auto 16px !important;
         background: rgba(139, 92, 246, 0.2) !important;
         border: 2px solid rgba(139, 92, 246, 0.5) !important;
         border-radius: 50% !important;
@@ -273,8 +227,23 @@
         align-items: center !important;
         justify-content: center !important;
         box-shadow: 0 0 30px rgba(139, 92, 246, 0.3) !important;
+        animation: logoFloat 3s ease-in-out infinite !important;
     }
-    
+    .d-letter, .a-letter {
+        font-size: 36px !important;
+        font-weight: 900 !important;
+        background: linear-gradient(135deg, #fff, #a78bfa) !important;
+        -webkit-background-clip: text !important;
+        background-clip: text !important;
+        color: transparent !important;
+        text-shadow: 0 0 20px rgba(139, 92, 246, 0.8) !important;
+    }
+    .d-letter { margin-right: -8px; transform: scale(1.1); }
+    .a-letter { margin-left: -8px; transform: scale(1.1); }
+    @keyframes logoFloat {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+    }
     .welcome-message h2 {
         font-size: 24px !important;
         font-weight: 700 !important;
@@ -284,22 +253,18 @@
         background-clip: text !important;
         color: transparent !important;
     }
-    
     .welcome-message p {
         font-size: 15px !important;
         color: #d1d5db !important;
         line-height: 1.5 !important;
         margin-bottom: 24px !important;
     }
-    
-    /* Sugerencias rápidas */
     .quick-suggestions {
         display: grid !important;
         grid-template-columns: 1fr !important;
         gap: 10px !important;
         max-width: 100% !important;
     }
-    
     .suggestion-btn {
         padding: 14px 16px !important;
         font-size: 14px !important;
@@ -315,14 +280,11 @@
         white-space: normal !important;
         word-break: break-word !important;
     }
-    
     .suggestion-btn:active {
         background: rgba(139, 92, 246, 0.25) !important;
         border-color: #8b5cf6 !important;
         transform: scale(0.98) !important;
     }
-    
-    /* ========== INPUT ÁREA FIJA EN LA PARTE INFERIOR ========== */
     .input-area {
         flex-shrink: 0 !important;
         padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px)) 12px !important;
@@ -332,8 +294,6 @@
         box-shadow: 0 -2px 15px rgba(139, 92, 246, 0.1) !important;
         z-index: 100 !important;
     }
-    
-    /* Archivos adjuntos */
     .attached-files-container {
         display: flex !important;
         flex-wrap: wrap !important;
@@ -347,7 +307,6 @@
         overflow-y: auto !important;
         -webkit-overflow-scrolling: touch !important;
     }
-    
     .attached-file-item {
         display: flex !important;
         align-items: center !important;
@@ -358,19 +317,16 @@
         border-radius: 8px !important;
         font-size: 12px !important;
     }
-    
     .file-name {
         max-width: 120px !important;
         white-space: nowrap !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
     }
-    
     .file-size {
         font-size: 10px !important;
         color: #9ca3af !important;
     }
-    
     .remove-file-btn {
         width: 20px !important;
         height: 20px !important;
@@ -384,8 +340,6 @@
         justify-content: center !important;
         font-weight: 700 !important;
     }
-    
-    /* Contenedor del input */
     .input-container {
         display: flex !important;
         align-items: flex-end !important;
@@ -396,13 +350,10 @@
         padding: 6px 8px !important;
         transition: border 0.2s ease !important;
     }
-    
     .input-container:focus-within {
         border-color: #8b5cf6 !important;
         box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2) !important;
     }
-    
-    /* Botón adjuntar */
     .attach-btn {
         width: 40px !important;
         height: 40px !important;
@@ -417,25 +368,21 @@
         flex-shrink: 0 !important;
         transition: all 0.2s ease !important;
     }
-    
     .attach-btn:active {
         background: rgba(139, 92, 246, 0.2) !important;
         transform: scale(0.9) !important;
     }
-    
     .attach-btn svg {
         width: 22px !important;
         height: 22px !important;
     }
-    
-    /* Textarea */
     #messageInput {
         flex: 1 !important;
         background: transparent !important;
         border: none !important;
         outline: none !important;
         color: #fff !important;
-        font-size: 16px !important; /* Evita zoom en iOS */
+        font-size: 16px !important;
         line-height: 1.5 !important;
         resize: none !important;
         min-height: 24px !important;
@@ -443,12 +390,9 @@
         padding: 8px 0 !important;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
     }
-    
     #messageInput::placeholder {
         color: rgba(255, 255, 255, 0.4) !important;
     }
-    
-    /* Botón enviar */
     .send-btn {
         width: 42px !important;
         height: 42px !important;
@@ -464,35 +408,29 @@
         box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4) !important;
         transition: all 0.2s ease !important;
     }
-    
     .send-btn:active {
         transform: scale(0.9) !important;
         box-shadow: 0 2px 8px rgba(139, 92, 246, 0.6) !important;
     }
-    
     .send-btn:disabled {
         opacity: 0.6 !important;
         transform: none !important;
+        background: rgba(139, 92, 246, 0.3) !important;
+        box-shadow: none !important;
     }
-    
     .send-btn svg {
         width: 20px !important;
         height: 20px !important;
     }
-    
-    /* Ocultar footer del input en móvil */
     .input-footer {
         display: none !important;
     }
-    
-    /* ========== TYPING INDICATOR ========== */
     .typing-indicator {
         display: flex !important;
         align-items: center !important;
         gap: 6px !important;
         padding: 10px 0 !important;
     }
-    
     .typing-dot {
         width: 8px !important;
         height: 8px !important;
@@ -500,16 +438,12 @@
         border-radius: 50% !important;
         animation: typingBounce 1.4s infinite !important;
     }
-    
     .typing-dot:nth-child(2) { animation-delay: 0.2s !important; }
     .typing-dot:nth-child(3) { animation-delay: 0.4s !important; }
-    
     @keyframes typingBounce {
         0%, 60%, 100% { transform: translateY(0); }
         30% { transform: translateY(-10px); }
     }
-    
-    /* ========== CÓDIGO EN MÓVIL ========== */
     pre {
         padding: 12px !important;
         font-size: 13px !important;
@@ -519,15 +453,12 @@
         margin: 12px 0 !important;
         background: rgba(0, 0, 0, 0.4) !important;
     }
-    
     code {
         font-size: 13px !important;
         padding: 2px 6px !important;
         border-radius: 6px !important;
         background: rgba(139, 92, 246, 0.2) !important;
     }
-    
-    /* ========== NOTIFICACIONES MÓVIL ========== */
     .notification {
         position: fixed !important;
         top: auto !important;
@@ -542,88 +473,72 @@
         text-align: center !important;
         box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5) !important;
     }
-    
-    /* ========== FIX PARA iOS SAFARI ========== */
     @supports (-webkit-touch-callout: none) {
         body, .chat-area {
             height: -webkit-fill-available !important;
         }
-        
         .input-area {
             padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)) !important;
         }
     }
-    
-    /* ========== SCROLLBAR PERSONALIZADO ========== */
     .messages-container::-webkit-scrollbar {
         width: 4px !important;
     }
-    
     .messages-container::-webkit-scrollbar-thumb {
         background: rgba(139, 92, 246, 0.4) !important;
         border-radius: 4px !important;
     }
 }
 
-/* ========== MÓVILES PEQUEÑOS (iPhone SE, etc) ========== */
 @media (max-width: 375px) {
     .chat-header {
         padding: 10px 12px !important;
         height: 56px !important;
     }
-    
     .chat-title h2 {
         font-size: 15px !important;
     }
-    
     .current-mode {
         font-size: 10px !important;
     }
-    
     .action-btn {
         width: 34px !important;
         height: 34px !important;
     }
-    
     .message-avatar {
         width: 30px !important;
         height: 30px !important;
         min-width: 30px !important;
         font-size: 12px !important;
     }
-    
     .user-message .message-content,
     .ai-message .message-content {
         font-size: 14px !important;
         padding: 10px 14px !important;
     }
-    
     .welcome-message h2 {
         font-size: 22px !important;
     }
-    
     .welcome-message p {
         font-size: 14px !important;
     }
-    
     .suggestion-btn {
         font-size: 13px !important;
         padding: 12px 14px !important;
     }
 }
 
-/* ========== LANDSCAPE EN MÓVIL ========== */
 @media (max-width: 768px) and (orientation: landscape) {
     .welcome-message {
         padding: 20px !important;
     }
-    
-    .welcome-icon {
+    .da-logo {
         width: 50px !important;
         height: 50px !important;
-        font-size: 26px !important;
     }
-    
+    .d-letter, .a-letter {
+        font-size: 28px !important;
+    }
     .quick-suggestions {
         grid-template-columns: 1fr 1fr !important;
     }
