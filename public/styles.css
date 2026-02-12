@@ -74,7 +74,7 @@ body {
     66% { transform: translate(-100px, 100px) scale(0.9); }
 }
 
-/* ========== PANTALLA DE BIENVENIDA ÉPICA – 100% VISIBLE ========== */
+/* ========== PANTALLA DE BIENVENIDA ÉPICA – SIEMPRE VISIBLE ========== */
 .welcome-screen {
     position: fixed;
     top: 0;
@@ -85,7 +85,7 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    z-index: 999999 !important; /* FORZADO */
+    z-index: 999999 !important;
     background: radial-gradient(circle at center, #0a0a0a 0%, #000000 100%);
     transition: opacity 1s ease-out, transform 1s ease-out;
 }
@@ -130,11 +130,11 @@ body {
 .text-line {
     font-size: 60px;
     font-weight: 700;
-    color: white; /* FALLBACK SEGURO */
+    color: white;
     background: linear-gradient(135deg, #ffffff 0%, #c4b5fd 50%, #8b5cf6 100%);
     -webkit-background-clip: text;
     background-clip: text;
-    color: transparent; /* Si falla, se ve blanco */
+    color: transparent;
     opacity: 0;
     transform: translateY(50px) scale(0.8);
     margin: 10px 0;
@@ -188,7 +188,7 @@ body {
     }
 }
 
-/* ========== LOGIN SCREEN ========== */
+/* ========== LOGIN ========== */
 .login-screen {
     position: fixed;
     top: 0;
@@ -308,7 +308,6 @@ body {
     font-size: 16px;
     outline: none;
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    position: relative;
 }
 
 .input-group input:focus {
