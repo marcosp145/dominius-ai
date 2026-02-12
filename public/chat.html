@@ -8,12 +8,11 @@
     <link rel="stylesheet" href="mobile.css">
 </head>
 <body>
-    <!-- Input invisible para archivos (SIN LÍMITES) -->
+    <!-- Input invisible para archivos -->
     <input type="file" id="fileInput" style="display: none;" multiple accept="*/*">
-    
-    <!-- Sidebar izquierdo -->
+
+    <!-- Sidebar izquierdo (solo escritorio) -->
     <div class="sidebar">
-        <!-- Header del sidebar -->
         <div class="sidebar-header">
             <h1 class="logo">DOMINIUS <span>AI</span></h1>
             <div class="user-info">
@@ -25,8 +24,6 @@
                     <span class="user-plan">Plan Empresarial</span>
                 </div>
             </div>
-            
-            <!-- Botón de cerrar sesión -->
             <button id="logoutBtn" class="logout-btn">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
@@ -36,8 +33,6 @@
                 Cerrar Sesión
             </button>
         </div>
-
-        <!-- Pestañas de navegación -->
         <div class="sidebar-tabs">
             <button class="tab-button active" data-tab="chats">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -53,10 +48,7 @@
                 Modos
             </button>
         </div>
-
-        <!-- Contenido de pestañas -->
         <div class="tab-content">
-            <!-- Pestaña de Chats -->
             <div class="tab-panel active" id="chatsPanel">
                 <button class="new-chat-btn" id="newChatBtn">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -65,13 +57,8 @@
                     </svg>
                     Nuevo Chat
                 </button>
-
-                <div class="chats-list" id="chatsList">
-                    <!-- Los chats se generan dinámicamente -->
-                </div>
+                <div class="chats-list" id="chatsList"></div>
             </div>
-
-            <!-- Pestaña de Modos -->
             <div class="tab-panel" id="modesPanel">
                 <div class="modes-list">
                     <div class="mode-card active" data-mode="general">
@@ -81,7 +68,6 @@
                             <p>Asistente para todo tipo de consultas</p>
                         </div>
                     </div>
-
                     <div class="mode-card" data-mode="creative">
                         <div class="mode-icon">🎨</div>
                         <div class="mode-info">
@@ -89,7 +75,6 @@
                             <p>Ideas innovadoras y contenido original</p>
                         </div>
                     </div>
-
                     <div class="mode-card" data-mode="business">
                         <div class="mode-icon">💼</div>
                         <div class="mode-info">
@@ -97,7 +82,6 @@
                             <p>Análisis y gestión empresarial</p>
                         </div>
                     </div>
-
                     <div class="mode-card" data-mode="strategy">
                         <div class="mode-icon">🎯</div>
                         <div class="mode-info">
@@ -105,7 +89,6 @@
                             <p>Planificación y crecimiento</p>
                         </div>
                     </div>
-
                     <div class="mode-card" data-mode="data">
                         <div class="mode-icon">📊</div>
                         <div class="mode-info">
@@ -113,7 +96,6 @@
                             <p>Insights y métricas clave</p>
                         </div>
                     </div>
-
                     <div class="mode-card" data-mode="code">
                         <div class="mode-icon">💻</div>
                         <div class="mode-info">
@@ -128,7 +110,6 @@
 
     <!-- Área principal del chat -->
     <div class="chat-area">
-        <!-- Header del chat -->
         <div class="chat-header">
             <div class="chat-title">
                 <h2 id="currentChatTitle">Nuevo Chat</h2>
@@ -155,7 +136,13 @@
         <!-- Mensajes del chat -->
         <div class="messages-container" id="messagesContainer">
             <div class="welcome-message">
-                <div class="welcome-icon">🤖</div>
+                <!-- LOGO ANIMADO D&A FUSIONADAS (sin emoji) -->
+                <div class="welcome-logo">
+                    <div class="da-logo">
+                        <span class="d-letter">D</span>
+                        <span class="a-letter">A</span>
+                    </div>
+                </div>
                 <h2>¡Hola! Soy Dominius AI</h2>
                 <p>Tu asistente empresarial de élite. Transformo ideas en resultados estratégicos. ¿En qué puedo potenciar tu negocio hoy?</p>
                 <div class="quick-suggestions">
@@ -177,20 +164,14 @@
 
         <!-- Input de escritura -->
         <div class="input-area">
-            <!-- Archivos adjuntos -->
             <div id="attachedFilesContainer" class="attached-files-container" style="display: none;"></div>
-            
             <div class="input-container">
                 <button class="attach-btn" id="attachBtn" title="Adjuntar archivos (sin límite)">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
                     </svg>
                 </button>
-                <textarea 
-                    id="messageInput" 
-                    placeholder="Escribe tu mensaje..." 
-                    rows="1"
-                ></textarea>
+                <textarea id="messageInput" placeholder="Escribe tu mensaje..." rows="1"></textarea>
                 <button class="send-btn" id="sendBtn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="22" y1="2" x2="11" y2="13"></line>
