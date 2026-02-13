@@ -1,12 +1,12 @@
 // =============================================
-// CONFIGURACIÓN EMAILJS
+// CONFIGURACIÓN EMAILJS – DEFINITIVA
 // =============================================
 const EMAIL_CONFIG = {
-    serviceID: 'service_w443o2q',
-    templateWelcome: 'template_spfox4j',
-    templateRecovery: 'template_t60zh5m',
-    publicKey: 'zI6wDcEbWx6vmkK5G',
-    developerEmail: 'marcossantoslorenzo51@gmail.com'
+    serviceID: 'service_d768gfo',                // Servicio Gmail
+    templateWelcome: 'template_5j920rq',         // Plantilla bienvenida
+    templateRecovery: 'template_mkoq89e',        // Plantilla recuperación
+    publicKey: 'ZnDRVMG-WjptFNglK',               // Tu Public Key real
+    developerEmail: 'dominius.ai@gmail.com'       // ← CORREO PARA COPIAS (el que envía)
 };
 
 // =============================================
@@ -27,7 +27,7 @@ const EMAIL_CONFIG = {
 })();
 
 // =============================================
-// SISTEMA DE USUARIOS
+// SISTEMA DE USUARIOS (sin cambios)
 // =============================================
 const UserSystem = {
     getUsers: function() {
@@ -140,52 +140,117 @@ const UserSystem = {
 };
 
 // =============================================
-// FUNCIONES DE EMAIL
+// FUNCIONES DE EMAIL – CORREGIDAS Y OPTIMIZADAS
 // =============================================
+
+/**
+ * Envía email de bienvenida al usuario y copia al desarrollador
+ */
 async function sendWelcomeEmail(user) {
-    console.log('📧 Preparando notificación de registro...');
-    const templateParams = {
-        to_name: 'Marcos',
+    console.log('📧 Enviando email de bienvenida...');
+
+    // Parámetros para el usuario
+    const userParams = {
+        to_name: user.name,
+        to_email: user.email,
+        user_name: user.name,
+        user_username: user.username,
+        user_email: user.email,
+        fecha_registro: new Date().toLocaleDateString('es-ES', {
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+        }),
+        hora_registro: new Date().toLocaleTimeString('es-ES', {
+            hour: '2-digit', minute: '2-digit'
+        }),
+        app_name: 'Dominius AI'
+    };
+
+    // Parámetros para la copia al desarrollador
+    const devParams = {
+        to_name: 'Admin',
         to_email: EMAIL_CONFIG.developerEmail,
         user_name: user.name,
         user_username: user.username,
         user_email: user.email,
-        fecha_registro: new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
-        hora_registro: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+        fecha_registro: userParams.fecha_registro,
+        hora_registro: userParams.hora_registro,
         app_name: 'Dominius AI'
     };
+
     try {
-        const response = await emailjs.send(EMAIL_CONFIG.serviceID, EMAIL_CONFIG.templateWelcome, templateParams);
-        console.log('✅ Email enviado correctamente:', response);
-        return { success: true, response };
+        // Enviar al usuario
+        const userRes = await emailjs.send(
+            EMAIL_CONFIG.serviceID,
+            EMAIL_CONFIG.templateWelcome,
+            userParams
+        );
+        console.log('✅ Bienvenida enviada a:', user.email);
+
+        // Enviar copia al desarrollador
+        const devRes = await emailjs.send(
+            EMAIL_CONFIG.serviceID,
+            EMAIL_CONFIG.templateWelcome,
+            devParams
+        );
+        console.log('✅ Copia para admin enviada a:', EMAIL_CONFIG.developerEmail);
+
+        return { success: true };
     } catch (error) {
-        console.error('❌ Error enviando email:', error);
+        console.error('❌ Error en sendWelcomeEmail:', error);
         return { success: false, error };
     }
 }
+
+/**
+ * Envía código de recuperación al usuario y copia al desarrollador
+ */
 async function sendRecoveryEmail(user, code) {
-    console.log('📧 Preparando notificación de recuperación...');
-    const templateParams = {
-        to_name: 'Marcos',
+    console.log('📧 Enviando email de recuperación...');
+
+    // Parámetros para el usuario
+    const userParams = {
+        to_name: user.name,
+        to_email: user.email,
+        user_name: user.name,
+        user_email: user.email,
+        recovery_code: code
+    };
+
+    // Parámetros para la copia al desarrollador
+    const devParams = {
+        to_name: 'Admin',
         to_email: EMAIL_CONFIG.developerEmail,
         user_name: user.name,
         user_email: user.email,
-        recovery_code: code,
-        fecha: new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
-        hora: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+        recovery_code: code
     };
+
     try {
-        const response = await emailjs.send(EMAIL_CONFIG.serviceID, EMAIL_CONFIG.templateRecovery, templateParams);
-        console.log('✅ Código enviado correctamente:', response);
-        return { success: true, response };
+        // Enviar al usuario
+        const userRes = await emailjs.send(
+            EMAIL_CONFIG.serviceID,
+            EMAIL_CONFIG.templateRecovery,
+            userParams
+        );
+        console.log('✅ Código enviado a:', user.email);
+
+        // Enviar copia al desarrollador
+        const devRes = await emailjs.send(
+            EMAIL_CONFIG.serviceID,
+            EMAIL_CONFIG.templateRecovery,
+            devParams
+        );
+        console.log('✅ Copia para admin enviada a:', EMAIL_CONFIG.developerEmail);
+
+        return { success: true };
     } catch (error) {
-        console.error('❌ Error enviando código:', error);
+        console.error('❌ Error en sendRecoveryEmail:', error);
         return { success: false, error };
     }
 }
 
 // =============================================
-// FUNCIONES AUXILIARES
+// FUNCIONES AUXILIARES (sin cambios)
 // =============================================
 function showNotification(message, type = 'info') {
     const notification = document.getElementById('notification');
@@ -195,6 +260,7 @@ function showNotification(message, type = 'info') {
     notification.classList.add('show');
     setTimeout(() => notification.classList.remove('show'), 4000);
 }
+
 function showLoading(show = true, message = 'Procesando...') {
     const overlay = document.getElementById('loadingOverlay');
     if (!overlay) return;
@@ -203,6 +269,7 @@ function showLoading(show = true, message = 'Procesando...') {
     if (show) overlay.classList.add('active');
     else overlay.classList.remove('active');
 }
+
 function showScreen(screenId) {
     document.querySelectorAll('.login-screen').forEach(screen => screen.classList.remove('visible'));
     const screen = document.getElementById(screenId);
@@ -210,21 +277,20 @@ function showScreen(screenId) {
 }
 
 // =============================================
-// INICIALIZACIÓN – INTRO SIEMPRE + REDIRECCIÓN
+// INICIALIZACIÓN – INTRO + EVENTOS
 // =============================================
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Iniciando Dominius AI...');
 
-    // Mostrar intro 2 segundos
+    // Intro de 2 segundos
     setTimeout(() => {
         const welcomeScreen = document.getElementById('welcomeScreen');
         if (welcomeScreen) welcomeScreen.classList.add('hidden');
 
-        // Después de transición 1s, verificar sesión
         setTimeout(() => {
             const session = UserSystem.getSession();
             if (session) {
-                console.log('✅ Sesión activa, redirigiendo al chat...');
+                console.log('✅ Sesión activa, redirigiendo...');
                 window.location.href = 'chat.html';
             } else {
                 showScreen('loginScreen');
@@ -232,20 +298,20 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 1000);
     }, 2000);
 
-    // ========== FORMULARIOS ==========
+    // ========== LOGIN ==========
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
         loginForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const username = document.getElementById('loginUser').value.trim();
             const password = document.getElementById('loginPassword').value;
-            if (!username || !password) return showNotification('Por favor completa todos los campos', 'error');
+            if (!username || !password) return showNotification('Completa todos los campos', 'error');
             showLoading(true, 'Iniciando sesión...');
             setTimeout(() => {
                 const result = UserSystem.login(username, password);
                 showLoading(false);
                 if (result.success) {
-                    showNotification('¡Bienvenido a Dominius AI!', 'success');
+                    showNotification('¡Bienvenido!', 'success');
                     setTimeout(() => window.location.href = 'chat.html', 1000);
                 } else {
                     showNotification(result.message, 'error');
@@ -254,6 +320,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // ========== REGISTRO ==========
     const registerForm = document.getElementById('registerForm');
     if (registerForm) {
         registerForm.addEventListener('submit', async function(e) {
@@ -263,22 +330,27 @@ document.addEventListener('DOMContentLoaded', function() {
             const email = document.getElementById('regEmail').value.trim();
             const password = document.getElementById('regPassword').value;
             const confirmPassword = document.getElementById('regConfirmPassword').value;
-            if (!name || !username || !email || !password || !confirmPassword) return showNotification('Por favor completa todos los campos', 'error');
-            if (password !== confirmPassword) return showNotification('Las contraseñas no coinciden', 'error');
-            if (password.length < 6) return showNotification('La contraseña debe tener al menos 6 caracteres', 'error');
-            if (!email.includes('@') || !email.includes('.')) return showNotification('Email inválido', 'error');
+
+            if (!name || !username || !email || !password || !confirmPassword) 
+                return showNotification('Completa todos los campos', 'error');
+            if (password !== confirmPassword) 
+                return showNotification('Las contraseñas no coinciden', 'error');
+            if (password.length < 6) 
+                return showNotification('Mínimo 6 caracteres', 'error');
+            if (!email.includes('@') || !email.includes('.')) 
+                return showNotification('Email inválido', 'error');
+
             showLoading(true, 'Creando cuenta...');
             setTimeout(async () => {
                 const result = UserSystem.register(name, username, email, password);
                 if (result.success) {
                     showLoading(true, 'Enviando notificación...');
-                    try {
-                        await sendWelcomeEmail(result.user);
-                        showLoading(false);
-                        showNotification('¡Cuenta creada! Notificación enviada', 'success');
-                    } catch (error) {
-                        showLoading(false);
-                        showNotification('Cuenta creada correctamente', 'success');
+                    const emailRes = await sendWelcomeEmail(result.user);
+                    showLoading(false);
+                    if (emailRes.success) {
+                        showNotification('Cuenta creada y notificación enviada', 'success');
+                    } else {
+                        showNotification('Cuenta creada, pero falló el email', 'warning');
                     }
                     setTimeout(() => {
                         showScreen('loginScreen');
@@ -292,21 +364,27 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // ========== RECUPERACIÓN ==========
     const forgotForm = document.getElementById('forgotPasswordForm');
     if (forgotForm) {
         forgotForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             const email = document.getElementById('forgotEmail').value.trim();
-            if (!email || !email.includes('@')) return showNotification('Por favor ingresa un email válido', 'error');
-            showLoading(true, 'Buscando tu cuenta...');
+            if (!email || !email.includes('@')) 
+                return showNotification('Email válido requerido', 'error');
+
+            showLoading(true, 'Buscando cuenta...');
             setTimeout(async () => {
                 const result = UserSystem.recoverPassword(email);
                 if (result.success) {
                     showLoading(true, 'Enviando código...');
-                    const emailResult = await sendRecoveryEmail(result.user, result.code);
+                    const emailRes = await sendRecoveryEmail(result.user, result.code);
                     showLoading(false);
-                    if (emailResult.success) showNotification('✅ Código enviado al administrador', 'success');
-                    else showNotification(`Tu código es: ${result.code}`, 'info');
+                    if (emailRes.success) {
+                        showNotification('Código enviado al usuario y copia al admin', 'success');
+                    } else {
+                        showNotification('Código generado, pero falló el envío', 'warning');
+                    }
                     showRecoveryCodeScreen(result.user.id);
                     forgotForm.reset();
                 } else {
@@ -321,7 +399,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Navegación
+    // Navegación entre pantallas
     document.getElementById('showRegister')?.addEventListener('click', () => showScreen('registerScreen'));
     document.getElementById('showLogin')?.addEventListener('click', () => showScreen('loginScreen'));
     document.getElementById('showForgotPassword')?.addEventListener('click', () => showScreen('forgotPasswordScreen'));
@@ -337,7 +415,7 @@ function showRecoveryCodeScreen(userId) {
             <div class="login-screen" id="recoveryCodeScreen">
                 <div class="login-box">
                     <h2 class="login-title">Verificar Código</h2>
-                    <p class="forgot-info">Ingresa el código que te proporcionó el administrador</p>
+                    <p class="forgot-info">Ingresa el código que recibiste</p>
                     <form id="recoveryCodeForm">
                         <div class="input-group">
                             <label>Código de 6 dígitos</label>
@@ -354,7 +432,7 @@ function showRecoveryCodeScreen(userId) {
                         <button type="submit" class="login-button">Cambiar Contraseña</button>
                     </form>
                     <div class="form-footer">
-                        <span class="link" id="backToLoginFromCode">Volver al inicio de sesión</span>
+                        <span class="link" id="backToLoginFromCode">Volver al inicio</span>
                     </div>
                 </div>
             </div>
@@ -368,14 +446,17 @@ function showRecoveryCodeScreen(userId) {
                 const code = document.getElementById('recoveryCodeInput').value.trim();
                 const newPassword = document.getElementById('newPasswordInput').value;
                 const confirmPassword = document.getElementById('confirmNewPasswordInput').value;
-                if (code.length !== 6 || !/^\d+$/.test(code)) return showNotification('El código debe tener 6 dígitos', 'error');
-                if (newPassword !== confirmPassword) return showNotification('Las contraseñas no coinciden', 'error');
-                if (newPassword.length < 6) return showNotification('La contraseña debe tener al menos 6 caracteres', 'error');
+                if (code.length !== 6 || !/^\d+$/.test(code)) 
+                    return showNotification('Código inválido', 'error');
+                if (newPassword !== confirmPassword) 
+                    return showNotification('Contraseñas no coinciden', 'error');
+                if (newPassword.length < 6) 
+                    return showNotification('Mínimo 6 caracteres', 'error');
                 const verification = UserSystem.verifyRecoveryCode(userId, code);
                 if (verification.success) {
                     const result = UserSystem.changePassword(userId, newPassword);
                     if (result.success) {
-                        showNotification('✅ Contraseña cambiada exitosamente', 'success');
+                        showNotification('✅ Contraseña cambiada', 'success');
                         setTimeout(() => { showScreen('loginScreen'); codeForm.reset(); }, 2000);
                     } else showNotification(result.message, 'error');
                 } else showNotification(verification.message, 'error');
@@ -386,4 +467,4 @@ function showRecoveryCodeScreen(userId) {
     showScreen('recoveryCodeScreen');
 }
 
-console.log('✅ app.js cargado - Intro siempre visible');
+console.log('✅ app.js final – Todo listo');
