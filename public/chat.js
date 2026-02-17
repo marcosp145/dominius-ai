@@ -18,7 +18,7 @@ let typewriterIndex = 0;
 let isPaused = false;
 
 // 🔑 API KEY DE GROQ
-const GROQ_API_KEY = "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";
+const GROQ_API_KEY = "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";
 
 // =============================================
 // INICIALIZACIÓN
@@ -759,3 +759,4 @@ function createParticle(container, i) {
 setTimeout(() => { if (window.updateButtonState) window.updateButtonState(); }, 100);
 
 console.log('✅ chat.js cargado - Botón inteligente activado');
+
