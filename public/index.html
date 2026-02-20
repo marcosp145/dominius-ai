@@ -13,20 +13,17 @@
         <div class="particle-field"></div>
     </div>
 
-    <!-- CINEMÁTICA ESTILO APPLE -->
+    <!-- CINEMÁTICA EFECTO POLVO -->
     <div class="welcome-screen" id="welcomeScreen">
         <div class="glow-orb"></div>
-        <div class="pulse-ring"></div>
+        <canvas id="dustCanvas"></canvas>
 
         <div class="welcome-logo-big">
-            <div class="da-logo-big">
-                <span class="d-letter-big">D</span>
-                <span class="a-letter-big">A</span>
-            </div>
+            <div class="da-logo-big"></div>
         </div>
 
-        <div class="text-line line1">Dominius AI</div>
-        <div class="text-line line2">Tu inteligencia empresarial</div>
+        <div class="text-line line1" id="titleText">DOMINIUS AI</div>
+        <div class="text-line line2" id="subtitleText">Tu IA Empresarial</div>
 
         <div class="loading-bar-container">
             <div class="loading-bar"></div>
@@ -117,6 +114,179 @@
         <div class="spinner"></div>
         <p>Un momento...</p>
     </div>
+
+    <script>
+    // ============================================
+    // EFECTO POLVO - LETRAS QUE SE DESHACEN
+    // ============================================
+    (function() {
+        const canvas = document.getElementById('dustCanvas');
+        const ctx = canvas.getContext('2d');
+        let W = window.innerWidth;
+        let H = window.innerHeight;
+        canvas.width = W;
+        canvas.height = H;
+
+        window.addEventListener('resize', () => {
+            W = window.innerWidth;
+            H = window.innerHeight;
+            canvas.width = W;
+            canvas.height = H;
+        });
+
+        // Partículas de polvo
+        let particles = [];
+        let phase = 'idle'; // idle → appear → hold → dissolve → done
+
+        function Particle(x, y, color) {
+            this.ox = x; this.oy = y;
+            this.x = x + (Math.random() - 0.5) * W * 0.8;
+            this.y = y + (Math.random() - 0.5) * H * 0.6;
+            this.tx = x; this.ty = y;
+            this.color = color;
+            this.size = Math.random() * 2.5 + 0.5;
+            this.alpha = 0;
+            this.speed = 0.04 + Math.random() * 0.04;
+            // para la disolución
+            this.vx = (Math.random() - 0.5) * 3;
+            this.vy = (Math.random() - 0.2) * 3;
+            this.drag = 0.97;
+        }
+
+        Particle.prototype.updateAppear = function(progress) {
+            this.x += (this.tx - this.x) * this.speed * 2.5;
+            this.y += (this.ty - this.y) * this.speed * 2.5;
+            this.alpha = Math.min(1, progress * 2);
+        };
+
+        Particle.prototype.updateDissolve = function() {
+            this.vx *= this.drag;
+            this.vy *= this.drag;
+            this.x += this.vx;
+            this.y += this.vy - 0.3;
+            this.alpha -= 0.012;
+            this.size *= 0.995;
+        };
+
+        Particle.prototype.draw = function() {
+            if (this.alpha <= 0) return;
+            ctx.save();
+            ctx.globalAlpha = Math.max(0, this.alpha);
+            ctx.fillStyle = this.color;
+            ctx.shadowBlur = 6;
+            ctx.shadowColor = this.color;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, Math.max(0.1, this.size), 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        };
+
+        // Renderizar texto en canvas oculto para extraer píxeles
+        function buildParticles() {
+            const offscreen = document.createElement('canvas');
+            offscreen.width = W;
+            offscreen.height = H;
+            const octx = offscreen.getContext('2d');
+
+            const isMobile = W < 600;
+            const fontSize1 = isMobile ? 48 : 82;
+            const fontSize2 = isMobile ? 16 : 22;
+
+            // Título
+            octx.clearRect(0, 0, W, H);
+            octx.font = `700 ${fontSize1}px -apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", sans-serif`;
+            octx.textAlign = 'center';
+            octx.textBaseline = 'middle';
+
+            // Gradiente para el título
+            const grad1 = octx.createLinearGradient(W*0.2, 0, W*0.8, 0);
+            grad1.addColorStop(0, '#ffffff');
+            grad1.addColorStop(0.4, '#c4b5fd');
+            grad1.addColorStop(0.75, '#8b5cf6');
+            grad1.addColorStop(1, '#ffffff');
+            octx.fillStyle = grad1;
+            octx.fillText('DOMINIUS AI', W / 2, H / 2 - fontSize1 * 0.4);
+
+            // Subtítulo
+            octx.font = `300 ${fontSize2}px -apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", sans-serif`;
+            octx.fillStyle = 'rgba(167,139,250,0.8)';
+            octx.fillText('Tu IA Empresarial', W / 2, H / 2 + fontSize1 * 0.55);
+
+            const imageData = octx.getImageData(0, 0, W, H);
+            const data = imageData.data;
+            particles = [];
+
+            const step = isMobile ? 3 : 2;
+            for (let y = 0; y < H; y += step) {
+                for (let x = 0; x < W; x += step) {
+                    const i = (y * W + x) * 4;
+                    if (data[i + 3] > 80) {
+                        const r = data[i], g = data[i+1], b = data[i+2];
+                        const color = `rgb(${r},${g},${b})`;
+                        particles.push(new Particle(x, y, color));
+                    }
+                }
+            }
+        }
+
+        let appearStart = null;
+        let dissolveStart = null;
+        const APPEAR_DURATION = 2200;
+        const HOLD_DURATION = 1800;
+        const DISSOLVE_DURATION = 2000;
+
+        function animate(ts) {
+            ctx.clearRect(0, 0, W, H);
+
+            if (phase === 'appear') {
+                if (!appearStart) appearStart = ts;
+                const progress = Math.min(1, (ts - appearStart) / APPEAR_DURATION);
+                for (const p of particles) p.updateAppear(progress);
+                if (progress >= 1) {
+                    phase = 'hold';
+                    setTimeout(() => { phase = 'dissolve'; }, HOLD_DURATION);
+                }
+            } else if (phase === 'dissolve') {
+                if (!dissolveStart) dissolveStart = ts;
+                for (const p of particles) p.updateDissolve();
+                // Ocultar los textos CSS cuando empieza la disolución
+                const t1 = document.getElementById('titleText');
+                const t2 = document.getElementById('subtitleText');
+                if (t1) t1.style.opacity = '0';
+                if (t2) t2.style.opacity = '0';
+
+                const elapsed = ts - dissolveStart;
+                if (elapsed > DISSOLVE_DURATION) {
+                    phase = 'done';
+                    // Trigger salida
+                    const ws = document.getElementById('welcomeScreen');
+                    if (ws) ws.classList.add('hidden');
+                    setTimeout(() => {
+                        if (ws) ws.style.display = 'none';
+                    }, 900);
+                }
+            }
+
+            for (const p of particles) p.draw();
+
+            if (phase !== 'done') requestAnimationFrame(animate);
+        }
+
+        // Ocultar los textos CSS (los dibujaremos en canvas)
+        window.addEventListener('DOMContentLoaded', () => {
+            const t1 = document.getElementById('titleText');
+            const t2 = document.getElementById('subtitleText');
+            // Dejar que la animación CSS los muestre brevemente, luego canvas toma el control
+            setTimeout(() => {
+                if (t1) t1.style.transition = 'opacity 0.3s';
+                if (t2) t2.style.transition = 'opacity 0.3s';
+                buildParticles();
+                phase = 'appear';
+                requestAnimationFrame(animate);
+            }, 400);
+        });
+    })();
+    </script>
 
     <script src="app.js"></script>
 </body>
