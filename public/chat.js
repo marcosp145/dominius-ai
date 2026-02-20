@@ -347,7 +347,13 @@ async function getAIResponse(userMessage) {
 
         const contentDiv = aiMessageDiv.querySelector('.message-content');
 
-        // El efecto typewriter sigue funcionando igual
+        // Hablar simultáneamente al typewriter si fue mensaje de voz
+        if (window.lastWasVoice && currentAIMessage) {
+            window.lastWasVoice = false;
+            speakAIResponse(currentAIMessage);
+        }
+
+        // El efecto typewriter
         if (!stopGeneration && currentAIMessage) {
             await typeWriter(contentDiv, currentAIMessage, 0, 35);
         } else {
@@ -742,25 +748,22 @@ function createParticle(container, i) {
 // Inicializar estado del botón al cargar
 setTimeout(() => { if (window.updateButtonState) window.updateButtonState(); }, 100);
 
-console.log('✅ chat.js cargado - Botón inteligente activado');
-
-
 
 // =============================================
-
-// =============================================
-// SISTEMA DE AUDIO - MICRÓFONO AL LADO DEL ENVIAR
+// SISTEMA DE AUDIO V3 - SIN PAUSAS + SIMULTÁNEO
 // =============================================
 let isRecording = false;
 let recognition = null;
+let isSpeaking = false;
 
-// Función para hablar la respuesta de la IA
+// ── HABLAR: divide en frases y encadena sin pausa ──
 function speakAIResponse(text) {
     const synth = window.speechSynthesis;
     if (!synth) return;
     synth.cancel();
+    isSpeaking = true;
 
-    // Limpiar markdown para que suene bien
+    // Limpiar markdown
     const clean = text
         .replace(/```[\s\S]*?```/g, 'código.')
         .replace(/`[^`]+`/g, '')
@@ -768,33 +771,71 @@ function speakAIResponse(text) {
         .replace(/\*([^*]+)\*/g, '$1')
         .replace(/#{1,6}\s/g, '')
         .replace(/\[.*?\]\(.*?\)/g, '')
-        .replace(/\n/g, ' ')
+        .replace(/\n+/g, ' ')
         .trim();
 
-    const utterance = new SpeechSynthesisUtterance(clean);
-    utterance.lang = 'es-ES';
-    utterance.rate = 1.0;
-    utterance.pitch = 1.0;
-    utterance.volume = 1.0;
+    // Dividir en frases (por punto, coma, etc.)
+    const sentences = clean.match(/[^.!?,:;]+[.!?,:;]*/g) || [clean];
 
-    // Esperar a que carguen las voces y usar una española
-    const setVoice = () => {
-        const voices = synth.getVoices();
-        const esVoice = voices.find(v => v.lang === 'es-ES') || 
-                        voices.find(v => v.lang.startsWith('es')) || 
-                        voices[0];
-        if (esVoice) utterance.voice = esVoice;
-        synth.speak(utterance);
-    };
+    // Precargar voces
+    const voices = synth.getVoices();
+    const esVoice = voices.find(v => v.lang === 'es-ES') ||
+                    voices.find(v => v.lang === 'es-MX') ||
+                    voices.find(v => v.lang.startsWith('es')) ||
+                    null;
 
-    if (synth.getVoices().length > 0) {
-        setVoice();
+    let index = 0;
+
+    function speakNext() {
+        if (index >= sentences.length || !isSpeaking) {
+            isSpeaking = false;
+            return;
+        }
+        const sentence = sentences[index].trim();
+        if (!sentence) { index++; speakNext(); return; }
+
+        const u = new SpeechSynthesisUtterance(sentence);
+        u.lang = 'es-ES';
+        u.rate = 1.1;      // Un poco más rápido = más natural
+        u.pitch = 1.0;
+        u.volume = 1.0;
+        if (esVoice) u.voice = esVoice;
+
+        u.onend = () => {
+            index++;
+            speakNext(); // encadenar sin pausa
+        };
+        u.onerror = () => {
+            index++;
+            speakNext();
+        };
+
+        synth.speak(u);
+    }
+
+    // Si las voces aún no cargaron, esperar
+    if (voices.length === 0) {
+        synth.onvoiceschanged = () => {
+            const v2 = synth.getVoices();
+            const esV = v2.find(v => v.lang === 'es-ES') ||
+                        v2.find(v => v.lang.startsWith('es')) || null;
+            if (esV) {
+                // reasignar
+                Object.defineProperty(u => u, 'voice', { value: esV });
+            }
+            speakNext();
+        };
     } else {
-        synth.onvoiceschanged = setVoice;
+        speakNext();
     }
 }
 
-// Crear botón de micrófono en el input
+function stopSpeaking() {
+    isSpeaking = false;
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+}
+
+// ── BOTÓN MICRÓFONO ──
 function initMicButton() {
     const inputContainer = document.querySelector('.input-container');
     if (!inputContainer || document.getElementById('micBtn')) return;
@@ -806,7 +847,7 @@ function initMicButton() {
     micBtn.type = 'button';
     micBtn.style.cssText = 'transition: all 0.2s ease; flex-shrink: 0;';
     micBtn.innerHTML = `
-        <svg id="micIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
             <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
             <line x1="12" y1="19" x2="12" y2="23"></line>
@@ -815,48 +856,38 @@ function initMicButton() {
 
     micBtn.addEventListener('click', toggleMic);
 
-    // Insertar justo antes del botón de enviar
     const sendBtn = document.getElementById('sendBtn');
-    if (sendBtn) {
-        inputContainer.insertBefore(micBtn, sendBtn);
-    }
+    if (sendBtn) inputContainer.insertBefore(micBtn, sendBtn);
 }
 
 function toggleMic() {
-    if (isRecording) {
-        stopMic();
-    } else {
-        startMic();
-    }
+    if (isRecording) stopMic();
+    else startMic();
 }
 
 function startMic() {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-        showNotification('Tu navegador no soporta el micrófono. Usa Chrome.', 'error');
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) {
+        showNotification('Usa Chrome para el micrófono', 'error');
         return;
     }
 
-    recognition = new SpeechRecognition();
+    recognition = new SR();
     recognition.lang = 'es-ES';
     recognition.continuous = false;
     recognition.interimResults = false;
 
-    recognition.onstart = function() {
+    recognition.onstart = () => {
         isRecording = true;
         setMicActive(true);
         showNotification('🎤 Escuchando...', 'info');
     };
 
-    recognition.onresult = function(e) {
+    recognition.onresult = (e) => {
         const transcript = e.results[0][0].transcript.trim();
         stopMic();
-
         if (transcript) {
-            // Marcar que fue mensaje de voz para que la IA responda hablando
             window.lastWasVoice = true;
-
-            // Meter el texto en el input y enviar
             const input = document.getElementById('messageInput');
             if (input) {
                 input.value = transcript;
@@ -868,19 +899,13 @@ function startMic() {
         }
     };
 
-    recognition.onerror = function(e) {
+    recognition.onerror = (e) => {
         stopMic();
-        if (e.error === 'not-allowed') {
-            showNotification('Permite el acceso al micrófono en el navegador', 'error');
-        } else if (e.error !== 'no-speech') {
-            showNotification('No te escuché, inténtalo de nuevo', 'error');
-        }
+        if (e.error === 'not-allowed') showNotification('Permite el micrófono en el navegador', 'error');
+        else if (e.error !== 'no-speech') showNotification('No te escuché, inténtalo de nuevo', 'error');
     };
 
-    recognition.onend = function() {
-        if (isRecording) stopMic();
-    };
-
+    recognition.onend = () => { if (isRecording) stopMic(); };
     recognition.start();
 }
 
@@ -911,8 +936,9 @@ function setMicActive(active) {
     }
 }
 
-// Inicializar micrófono cuando cargue
 window.lastWasVoice = false;
 setTimeout(() => initMicButton(), 300);
+// Precargar voces al iniciar
+if (window.speechSynthesis) window.speechSynthesis.getVoices();
 
-console.log('🎤 Micrófono listo');
+console.log('🎤 Audio V3 listo');
