@@ -741,41 +741,22 @@ console.log('✅ chat.js cargado - Botón inteligente activado');
 
 
 // =============================================
-// SISTEMA DE AUDIO COMPLETO
+
 // =============================================
-let audioMode = false; // false = escritura, true = audio
+// SISTEMA DE AUDIO - BOTÓN AL LADO DEL ENVIAR
+// =============================================
 let isRecording = false;
-let mediaRecorder = null;
 let recognition = null;
-let audioChunks = [];
 let speechSynth = window.speechSynthesis;
-let currentUtterance = null;
 
-// Inicializar reconocimiento de voz
-function initSpeechRecognition() {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-        showNotification('Tu navegador no soporta reconocimiento de voz', 'error');
-        return null;
-    }
-    const recog = new SpeechRecognition();
-    recog.lang = 'es-ES';
-    recog.continuous = false;
-    recog.interimResults = false;
-    recog.maxAlternatives = 1;
-    return recog;
-}
+function initAudioButton() {
+    const inputContainer = document.querySelector('.input-container');
+    if (!inputContainer || document.getElementById('micBtn')) return;
 
-// Crear botón de modo audio en el header del chat
-function createAudioModeButton() {
-    const chatActions = document.querySelector('.chat-actions');
-    if (!chatActions || document.getElementById('audioModeBtn')) return;
-
-    const btn = document.createElement('button');
-    btn.className = 'action-btn';
-    btn.id = 'audioModeBtn';
-    btn.title = 'Activar modo audio';
-    btn.innerHTML = `
+    const micBtn = document.createElement('button');
+    micBtn.id = 'micBtn';
+    micBtn.title = 'Hablar';
+    micBtn.innerHTML = `
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
             <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
@@ -783,345 +764,110 @@ function createAudioModeButton() {
             <line x1="8" y1="23" x2="16" y2="23"></line>
         </svg>
     `;
-    btn.style.cssText = 'transition: all 0.3s ease;';
-    btn.addEventListener('click', toggleAudioMode);
-    chatActions.insertBefore(btn, chatActions.firstChild);
+    micBtn.className = 'attach-btn';
+    micBtn.style.cssText = 'transition: all 0.25s ease; flex-shrink: 0;';
+    micBtn.addEventListener('click', toggleVoice);
+
+    // Insertar justo antes del botón de enviar
+    const sendBtn = document.getElementById('sendBtn');
+    if (sendBtn) inputContainer.insertBefore(micBtn, sendBtn);
 }
 
-// Alternar entre modo escritura y audio
-function toggleAudioMode() {
-    audioMode = !audioMode;
-    const btn = document.getElementById('audioModeBtn');
-    const inputArea = document.querySelector('.input-area');
-    const audioInterface = document.getElementById('audioInterface');
-
-    if (audioMode) {
-        // MODO AUDIO activado
-        btn.style.background = 'rgba(139,92,246,0.4)';
-        btn.style.borderColor = '#8b5cf6';
-        btn.style.boxShadow = '0 0 15px rgba(139,92,246,0.5)';
-        btn.title = 'Volver a modo escritura';
-        showNotification('🎤 Modo audio activado', 'info');
-        if (inputArea) inputArea.style.display = 'none';
-        showAudioInterface();
+function toggleVoice() {
+    if (isRecording) {
+        stopVoice();
     } else {
-        // MODO ESCRITURA activado
-        btn.style.background = '';
-        btn.style.borderColor = '';
-        btn.style.boxShadow = '';
-        btn.title = 'Activar modo audio';
-        showNotification('⌨️ Modo escritura activado', 'info');
-        if (inputArea) inputArea.style.display = '';
-        hideAudioInterface();
-        stopRecording();
+        startVoice();
     }
 }
 
-// Mostrar interfaz de audio
-function showAudioInterface() {
-    if (document.getElementById('audioInterface')) {
-        document.getElementById('audioInterface').style.display = 'flex';
+function startVoice() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        showNotification('Tu navegador no soporta reconocimiento de voz', 'error');
         return;
     }
 
-    const div = document.createElement('div');
-    div.id = 'audioInterface';
-    div.style.cssText = `
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 25px 20px;
-        gap: 15px;
-        background: rgba(10,10,20,0.98);
-        border-top: 1px solid rgba(139,92,246,0.3);
-        position: relative;
-    `;
-
-    div.innerHTML = `
-        <div id="audioStatus" style="
-            font-family: 'Segoe UI', sans-serif;
-            color: rgba(167,139,250,0.8);
-            font-size: 13px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        ">Pulsa el micrófono para hablar</div>
-
-        <div style="position: relative; display: flex; align-items: center; justify-content: center;">
-            <!-- Anillos de onda -->
-            <div id="waveRing1" style="
-                position: absolute;
-                width: 80px; height: 80px;
-                border: 2px solid rgba(139,92,246,0.3);
-                border-radius: 50%;
-                opacity: 0;
-                transition: all 0.3s ease;
-            "></div>
-            <div id="waveRing2" style="
-                position: absolute;
-                width: 100px; height: 100px;
-                border: 2px solid rgba(139,92,246,0.2);
-                border-radius: 50%;
-                opacity: 0;
-                transition: all 0.3s ease;
-            "></div>
-            <div id="waveRing3" style="
-                position: absolute;
-                width: 120px; height: 120px;
-                border: 2px solid rgba(139,92,246,0.1);
-                border-radius: 50%;
-                opacity: 0;
-                transition: all 0.3s ease;
-            "></div>
-
-            <!-- Botón micrófono -->
-            <button id="micBtn" style="
-                width: 64px; height: 64px;
-                border-radius: 50%;
-                border: 2px solid rgba(139,92,246,0.5);
-                background: rgba(139,92,246,0.15);
-                color: #a78bfa;
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                transition: all 0.3s ease;
-                position: relative;
-                z-index: 2;
-            ">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                    <line x1="12" y1="19" x2="12" y2="23"></line>
-                    <line x1="8" y1="23" x2="16" y2="23"></line>
-                </svg>
-            </button>
-        </div>
-
-        <div id="audioTranscript" style="
-            color: rgba(255,255,255,0.7);
-            font-size: 14px;
-            text-align: center;
-            max-width: 500px;
-            min-height: 20px;
-            font-style: italic;
-            padding: 0 20px;
-        "></div>
-
-        <!-- Botón parar voz de la IA -->
-        <button id="stopSpeakBtn" style="
-            display: none;
-            padding: 8px 20px;
-            border: 1px solid rgba(239,68,68,0.4);
-            border-radius: 20px;
-            background: rgba(239,68,68,0.1);
-            color: #f87171;
-            cursor: pointer;
-            font-size: 12px;
-            letter-spacing: 1px;
-            transition: all 0.2s ease;
-        ">⏹ Detener voz</button>
-    `;
-
-    // Insertar antes del final del chat-area
-    const chatArea = document.querySelector('.chat-area');
-    if (chatArea) chatArea.appendChild(div);
-
-    // Eventos
-    document.getElementById('micBtn').addEventListener('click', toggleRecording);
-    document.getElementById('stopSpeakBtn').addEventListener('click', stopSpeaking);
-}
-
-function hideAudioInterface() {
-    const ai = document.getElementById('audioInterface');
-    if (ai) ai.style.display = 'none';
-}
-
-// Grabar / parar
-async function toggleRecording() {
-    if (isRecording) {
-        stopRecording();
-    } else {
-        startRecording();
-    }
-}
-
-function startRecording() {
-    recognition = initSpeechRecognition();
-    if (!recognition) return;
+    recognition = new SpeechRecognition();
+    recognition.lang = 'es-ES';
+    recognition.continuous = false;
+    recognition.interimResults = false;
 
     isRecording = true;
-    updateMicUI(true);
+    updateMicStyle(true);
+    showNotification('🎤 Escuchando...', 'info');
 
-    document.getElementById('audioStatus').textContent = 'Escuchando... habla ahora';
-    document.getElementById('audioTranscript').textContent = '';
-
-    recognition.onresult = function(event) {
-        const transcript = event.results[0][0].transcript;
-        document.getElementById('audioTranscript').textContent = '"' + transcript + '"';
-        stopRecording();
-        // Enviar el mensaje de voz
-        sendVoiceMessage(transcript);
+    recognition.onresult = function(e) {
+        const text = e.results[0][0].transcript;
+        stopVoice();
+        // Meter el texto en el input y enviarlo
+        const input = document.getElementById('messageInput');
+        if (input) {
+            input.value = text;
+            autoResizeTextarea();
+            updateCharCount();
+            updateButtonState();
+            setTimeout(() => sendUserMessage(), 150);
+        }
     };
 
-    recognition.onerror = function(event) {
-        stopRecording();
-        if (event.error === 'not-allowed') {
-            showNotification('Debes permitir el acceso al micrófono', 'error');
-        } else if (event.error !== 'no-speech') {
-            showNotification('Error de reconocimiento: ' + event.error, 'error');
-        } else {
-            document.getElementById('audioStatus').textContent = 'No te escuché. Pulsa para intentar de nuevo';
+    recognition.onerror = function(e) {
+        stopVoice();
+        if (e.error === 'not-allowed') {
+            showNotification('Debes permitir el micrófono en el navegador', 'error');
+        } else if (e.error !== 'no-speech') {
+            showNotification('No te escuché bien, inténtalo de nuevo', 'error');
         }
     };
 
     recognition.onend = function() {
-        if (isRecording) stopRecording();
+        if (isRecording) stopVoice();
     };
 
     recognition.start();
 }
 
-function stopRecording() {
+function stopVoice() {
     isRecording = false;
     if (recognition) {
         try { recognition.stop(); } catch(e) {}
         recognition = null;
     }
-    updateMicUI(false);
-    const status = document.getElementById('audioStatus');
-    if (status && !isAIResponding) status.textContent = 'Pulsa el micrófono para hablar';
+    updateMicStyle(false);
 }
 
-function updateMicUI(recording) {
-    const micBtn = document.getElementById('micBtn');
-    const ring1 = document.getElementById('waveRing1');
-    const ring2 = document.getElementById('waveRing2');
-    const ring3 = document.getElementById('waveRing3');
-    if (!micBtn) return;
-
-    if (recording) {
-        micBtn.style.background = 'rgba(139,92,246,0.5)';
-        micBtn.style.borderColor = '#8b5cf6';
-        micBtn.style.color = '#fff';
-        micBtn.style.boxShadow = '0 0 30px rgba(139,92,246,0.6)';
-        micBtn.style.transform = 'scale(1.1)';
-        if (ring1) { ring1.style.opacity = '1'; ring1.style.animation = 'waveExpand 1.5s ease-out infinite'; }
-        if (ring2) { ring2.style.opacity = '1'; ring2.style.animation = 'waveExpand 1.5s ease-out 0.3s infinite'; }
-        if (ring3) { ring3.style.opacity = '1'; ring3.style.animation = 'waveExpand 1.5s ease-out 0.6s infinite'; }
-
-        // Añadir keyframe si no existe
-        if (!document.getElementById('waveStyle')) {
-            const style = document.createElement('style');
-            style.id = 'waveStyle';
-            style.textContent = `
-                @keyframes waveExpand {
-                    0% { transform: scale(0.8); opacity: 0.8; }
-                    100% { transform: scale(1.4); opacity: 0; }
-                }
-            `;
-            document.head.appendChild(style);
-        }
+function updateMicStyle(active) {
+    const btn = document.getElementById('micBtn');
+    if (!btn) return;
+    if (active) {
+        btn.style.color = '#ef4444';
+        btn.style.borderColor = 'rgba(239,68,68,0.5)';
+        btn.style.background = 'rgba(239,68,68,0.15)';
+        btn.style.boxShadow = '0 0 12px rgba(239,68,68,0.4)';
+        btn.title = 'Parar';
     } else {
-        micBtn.style.background = 'rgba(139,92,246,0.15)';
-        micBtn.style.borderColor = 'rgba(139,92,246,0.5)';
-        micBtn.style.color = '#a78bfa';
-        micBtn.style.boxShadow = '';
-        micBtn.style.transform = '';
-        if (ring1) { ring1.style.opacity = '0'; ring1.style.animation = ''; }
-        if (ring2) { ring2.style.opacity = '0'; ring2.style.animation = ''; }
-        if (ring3) { ring3.style.opacity = '0'; ring3.style.animation = ''; }
+        btn.style.color = '';
+        btn.style.borderColor = '';
+        btn.style.background = '';
+        btn.style.boxShadow = '';
+        btn.title = 'Hablar';
     }
 }
 
-// Enviar mensaje de voz
-async function sendVoiceMessage(text) {
-    if (!text || isAIResponding) return;
-    if (!currentChatId) createNewChat();
+// La IA responde en voz alta si el mensaje fue por voz
+const _origGetAIResponse = getAIResponse;
+let lastWasVoice = false;
 
-    const status = document.getElementById('audioStatus');
-    if (status) status.textContent = 'Procesando respuesta...';
+// Hook para saber si el último mensaje fue por voz
+const _origSendVoice = sendUserMessage;
 
-    addUserMessage(text, []);
-    saveMessageToChat(currentChatId, 'user', text);
-
-    // Obtener respuesta IA
-    const aiText = await getAIResponseText(text);
-    if (aiText) {
-        // Mostrar en el chat
-        addAIMessageToChat(aiText);
-        saveMessageToChat(currentChatId, 'assistant', aiText);
-        // Leer en voz alta
-        speakText(aiText);
-    }
-
-    if (status) status.textContent = 'Pulsa el micrófono para hablar';
-}
-
-// Obtener respuesta de la IA (devuelve texto)
-async function getAIResponseText(userMessage) {
-    isAIResponding = true;
-    updateButtonState();
-
-    try {
-        const chatHistory = getChatHistory(currentChatId);
-        const messages = [
-            { role: 'system', content: getModeSystemPrompt(currentMode) },
-            ...chatHistory.map(msg => ({ role: msg.role, content: msg.content })),
-            { role: 'user', content: userMessage }
-        ];
-
-        const response = await fetch('/api/groq', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                model: 'llama-3.3-70b-versatile',
-                messages,
-                temperature: 0.7,
-                max_tokens: 8000
-            })
-        });
-
-        if (!response.ok) throw new Error('Error en la API');
-        const data = await response.json();
-        return data.choices?.[0]?.message?.content || '';
-
-    } catch (error) {
-        console.error('Error:', error);
-        showNotification('Error al obtener respuesta', 'error');
-        return null;
-    } finally {
-        isAIResponding = false;
-        updateButtonState();
-    }
-}
-
-// Añadir mensaje de IA al chat (sin typewriter para modo audio)
-function addAIMessageToChat(text) {
-    const container = document.getElementById('messagesContainer');
-    if (!container) return;
-    const div = document.createElement('div');
-    div.className = 'message ai-message';
-    div.innerHTML = `
-        <div class="message-avatar ai-avatar"><span>AI</span></div>
-        <div class="message-content-wrapper">
-            <div class="message-content">${formatAIResponse(text)}</div>
-            <div class="message-time">${new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</div>
-        </div>
-    `;
-    container.appendChild(div);
-    container.scrollTop = container.scrollHeight;
-    addCopyButton(div, text);
-}
-
-// Hablar texto
-function speakText(text) {
+// Hablar la respuesta de la IA
+function speakAIResponse(text) {
     if (!speechSynth) return;
-    stopSpeaking();
+    speechSynth.cancel();
 
-    // Limpiar markdown para la voz
-    const cleanText = text
-        .replace(/```[\s\S]*?```/g, 'código omitido')
+    const clean = text
+        .replace(/```[\s\S]*?```/g, 'código.')
         .replace(/`[^`]+`/g, '')
         .replace(/\*\*([^*]+)\*\*/g, '$1')
         .replace(/\*([^*]+)\*/g, '$1')
@@ -1129,40 +875,17 @@ function speakText(text) {
         .replace(/\n/g, ' ')
         .trim();
 
-    currentUtterance = new SpeechSynthesisUtterance(cleanText);
-    currentUtterance.lang = 'es-ES';
-    currentUtterance.rate = 1.0;
-    currentUtterance.pitch = 1.0;
-    currentUtterance.volume = 1.0;
-
-    // Intentar voz española
+    const utterance = new SpeechSynthesisUtterance(clean);
+    utterance.lang = 'es-ES';
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
     const voices = speechSynth.getVoices();
-    const esVoice = voices.find(v => v.lang.startsWith('es')) || voices[0];
-    if (esVoice) currentUtterance.voice = esVoice;
-
-    const stopBtn = document.getElementById('stopSpeakBtn');
-    const status = document.getElementById('audioStatus');
-
-    if (stopBtn) stopBtn.style.display = 'block';
-    if (status) status.textContent = 'IA hablando...';
-
-    currentUtterance.onend = function() {
-        if (stopBtn) stopBtn.style.display = 'none';
-        if (status) status.textContent = 'Pulsa el micrófono para hablar';
-    };
-
-    speechSynth.speak(currentUtterance);
+    const esVoice = voices.find(v => v.lang.startsWith('es'));
+    if (esVoice) utterance.voice = esVoice;
+    speechSynth.speak(utterance);
 }
 
-function stopSpeaking() {
-    if (speechSynth) speechSynth.cancel();
-    const stopBtn = document.getElementById('stopSpeakBtn');
-    if (stopBtn) stopBtn.style.display = 'none';
-}
+// Inicializar el botón al cargar
+setTimeout(() => initAudioButton(), 300);
 
-// Inicializar el botón de audio cuando cargue el DOM
-setTimeout(() => {
-    createAudioModeButton();
-}, 200);
-
-console.log('🎤 Sistema de audio inicializado');
+console.log('🎤 Botón de micrófono listo');
