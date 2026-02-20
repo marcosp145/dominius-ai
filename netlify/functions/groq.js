@@ -1,20 +1,14 @@
-exports.handler = async function(event) {
-    if (event.httpMethod !== 'POST') {
-        return { statusCode: 405, body: 'Method Not Allowed' };
+export default async function handler(req, res) {
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method Not Allowed' });
     }
 
-    const headers = {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Content-Type': 'application/json'
-    };
-
     try {
-        const { messages, model, temperature, max_tokens } = JSON.parse(event.body);
+        const { messages, model, temperature, max_tokens } = req.body;
         const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
         if (!GROQ_API_KEY) {
-            return { statusCode: 500, headers, body: JSON.stringify({ error: 'API key no configurada' }) };
+            return res.status(500).json({ error: 'API key no configurada' });
         }
 
         const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -33,9 +27,9 @@ exports.handler = async function(event) {
         });
 
         const data = await response.json();
-        return { statusCode: 200, headers, body: JSON.stringify(data) };
+        return res.status(200).json(data);
 
     } catch (error) {
-        return { statusCode: 500, headers, body: JSON.stringify({ error: error.message }) };
+        return res.status(500).json({ error: error.message });
     }
-};
+}
