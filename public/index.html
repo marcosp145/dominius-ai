@@ -7,250 +7,12 @@
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="mobile.css">
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-
-<style>
-/* ─────────────────────────────────────────────
-   INTRO
-───────────────────────────────────────────── */
-#intro {
-  position: fixed;
-  inset: 0;
-  z-index: 999999;
-  background: #000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  gap: 0;
-  /* Salida */
-  transition: opacity 1.1s cubic-bezier(0.76, 0, 0.24, 1);
-}
-#intro.exit { opacity: 0; pointer-events: none; }
-
-/* Fondo — halo respirando */
-#intro-bg {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    ellipse 90% 70% at 50% 52%,
-    rgba(88, 28, 180, 0.20) 0%,
-    rgba(55, 10, 120, 0.08) 45%,
-    transparent 72%
-  );
-  opacity: 0;
-  animation: haloPulse 3.8s ease-in-out infinite;
-}
-@keyframes haloPulse {
-  0%, 100% { opacity: .55; transform: scale(1); }
-  50%       { opacity: 1;   transform: scale(1.06); }
-}
-
-/* Línea horizontal sutil centrada */
-#intro-line {
-  position: absolute;
-  top: 50%;
-  left: 8%; right: 8%;
-  height: 1px;
-  transform: translateY(-50%);
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(139,92,246,.12) 20%,
-    rgba(139,92,246,.12) 80%,
-    transparent
-  );
-  opacity: 0;
-  animation: lineAppear .6s ease 0.4s forwards;
-}
-@keyframes lineAppear { to { opacity: 1; } }
-
-/* ── TÍTULO ── */
-#title-wrap {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-}
-
-#title-text {
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display',
-               'Helvetica Neue', sans-serif;
-  font-size: clamp(40px, 8.5vw, 96px);
-  font-weight: 700;
-  letter-spacing: -0.025em;
-  line-height: 1;
-  white-space: nowrap;
-
-  /* Gradiente del texto */
-  background: linear-gradient(
-    128deg,
-    #ffffff    0%,
-    #ede9fe   28%,
-    #a78bfa   55%,
-    #ede9fe   78%,
-    #ffffff  100%
-  );
-  background-size: 200% auto;
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-
-  /* Empieza invisible — el láser lo revela */
-  clip-path: inset(0 101% 0 0);
-
-  /* Animación de reveal sincronizada con el láser */
-  animation:
-    textReveal 1.5s cubic-bezier(0.76, 0, 0.24, 1) 0.7s forwards,
-    shimmer    4s linear 2.4s infinite;
-
-  filter: drop-shadow(0 0 55px rgba(139,92,246,.4));
-}
-
-@keyframes textReveal {
-  0%   { clip-path: inset(0 101% 0 0); }
-  100% { clip-path: inset(0 -2% 0 0);  }
-}
-
-@keyframes shimmer {
-  0%   { background-position: 0% center; }
-  100% { background-position: 200% center; }
-}
-
-/* ── LÁSER ── */
-#laser {
-  position: absolute;
-  top: -15%;
-  bottom: -15%;
-  width: 2px;
-  left: 0%;
-  pointer-events: none;
-  opacity: 0;
-
-  background: linear-gradient(
-    180deg,
-    transparent 0%,
-    rgba(216,180,254,.6) 20%,
-    #ffffff 50%,
-    rgba(216,180,254,.6) 80%,
-    transparent 100%
-  );
-
-  /* Halo del láser */
-  box-shadow:
-    0 0  6px 2px rgba(167,139,250, .9),
-    0 0 16px 4px rgba(139, 92,246, .6),
-    0 0 35px 8px rgba(109, 40,217, .35),
-    0 0 70px 16px rgba(88,  28,180, .15);
-
-  animation: laserTravel 1.5s cubic-bezier(0.76, 0, 0.24, 1) 0.7s forwards;
-}
-
-@keyframes laserTravel {
-  0%   { left: 0%;    opacity: 1; }
-  95%  { left: 100%;  opacity: 1; }
-  100% { left: 100%;  opacity: 0; }
-}
-
-/* Destello inicial del láser */
-#laser::before {
-  content: '';
-  position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  width: 20px; height: 20px;
-  border-radius: 50%;
-  background: radial-gradient(circle, #fff 0%, rgba(167,139,250,.4) 60%, transparent 100%);
-  filter: blur(4px);
-}
-
-/* ── SUBTÍTULO ── */
-#sub-text {
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display',
-               'Helvetica Neue', sans-serif;
-  font-size: clamp(11px, 1.5vw, 16px);
-  font-weight: 300;
-  letter-spacing: .45em;
-  text-transform: uppercase;
-  color: rgba(167,139,250,0);
-  margin-top: clamp(14px, 2.5vw, 26px);
-  opacity: 0;
-  transform: translateY(14px);
-  animation: subReveal .9s cubic-bezier(0.25,0.46,0.45,0.94) 2.5s forwards;
-}
-
-@keyframes subReveal {
-  0%   { opacity: 0; color: rgba(167,139,250,0);    transform: translateY(14px); }
-  100% { opacity: 1; color: rgba(167,139,250,.65);  transform: translateY(0); }
-}
-
-/* ── PUNTO / ORB debajo del subtítulo ── */
-#orb {
-  width: 5px; height: 5px;
-  border-radius: 50%;
-  background: #8b5cf6;
-  margin-top: clamp(22px, 4vw, 40px);
-  box-shadow: 0 0 12px 4px rgba(139,92,246,.6);
-  opacity: 0;
-  animation: orbIn .5s ease 3.2s forwards, orbPulse 2s ease-in-out 3.7s infinite;
-}
-@keyframes orbIn { to { opacity: 1; } }
-@keyframes orbPulse {
-  0%,100% { transform: scale(1);   box-shadow: 0 0 12px 4px rgba(139,92,246,.6); }
-  50%      { transform: scale(1.5); box-shadow: 0 0 20px 8px rgba(139,92,246,.4); }
-}
-
-/* ── SKIP ── */
-#skip-btn {
-  position: absolute;
-  bottom: 28px; right: 28px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
-  font-size: 10px;
-  letter-spacing: 3px;
-  text-transform: uppercase;
-  color: rgba(255,255,255,.15);
-  cursor: pointer;
-  opacity: 0;
-  animation: fadeIn .8s ease 2.2s forwards;
-  transition: color .3s ease;
-  user-select: none;
-}
-#skip-btn:hover { color: rgba(255,255,255,.4); }
-@keyframes fadeIn { to { opacity: 1; } }
-
-/* Viñeta sutil */
-#intro-vignette {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: radial-gradient(
-    ellipse 100% 100% at 50% 50%,
-    transparent 40%,
-    rgba(0,0,0,.55) 100%
-  );
-}
-</style>
 </head>
 <body>
-
 <div class="background"><div class="particle-field"></div></div>
 
-<!-- ── INTRO ── -->
-<div id="intro">
-  <div id="intro-bg"></div>
-  <div id="intro-line"></div>
-  <div id="intro-vignette"></div>
+<canvas id="c"></canvas>
 
-  <div id="title-wrap">
-    <span id="title-text">DOMINIUS AI</span>
-    <div id="laser"></div>
-  </div>
-
-  <div id="sub-text">Tu IA Empresarial</div>
-  <div id="orb"></div>
-
-  <div id="skip-btn">Saltar</div>
-</div>
-
-<!-- ── LOGIN ── -->
 <div class="login-screen" id="loginScreen">
   <div class="login-box">
     <h2 class="login-title">Iniciar Sesión</h2>
@@ -298,119 +60,397 @@
 <div class="notification" id="notification"></div>
 <div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div><p>Un momento...</p></div>
 
+<style>
+#c {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: pointer;
+}
+</style>
+
 <script>
 (function () {
-  const intro = document.getElementById('intro');
-  const skip  = document.getElementById('skip-btn');
-  let finished = false;
 
-  /* ── AUDIO ── */
-  function buildAudio() {
-    try {
-      const AC  = new (window.AudioContext || window.webkitAudioContext)();
-      const now = AC.currentTime;
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+let W, H, cx, cy, raf, t0, done = false;
 
-      /* Reverb convolution sencillo */
-      function makeReverb(dur = 1.8, decay = 2.5) {
-        const sr  = AC.sampleRate;
-        const len = sr * dur;
-        const buf = AC.createBuffer(2, len, sr);
-        for (let c = 0; c < 2; c++) {
-          const d = buf.getChannelData(c);
-          for (let i = 0; i < len; i++)
-            d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
-        }
-        const node = AC.createConvolver();
-        node.buffer = buf;
-        return node;
-      }
+function resize() {
+  W = canvas.width  = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  cx = W / 2; cy = H / 2;
+}
+resize();
+window.addEventListener('resize', () => { resize(); });
 
-      const reverb  = makeReverb(2.2, 3);
-      const masterG = AC.createGain();
-      masterG.gain.value = .85;
-      reverb.connect(masterG);
-      masterG.connect(AC.destination);
+/* ══════════════════════════════════════
+   AUDIO — cinematic score
+══════════════════════════════════════ */
+let AC;
+function getAC() {
+  if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
+  if (AC.state === 'suspended') AC.resume();
+  return AC;
+}
 
-      function osc(freq, start, dur, type = 'sine', vol = 0.15, detune = 0) {
-        const o = AC.createOscillator();
-        const g = AC.createGain();
-        o.type = type; o.frequency.value = freq; o.detune.value = detune;
-        g.gain.setValueAtTime(0, now + start);
-        g.gain.linearRampToValueAtTime(vol, now + start + .04);
-        g.gain.exponentialRampToValueAtTime(.0001, now + start + dur);
-        o.connect(g); g.connect(reverb); g.connect(AC.destination);
-        o.start(now + start); o.stop(now + start + dur + .1);
-      }
+function buildScore() {
+  try {
+    const ac  = getAC();
+    const now = ac.currentTime;
 
-      function sweep(f0, f1, start, dur, vol = .2) {
-        const o = AC.createOscillator();
-        const g = AC.createGain();
-        o.type = 'sine';
-        o.frequency.setValueAtTime(f0, now + start);
-        o.frequency.exponentialRampToValueAtTime(f1, now + start + dur);
-        g.gain.setValueAtTime(0, now + start);
-        g.gain.linearRampToValueAtTime(vol, now + start + .03);
-        g.gain.exponentialRampToValueAtTime(.0001, now + start + dur);
-        o.connect(g); g.connect(reverb); g.connect(AC.destination);
-        o.start(now + start); o.stop(now + start + dur + .1);
-      }
+    // Master reverb
+    const rvSr  = ac.sampleRate;
+    const rvLen = rvSr * 3.5;
+    const rvBuf = ac.createBuffer(2, rvLen, rvSr);
+    for (let ch = 0; ch < 2; ch++) {
+      const d = rvBuf.getChannelData(ch);
+      for (let i = 0; i < rvLen; i++)
+        d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / rvLen, 2.8);
+    }
+    const rv = ac.createConvolver();
+    rv.buffer = rvBuf;
+    const rvG = ac.createGain(); rvG.gain.value = .5;
+    rv.connect(rvG); rvG.connect(ac.destination);
 
-      /* Sub profundo */
-      osc(40,  .4, 5.5, 'sine', .28);
-      osc(40,  .4, 5.5, 'triangle', .07, -8);
+    function O(freq, start, dur, type = 'sine', vol = .15, det = 0) {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = type; o.frequency.value = freq; o.detune.value = det;
+      g.gain.setValueAtTime(0, now + start);
+      g.gain.linearRampToValueAtTime(vol, now + start + .06);
+      g.gain.exponentialRampToValueAtTime(.0001, now + start + dur);
+      o.connect(g); g.connect(ac.destination); g.connect(rv);
+      o.start(now + start); o.stop(now + start + dur + .15);
+    }
 
-      /* Sub sweep — tensión */
-      sweep(32, 75, .4, 2.6, .22);
+    function SW(f0, f1, start, dur, vol = .2) {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(f0, now + start);
+      o.frequency.exponentialRampToValueAtTime(f1, now + start + dur);
+      g.gain.setValueAtTime(0, now + start);
+      g.gain.linearRampToValueAtTime(vol, now + start + .05);
+      g.gain.exponentialRampToValueAtTime(.0001, now + start + dur);
+      o.connect(g); g.connect(ac.destination); g.connect(rv);
+      o.start(now + start); o.stop(now + start + dur + .15);
+    }
 
-      /* Sonido del láser — sweep descendente agudo */
-      sweep(2200, 380, .7, 1.5, .045);
-      sweep(1800, 300, .75, 1.4, .025);
+    function NS(start, dur, vol = .12, freq = 300) {
+      const sr  = ac.sampleRate;
+      const buf = ac.createBuffer(1, sr * dur, sr);
+      const d   = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      const src = ac.createBufferSource();
+      src.buffer = buf;
+      const fl = ac.createBiquadFilter();
+      fl.type = 'bandpass'; fl.frequency.value = freq; fl.Q.value = .6;
+      const g = ac.createGain();
+      g.gain.setValueAtTime(0, now + start);
+      g.gain.linearRampToValueAtTime(vol, now + start + .04);
+      g.gain.exponentialRampToValueAtTime(.0001, now + start + dur);
+      src.connect(fl); fl.connect(g); g.connect(ac.destination); g.connect(rv);
+      src.start(now + start); src.stop(now + start + dur + .1);
+    }
 
-      /* Acorde que se despliega después del reveal */
-      const chord = [220, 277.18, 329.63, 440, 554.37];
-      chord.forEach((f, i) => {
-        osc(f, 2.3 + i * .06, 4.5, 'sine', .1 - i * .015);
-        osc(f, 2.3 + i * .06, 4.5, 'triangle', .025 - i * .003, 5);
+    // ── Silencio absoluto 0–0.6s ──
+
+    // Rumble que crece del suelo
+    O(28,  .6, 7,  'sine',     .4);
+    O(28,  .6, 7,  'triangle', .1, -6);
+    SW(25, 55, .6, 3.5,        .28);
+    NS(.6, 2,  .08, 80);
+
+    // Tensión media — el horizonte aparece ~1.2s
+    SW(80, 140, 1.8, 2, .12);
+    NS(1.8, 1.2, .06, 200);
+
+    // IMPACTO — el texto toca suelo ~3.5s
+    NS(3.4, .6,  .45, 120);
+    NS(3.4, .25, .3,  60);
+    O(35,  3.4, 4,   'sine', .5);
+    O(55,  3.5, 3.5, 'sine', .25);
+    O(70,  3.6, 3,   'sine', .15);
+
+    // Acorde épico que se despliega
+    [[110,.18],[138.6,.14],[165,.10],[220,.08],[277,.055],[330,.035]]
+      .forEach(([f, v], i) => {
+        O(f, 3.8 + i * .07, 5.5, 'sine', v);
+        O(f, 3.8 + i * .07, 5.5, 'triangle', v * .2, 8);
       });
 
-      /* Shimmer alto */
-      osc(880,  2.6, 3.5, 'sine', .025);
-      osc(1100, 2.9, 3.0, 'sine', .012);
+    // Shimmer
+    O(880,  4.2, 4, 'sine', .022);
+    O(1320, 4.6, 3, 'sine', .012);
+    SW(600, 1400, 4.0, 2.5, .018);
 
-    } catch (e) { /* sin audio si falla */ }
+    // Crescendo final — llamarada ~7.5s
+    SW(55, 30, 7.0, 1.5, .3);
+    NS(7.3, .8, .55, 250);
+    NS(7.3, .4, .35, 80);
+    O(40, 7.3, 2, 'sine', .4);
+
+  } catch (e) {}
+}
+
+/* ══════════════════════════════════════
+   EASING
+══════════════════════════════════════ */
+const easeOutExpo  = t => t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+const easeInExpo   = t => t === 0 ? 0 : Math.pow(2, 10 * t - 10);
+const easeInOutQ   = t => t < .5 ? 2*t*t : 1 - Math.pow(-2*t+2, 2)/2;
+const clamp        = (v, a, b) => Math.min(b, Math.max(a, v));
+const invlerp      = (a, b, v) => clamp((v - a) / (b - a), 0, 1);
+
+/* ══════════════════════════════════════
+   TIMELINE (segundos)
+   0.0  negro puro
+   0.6  rumble empieza
+   1.2  horizonte comienza a salir
+   3.5  texto llega abajo → impacto
+   4.0  texto sube a su posición final
+   5.5  subtítulo aparece
+   7.3  llamarada blanca
+   7.9  fade a negro
+   8.6  finish
+══════════════════════════════════════ */
+
+let flash = 0;
+let scoreStarted = false;
+
+function draw(ts) {
+  if (done) return;
+  if (!t0) t0 = ts;
+  const T = (ts - t0) / 1000;
+
+  /* Lanzar audio en primer frame (desktop) o tras gesto (móvil) */
+  if (!scoreStarted && T > .1) {
+    scoreStarted = true;
+    buildScore();
   }
 
-  /* ── SALIDA ── */
-  function finish() {
-    if (finished) return;
-    finished = true;
-    intro.classList.add('exit');
-    setTimeout(() => { intro.style.display = 'none'; }, 1150);
+  ctx.clearRect(0, 0, W, H);
+
+  // ── FONDO NEGRO ──
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, W, H);
+
+  // ── HORIZONTE ──
+  // Aparece entre t=1.2 y t=3.5 desde abajo
+  const hProg  = easeOutExpo(invlerp(1.2, 3.2, T));
+  const hY     = H * (.52 + (1 - hProg) * .6); // baja desde fuera de pantalla
+
+  if (hProg > 0) {
+    // Glow del horizonte — planeta lejano
+    const gR = Math.max(W, H) * 1.1;
+    const grd = ctx.createRadialGradient(cx, hY, 0, cx, hY, gR);
+    grd.addColorStop(0,    `rgba(180,100,255,${.32 * hProg})`);
+    grd.addColorStop(.04,  `rgba(140,60,240,${.28 * hProg})`);
+    grd.addColorStop(.12,  `rgba(88,28,180,${.2 * hProg})`);
+    grd.addColorStop(.3,   `rgba(40,10,100,${.1 * hProg})`);
+    grd.addColorStop(1,    'rgba(0,0,0,0)');
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, W, H);
+
+    // Línea del horizonte nítida
+    const lineAlpha = Math.min(1, hProg * 2);
+    const lGrd = ctx.createLinearGradient(0, 0, W, 0);
+    lGrd.addColorStop(0,   'rgba(180,120,255,0)');
+    lGrd.addColorStop(.15, `rgba(210,160,255,${lineAlpha})`);
+    lGrd.addColorStop(.5,  `rgba(255,255,255,${lineAlpha})`);
+    lGrd.addColorStop(.85, `rgba(210,160,255,${lineAlpha})`);
+    lGrd.addColorStop(1,   'rgba(180,120,255,0)');
+    ctx.save();
+    ctx.shadowBlur  = 30 * hProg;
+    ctx.shadowColor = `rgba(180,120,255,${.8 * hProg})`;
+    ctx.strokeStyle = lGrd;
+    ctx.lineWidth   = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(0, hY); ctx.lineTo(W, hY);
+    ctx.stroke();
+    ctx.restore();
+
+    // Rayos de luz que salen del horizonte hacia arriba
+    const rayAlpha = hProg * .07;
+    for (let i = 0; i < 9; i++) {
+      const angle = (i / 8) * Math.PI - Math.PI / 2 + (Math.sin(T * .4 + i) * .04);
+      const len   = H * 1.4;
+      ctx.save();
+      ctx.globalAlpha = rayAlpha * (1 - Math.abs((i / 8) - .5) * .8);
+      const rGrd = ctx.createLinearGradient(
+        cx, hY,
+        cx + Math.cos(angle) * len,
+        hY  + Math.sin(angle) * len
+      );
+      rGrd.addColorStop(0,   'rgba(180,100,255,.9)');
+      rGrd.addColorStop(.4,  'rgba(120,60,220,.3)');
+      rGrd.addColorStop(1,   'rgba(0,0,0,0)');
+      ctx.strokeStyle = rGrd;
+      ctx.lineWidth   = len * .08;
+      ctx.beginPath();
+      ctx.moveTo(cx, hY);
+      ctx.lineTo(cx + Math.cos(angle) * len, hY + Math.sin(angle) * len);
+      ctx.stroke();
+      ctx.restore();
+    }
   }
 
-  /* Salida automática: reveal acaba ~2.2s, subtítulo ~3.4s, orb ~3.7s
-     Dejamos hold hasta 5.6s y salimos */
-  setTimeout(finish, 5600);
+  // ── TEXTO DOMINIUS AI ──
+  const mob   = W < 600;
+  const fs    = mob ? 42 : Math.min(96, W * .085);
+  const fs2   = mob ? 13 : Math.min(17, W * .015);
 
-  skip.addEventListener('click', finish);
+  // Fase 1: cae desde arriba hasta cy+H*0.4 (impacto) entre t=1.5 y t=3.5
+  // Fase 2: sube a su posición final cy-fs*.1 entre t=3.5 y t=4.5
+  let titleY;
+  const fallProg = easeInExpo(invlerp(1.5, 3.5, T));
+  const riseProg = easeOutExpo(invlerp(3.5, 4.6, T));
 
-  /* Iniciar audio al primer gesto o inmediatamente si ya permitido */
-  let audioStarted = false;
-  function startAudio() {
-    if (audioStarted) return;
-    audioStarted = true;
-    buildAudio();
+  const impactY = cy + fs * .5;
+  const finalY  = cy - fs * .15;
+  const startY  = -fs;
+
+  if (T < 3.5) {
+    titleY = startY + (impactY - startY) * fallProg;
+  } else {
+    titleY = impactY + (finalY - impactY) * riseProg;
   }
 
-  /* En desktop lanzamos directo */
-  if (document.readyState === 'loading')
-    document.addEventListener('DOMContentLoaded', () => setTimeout(startAudio, 50));
-  else
-    setTimeout(startAudio, 50);
+  const titleAlpha = clamp(invlerp(1.5, 2.5, T), 0, 1);
 
-  /* Fallback para móviles que bloquean audio sin gesto */
-  document.addEventListener('touchstart', startAudio, { once: true });
-  document.addEventListener('click',      startAudio, { once: true });
+  if (titleAlpha > 0) {
+    ctx.save();
+    ctx.globalAlpha = titleAlpha;
+
+    // Impacto: vibración al aterrizar
+    let shake = 0;
+    if (T > 3.45 && T < 3.8) {
+      const st = (T - 3.45) / .35;
+      shake = Math.sin(st * Math.PI * 8) * (1 - st) * (mob ? 3 : 6);
+    }
+
+    ctx.font      = `700 ${fs}px -apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    // Glow del texto
+    const glowP  = riseProg;
+    ctx.shadowBlur  = 60 + Math.sin(T * 1.5) * 15;
+    ctx.shadowColor = `rgba(167,139,250,${.7 * glowP + .3})`;
+
+    // Gradiente del texto
+    const tGrd = ctx.createLinearGradient(cx - fs * 3, 0, cx + fs * 3, 0);
+    tGrd.addColorStop(0,   '#fff');
+    tGrd.addColorStop(.3,  '#e9d5ff');
+    tGrd.addColorStop(.55, '#a78bfa');
+    tGrd.addColorStop(.75, '#e9d5ff');
+    tGrd.addColorStop(1,   '#fff');
+    ctx.fillStyle = tGrd;
+    ctx.fillText('DOMINIUS AI', cx + shake, titleY + shake * .3);
+
+    // Segundo pase — brillo interior
+    ctx.shadowBlur  = 20;
+    ctx.shadowColor = '#fff';
+    ctx.globalAlpha = titleAlpha * .25;
+    ctx.fillStyle   = '#fff';
+    ctx.fillText('DOMINIUS AI', cx + shake, titleY + shake * .3);
+
+    ctx.restore();
+  }
+
+  // ── SUBTÍTULO ──
+  const subAlpha = easeOutExpo(invlerp(5.5, 6.4, T));
+  const subY     = finalY + fs * .75 + (1 - subAlpha) * 16;
+
+  if (subAlpha > 0) {
+    ctx.save();
+    ctx.globalAlpha  = subAlpha * .7;
+    ctx.font         = `300 ${fs2}px -apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif`;
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.letterSpacing = '0.4em';
+    ctx.fillStyle    = '#c4b5fd';
+    ctx.shadowBlur   = 20;
+    ctx.shadowColor  = 'rgba(167,139,250,.5)';
+    ctx.fillText('TU IA EMPRESARIAL', cx, subY);
+    ctx.restore();
+  }
+
+  // ── LLAMARADA FINAL ──
+  if (T > 7.3) {
+    const fp = invlerp(7.3, 7.75, T);
+    flash = Math.max(flash, easeInOutQ(fp < .5 ? fp * 2 : (1 - fp) * 2));
+  }
+
+  // ── FLASH ──
+  if (flash > .001) {
+    ctx.save();
+    ctx.globalAlpha = flash;
+    const fGrd = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * .8);
+    fGrd.addColorStop(0, '#fff');
+    fGrd.addColorStop(.3, 'rgba(220,180,255,.9)');
+    fGrd.addColorStop(1, 'rgba(88,28,180,0)');
+    ctx.fillStyle = fGrd;
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+    flash *= .88;
+  }
+
+  // ── FADE A NEGRO FINAL ──
+  if (T > 7.9) {
+    const fp = clamp((T - 7.9) / .7, 0, 1);
+    ctx.save();
+    ctx.globalAlpha = fp;
+    ctx.fillStyle   = '#000';
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+  }
+
+  // ── VIÑETA PERMANENTE ──
+  const vGrd = ctx.createRadialGradient(cx, cy, H * .25, cx, cy, H * .95);
+  vGrd.addColorStop(0, 'rgba(0,0,0,0)');
+  vGrd.addColorStop(1, 'rgba(0,0,0,.6)');
+  ctx.fillStyle = vGrd;
+  ctx.fillRect(0, 0, W, H);
+
+  // ── SKIP ──
+  if (T > 2) {
+    ctx.save();
+    ctx.globalAlpha  = clamp((T - 2) * .4, 0, .22);
+    ctx.font         = `400 10px -apple-system,sans-serif`;
+    ctx.textAlign    = 'right';
+    ctx.textBaseline = 'bottom';
+    ctx.fillStyle    = '#fff';
+    ctx.letterSpacing = '3px';
+    ctx.fillText('SALTAR', W - 24, H - 24);
+    ctx.restore();
+  }
+
+  // Fin
+  if (T > 8.6) { finish(); return; }
+
+  raf = requestAnimationFrame(draw);
+}
+
+function finish() {
+  if (done) return;
+  done = true;
+  cancelAnimationFrame(raf);
+  canvas.style.transition = 'opacity .5s ease';
+  canvas.style.opacity    = '0';
+  setTimeout(() => canvas.style.display = 'none', 520);
+}
+
+canvas.addEventListener('click', () => {
+  try { getAC(); } catch(e) {}
+  if (t0 && (performance.now() - t0) / 1000 > 2) finish();
+});
+document.addEventListener('touchstart', () => { try { getAC(); } catch(e) {} }, { once: true });
+
+// Arrancar
+raf = requestAnimationFrame(draw);
 
 })();
 </script>
