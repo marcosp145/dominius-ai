@@ -7,25 +7,24 @@
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="mobile.css">
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 <div class="background"><div class="particle-field"></div></div>
 
 <div id="intro">
-  <canvas id="bg3d"></canvas>
-
-  <!-- Texto encima del canvas 3D -->
-  <div id="intro-content">
-    <div id="main-title">DOMINIUS AI</div>
-    <div id="sub-title">Tu IA Empresarial</div>
-    <div id="intro-line-h"></div>
+  <video id="iv" autoplay muted playsinline preload="auto">
+    <source src="bg.mp4" type="video/mp4">
+  </video>
+  <div id="overlay"></div>
+  <div id="content">
+    <div id="eyebrow">BIENVENIDO A</div>
+    <h1 id="title">DOMINIUS AI</h1>
+    <div id="rule"></div>
+    <p id="sub">Tu Inteligencia Artificial Empresarial</p>
   </div>
-
-  <div id="skip-btn">SALTAR</div>
+  <div id="skip" onclick="exitIntro()">SALTAR ›</div>
 </div>
 
-<!-- LOGIN -->
 <div class="login-screen" id="loginScreen">
   <div class="login-box">
     <h2 class="login-title">Iniciar Sesión</h2>
@@ -74,284 +73,202 @@
 <div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div><p>Un momento...</p></div>
 
 <style>
-/* ── INTRO CONTAINER ── */
+/* ─── INTRO ─── */
 #intro {
-  position: fixed;
-  inset: 0;
-  z-index: 999999;
+  position: fixed; inset: 0; z-index: 999999;
   background: #000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  transition: opacity 1.4s cubic-bezier(0.76,0,0.24,1);
+}
+#intro.out { opacity: 0; pointer-events: none; }
+
+/* Vídeo */
+#iv {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 3s ease;
+  transform: scale(1.06);
+  animation: videoZoom 12s ease forwards;
+}
+#iv.loaded { opacity: 1; }
+@keyframes videoZoom {
+  from { transform: scale(1.08); }
+  to   { transform: scale(1.0); }
 }
 
-#intro.fade-out {
-  animation: introOut 1.2s cubic-bezier(0.76,0,0.24,1) forwards;
-}
-@keyframes introOut {
-  0%   { opacity:1; }
-  100% { opacity:0; pointer-events:none; }
-}
-
-/* Three.js canvas */
-#bg3d {
-  position: absolute;
-  inset: 0;
-  width: 100% !important;
-  height: 100% !important;
+/* Overlay multicapa */
+#overlay {
+  position: absolute; inset: 0; z-index: 1;
+  background:
+    /* viñeta */
+    radial-gradient(ellipse 90% 90% at 50% 50%,
+      transparent 30%,
+      rgba(0,0,0,.5) 70%,
+      rgba(0,0,0,.9) 100%),
+    /* oscurecimiento general */
+    rgba(0,0,0,.35);
 }
 
-/* Contenido HTML encima */
-#intro-content {
-  position: relative;
-  z-index: 2;
+/* Contenido */
+#content {
+  position: relative; z-index: 2;
   text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  display: flex; flex-direction: column; align-items: center;
 }
 
-/* ── TÍTULO PRINCIPAL ── */
-#main-title {
+/* Eyebrow */
+#eyebrow {
   font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
-  font-size: clamp(38px, 8vw, 92px);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1;
-  white-space: nowrap;
-  color: transparent;
-
-  /* Gradiente */
-  background: linear-gradient(
-    135deg,
-    #ffffff  0%,
-    #ede9fe 25%,
-    #a78bfa 50%,
-    #ede9fe 75%,
-    #ffffff 100%
-  );
-  background-size: 300% auto;
-  background-clip: text;
-  -webkit-background-clip: text;
-
-  /* Empieza invisible */
-  opacity: 0;
-  transform: translateY(30px);
-  filter: blur(12px);
-
-  /* Animación */
-  animation:
-    titleIn 1.4s cubic-bezier(0.16,1,0.3,1) 1.2s forwards,
-    shimmer 6s linear 2.8s infinite;
-
-  text-shadow: none;
-}
-
-/* Glow del título — pseudoelemento */
-#main-title::after {
-  content: 'DOMINIUS AI';
-  position: absolute;
-  inset: 0;
-  background: inherit;
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  filter: blur(20px);
-  opacity: .5;
-  animation: glowPulse 3s ease-in-out 2.8s infinite;
-}
-
-#main-title { position: relative; }
-
-@keyframes titleIn {
-  0%   { opacity:0; transform:translateY(30px); filter:blur(12px); }
-  100% { opacity:1; transform:translateY(0);    filter:blur(0); }
-}
-
-@keyframes shimmer {
-  0%   { background-position: 0%   center; }
-  100% { background-position: 300% center; }
-}
-
-@keyframes glowPulse {
-  0%,100% { opacity:.4; }
-  50%      { opacity:.7; }
-}
-
-/* Línea separadora */
-#intro-line-h {
-  width: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(167,139,250,.6), transparent);
-  margin: clamp(18px,3vw,30px) auto clamp(14px,2.5vw,24px);
-  animation: lineExpand 1s cubic-bezier(0.16,1,0.3,1) 2.3s forwards;
-  box-shadow: 0 0 12px rgba(139,92,246,.4);
-}
-
-@keyframes lineExpand {
-  0%   { width:0;   opacity:0; }
-  100% { width:clamp(80px,20vw,200px); opacity:1; }
-}
-
-/* ── SUBTÍTULO ── */
-#sub-title {
-  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
-  font-size: clamp(11px, 1.4vw, 15px);
-  font-weight: 300;
-  letter-spacing: .5em;
+  font-size: clamp(10px, 1.2vw, 13px);
+  font-weight: 400;
+  letter-spacing: .6em;
   text-transform: uppercase;
-  color: rgba(167,139,250,0);
+  color: rgba(196,181,253,0);
+  margin-bottom: clamp(10px,1.8vw,18px);
+  animation: fadeSlideUp .8s cubic-bezier(0.16,1,0.3,1) 1s forwards;
+}
+
+/* Título */
+#title {
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+  font-size: clamp(52px, 11vw, 130px);
+  font-weight: 700;
+  letter-spacing: -.01em;
+  line-height: 1;
+  margin: 0;
+
+  /* Gradiente texto */
+  background: linear-gradient(
+    160deg,
+    #fff    0%,
+    #ede9fe 20%,
+    #c4b5fd 45%,
+    #ede9fe 70%,
+    #fff   100%
+  );
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+
+  /* Estado inicial */
   opacity: 0;
-  transform: translateY(10px);
-  animation: subIn .9s cubic-bezier(0.16,1,0.3,1) 2.7s forwards;
-  order: 3;
+  transform: scale(.94) translateY(16px);
+  filter: blur(10px);
+
+  animation:
+    titleReveal 1.4s cubic-bezier(0.16,1,0.3,1) 1.3s forwards,
+    shimmerMove 8s linear 2.9s infinite;
+
+  /* Glow */
+  -webkit-text-stroke: 0px transparent;
 }
 
-@keyframes subIn {
-  0%   { opacity:0; color:rgba(167,139,250,0);   transform:translateY(10px); }
-  100% { opacity:1; color:rgba(167,139,250,.65); transform:translateY(0); }
+@keyframes titleReveal {
+  0%   { opacity:0; transform:scale(.94) translateY(16px); filter:blur(10px); }
+  100% { opacity:1; transform:scale(1)   translateY(0);    filter:blur(0); }
 }
 
-/* ── SKIP ── */
-#skip-btn {
+@keyframes shimmerMove {
+  from { background-position: 0% center; }
+  to   { background-position: 200% center; }
+}
+
+/* Glow del título — div separado */
+#title-glow {
   position: absolute;
-  bottom: 28px; right: 28px;
-  font-family: -apple-system, sans-serif;
-  font-size: 10px;
-  letter-spacing: 3px;
-  color: rgba(255,255,255,.15);
-  cursor: pointer;
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+  font-size: clamp(52px, 11vw, 130px);
+  font-weight: 700;
+  letter-spacing: -.01em;
+  line-height: 1;
+  color: rgba(167,139,250,.18);
+  filter: blur(28px);
+  pointer-events: none;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
   opacity: 0;
-  animation: skipIn .6s ease 3s forwards;
-  transition: color .3s;
-  user-select: none;
+  animation: glowIn 1.4s ease 1.3s forwards, glowPulse 4s ease-in-out 2.9s infinite;
 }
-#skip-btn:hover { color: rgba(255,255,255,.4); }
-@keyframes skipIn { to { opacity:1; } }
+@keyframes glowIn { to { opacity:1; } }
+@keyframes glowPulse {
+  0%,100% { opacity:.6; filter:blur(28px); }
+  50%      { opacity:1;  filter:blur(35px); }
+}
+
+/* Regla */
+#rule {
+  width: 0; height: 1px;
+  margin: clamp(22px,3.5vw,38px) 0 clamp(18px,3vw,30px);
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(255,255,255,.5) 20%,
+    rgba(196,181,253,1)  50%,
+    rgba(255,255,255,.5) 80%,
+    transparent);
+  box-shadow: 0 0 20px 3px rgba(167,139,250,.55);
+  opacity: 0;
+  animation: ruleGrow 1.1s cubic-bezier(0.16,1,0.3,1) 2.5s forwards;
+}
+@keyframes ruleGrow {
+  0%   { width:0;                        opacity:0; }
+  20%  { opacity:1; }
+  100% { width:clamp(120px,28vw,320px);  opacity:1; }
+}
+
+/* Subtítulo */
+#sub {
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+  font-size: clamp(12px, 1.6vw, 17px);
+  font-weight: 300;
+  letter-spacing: .35em;
+  text-transform: uppercase;
+  color: rgba(220,215,255,0);
+  margin: 0;
+  opacity: 0;
+  transform: translateY(12px);
+  animation: fadeSlideUp 1s cubic-bezier(0.16,1,0.3,1) 3.1s forwards;
+}
+
+@keyframes fadeSlideUp {
+  0%   { opacity:0; color:rgba(220,215,255,0);   transform:translateY(12px); }
+  100% { opacity:1; color:rgba(220,215,255,.7);  transform:translateY(0); }
+}
+
+/* Skip */
+#skip {
+  position: absolute; bottom:28px; right:30px; z-index:3;
+  font-family: -apple-system, sans-serif;
+  font-size: 10px; letter-spacing: 2.5px; text-transform: uppercase;
+  color: rgba(255,255,255,.18);
+  cursor: pointer; user-select: none;
+  opacity: 0;
+  animation: fadeSlideUp .5s ease 3.5s forwards;
+  transition: color .25s;
+}
+#skip:hover { color: rgba(255,255,255,.5); }
+
+/* Wrapper del título para el glow relativo */
+#title-wrap {
+  position: relative;
+  display: inline-block;
+}
 </style>
 
 <script>
-(function () {
+// ── VÍDEO ──
+const vid = document.getElementById('iv');
+vid.addEventListener('canplaythrough', () => vid.classList.add('loaded'), {once:true});
+vid.addEventListener('loadeddata',     () => vid.classList.add('loaded'), {once:true});
+// Fallback
+setTimeout(() => vid.classList.add('loaded'), 800);
 
-/* ══════════════════════════════════════
-   THREE.JS — Campo de estrellas 3D
-   con neblina volumétrica y movimiento
-══════════════════════════════════════ */
-const canvas   = document.getElementById('bg3d');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setClearColor(0x000000, 1);
-
-const scene  = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
-camera.position.set(0, 0, 5);
-
-window.addEventListener('resize', () => {
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-});
-
-/* ── FOG volumétrico ── */
-scene.fog = new THREE.FogExp2(0x000000, 0.018);
-
-/* ── ESTRELLAS — capa lejana ── */
-function makeStars(count, spread, size, color) {
-  const geo = new THREE.BufferGeometry();
-  const pos = new Float32Array(count * 3);
-  for (let i = 0; i < count * 3; i++)
-    pos[i] = (Math.random() - 0.5) * spread;
-  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  const mat = new THREE.PointsMaterial({
-    color,
-    size,
-    sizeAttenuation: true,
-    transparent: true,
-    opacity: 0,
-  });
-  const pts = new THREE.Points(geo, mat);
-  scene.add(pts);
-  return { pts, mat };
-}
-
-const stars1 = makeStars(3000, 800, 0.35, 0xffffff);
-const stars2 = makeStars(800,  400, 0.6,  0xc4b5fd);
-const stars3 = makeStars(300,  200, 0.9,  0x8b5cf6);
-
-/* ── PLANO DE NEBLINA — horizonte ── */
-const fogGeo = new THREE.PlaneGeometry(80, 4, 1, 1);
-const fogMat = new THREE.MeshBasicMaterial({
-  color: 0x5b21b6,
-  transparent: true,
-  opacity: 0,
-  depthWrite: false,
-  blending: THREE.AdditiveBlending,
-});
-const fogPlane = new THREE.Mesh(fogGeo, fogMat);
-fogPlane.position.set(0, -1.8, -8);
-fogPlane.rotation.x = -0.25;
-scene.add(fogPlane);
-
-/* ── SEGUNDO PLANO MÁS CERCANO Y BRILLANTE ── */
-const fogGeo2 = new THREE.PlaneGeometry(60, 2);
-const fogMat2 = new THREE.MeshBasicMaterial({
-  color: 0x7c3aed,
-  transparent: true,
-  opacity: 0,
-  depthWrite: false,
-  blending: THREE.AdditiveBlending,
-});
-const fogPlane2 = new THREE.Mesh(fogGeo2, fogMat2);
-fogPlane2.position.set(0, -1.6, -4);
-fogPlane2.rotation.x = -0.2;
-scene.add(fogPlane2);
-
-/* ── ANILLO de luz — orbit ── */
-const ringGeo = new THREE.TorusGeometry(3.5, 0.008, 2, 180);
-const ringMat = new THREE.MeshBasicMaterial({
-  color: 0x8b5cf6,
-  transparent: true,
-  opacity: 0,
-  blending: THREE.AdditiveBlending,
-});
-const ring = new THREE.Mesh(ringGeo, ringMat);
-ring.rotation.x = Math.PI / 2.4;
-ring.position.y = -0.3;
-scene.add(ring);
-
-const ringGeo2 = new THREE.TorusGeometry(5, 0.004, 2, 200);
-const ringMat2 = new THREE.MeshBasicMaterial({
-  color: 0x6d28d9,
-  transparent: true,
-  opacity: 0,
-  blending: THREE.AdditiveBlending,
-});
-const ring2 = new THREE.Mesh(ringGeo2, ringMat2);
-ring2.rotation.x = Math.PI / 2.2;
-ring2.position.y = -0.5;
-scene.add(ring2);
-
-/* ── LUZ CENTRAL — esfera de emisión ── */
-const coreGeo = new THREE.SphereGeometry(0.4, 32, 32);
-const coreMat = new THREE.MeshBasicMaterial({
-  color: 0xffffff,
-  transparent: true,
-  opacity: 0,
-  blending: THREE.AdditiveBlending,
-});
-const core = new THREE.Mesh(coreGeo, coreMat);
-core.position.set(0, -0.3, -2);
-scene.add(core);
-
-/* ── HELPER easing ── */
-const easeOut = t => 1 - Math.pow(1 - t, 3);
-const easeIn  = t => t * t * t;
-const clamp   = (v,a,b) => Math.min(b,Math.max(a,v));
-const prog    = (t,a,b) => clamp((t-a)/(b-a),0,1);
-
-/* ── AUDIO ── */
-let AC, scoreStarted = false;
+// ── AUDIO ──
+let AC, audioStarted = false;
 function getAC() {
   if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
   if (AC.state === 'suspended') AC.resume();
@@ -359,165 +276,99 @@ function getAC() {
 }
 
 function buildScore() {
+  if (audioStarted) return;
+  audioStarted = true;
   try {
-    const ac = getAC(), now = ac.currentTime;
+    const ac = getAC(), t = ac.currentTime;
 
-    // Reverb
-    const sr=ac.sampleRate, rl=sr*3, rb=ac.createBuffer(2,rl,sr);
-    for(let c=0;c<2;c++){const d=rb.getChannelData(c);for(let i=0;i<rl;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/rl,2.5);}
-    const rv=ac.createConvolver(); rv.buffer=rb;
-    const rvg=ac.createGain(); rvg.gain.value=.45;
-    rv.connect(rvg); rvg.connect(ac.destination);
-
-    function O(f,w,d,t='sine',v=.15,det=0){
-      const o=ac.createOscillator(),g=ac.createGain();
-      o.type=t;o.frequency.value=f;o.detune.value=det;
-      g.gain.setValueAtTime(0,now+w);
-      g.gain.linearRampToValueAtTime(v,now+w+.05);
-      g.gain.exponentialRampToValueAtTime(.0001,now+w+d);
-      o.connect(g);g.connect(ac.destination);g.connect(rv);
-      o.start(now+w);o.stop(now+w+d+.1);
+    // Reverb grande
+    const sr=ac.sampleRate, rl=Math.floor(sr*4);
+    const rb=ac.createBuffer(2,rl,sr);
+    for(let c=0;c<2;c++){
+      const d=rb.getChannelData(c);
+      for(let i=0;i<rl;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/rl,2);
     }
-    function SW(f0,f1,w,d,v=.2){
+    const rv=ac.createConvolver(); rv.buffer=rb;
+    const rg=ac.createGain(); rg.gain.value=.5;
+    rv.connect(rg); rg.connect(ac.destination);
+
+    function O(f,w,d,tp,v,det=0){
+      const o=ac.createOscillator(),g=ac.createGain();
+      o.type=tp||'sine'; o.frequency.value=f; o.detune.value=det;
+      g.gain.setValueAtTime(0,t+w);
+      g.gain.linearRampToValueAtTime(v,t+w+.06);
+      g.gain.exponentialRampToValueAtTime(.0001,t+w+d);
+      o.connect(g); g.connect(ac.destination); g.connect(rv);
+      o.start(t+w); o.stop(t+w+d+.15);
+    }
+    function SW(f0,f1,w,d,v){
       const o=ac.createOscillator(),g=ac.createGain();
       o.type='sine';
-      o.frequency.setValueAtTime(f0,now+w);
-      o.frequency.exponentialRampToValueAtTime(f1,now+w+d);
-      g.gain.setValueAtTime(0,now+w);
-      g.gain.linearRampToValueAtTime(v,now+w+.05);
-      g.gain.exponentialRampToValueAtTime(.0001,now+w+d);
-      o.connect(g);g.connect(ac.destination);g.connect(rv);
-      o.start(now+w);o.stop(now+w+d+.1);
+      o.frequency.setValueAtTime(f0,t+w);
+      o.frequency.exponentialRampToValueAtTime(f1,t+w+d);
+      g.gain.setValueAtTime(0,t+w);
+      g.gain.linearRampToValueAtTime(v,t+w+.05);
+      g.gain.exponentialRampToValueAtTime(.0001,t+w+d);
+      o.connect(g); g.connect(ac.destination); g.connect(rv);
+      o.start(t+w); o.stop(t+w+d+.15);
     }
-    function NS(w,d,v=.1,f=300){
-      const sr2=ac.sampleRate,buf=ac.createBuffer(1,sr2*d,sr2),da=buf.getChannelData(0);
-      for(let i=0;i<da.length;i++)da[i]=Math.random()*2-1;
+    function NS(w,d,v,f){
+      const b=ac.createBuffer(1,Math.floor(ac.sampleRate*d),ac.sampleRate);
+      const da=b.getChannelData(0);
+      for(let i=0;i<da.length;i++) da[i]=Math.random()*2-1;
       const src=ac.createBufferSource(),fl=ac.createBiquadFilter(),g=ac.createGain();
-      fl.type='bandpass';fl.frequency.value=f;fl.Q.value=.7;
-      src.buffer=buf;
-      g.gain.setValueAtTime(0,now+w);
-      g.gain.linearRampToValueAtTime(v,now+w+.04);
-      g.gain.exponentialRampToValueAtTime(.0001,now+w+d);
-      src.connect(fl);fl.connect(g);g.connect(ac.destination);g.connect(rv);
-      src.start(now+w);src.stop(now+w+d+.1);
+      fl.type='bandpass'; fl.frequency.value=f; fl.Q.value=.6;
+      src.buffer=b;
+      g.gain.setValueAtTime(0,t+w);
+      g.gain.linearRampToValueAtTime(v,t+w+.04);
+      g.gain.exponentialRampToValueAtTime(.0001,t+w+d);
+      src.connect(fl); fl.connect(g); g.connect(ac.destination); g.connect(rv);
+      src.start(t+w); src.stop(t+w+d+.1);
     }
 
-    // Deep void rumble
-    O(28,.2,9,'sine',.35);
-    O(28,.2,9,'triangle',.08,-7);
-    SW(25,60,.2,4,.3);
-    NS(.2,2.5,.08,80);
+    // Profundidad — rumble que emerge con el vídeo
+    O(30, 0, 10, 'sine', .32);
+    SW(28, 58, 0, 3.5, .28);
+    NS(0, 3, .07, 70);
 
-    // Horizonte aparece ~t=1
-    SW(80,160,1,2.5,.12);
-    NS(1,1.5,.06,200);
+    // Activación del título ~1.3s
+    SW(1800, 200, 1.0, 1.6, .04);
+    NS(1.1, .6, .15, 400);
+    O(55,  1.3, 7, 'sine',     .3);
+    O(82,  1.4, 6, 'sine',     .15);
+    O(110, 1.5, 5, 'triangle', .06);
 
-    // Anillos ~t=2
-    O(110,2,5,'sine',.14);
-    O(110,2,5,'triangle',.04,6);
-
-    // Core brilla ~t=2.5
-    NS(2.5,.8,.2,400);
-    SW(400,800,2.5,.6,.04);
-
-    // Título aparece ~t=1.2
-    O(55,1.2,6,'sine',.3);
-    O(82,1.4,5,'sine',.15);
-
-    // Acorde que se despliega ~t=2.8
-    [[165,.12],[220,.09],[277,.07],[330,.05],[440,.035],[550,.022]]
-      .forEach(([f,v],i)=>{
-        O(f,2.8+i*.08,5,'sine',v);
-        O(f,2.8+i*.08,5,'triangle',v*.15,5);
+    // Acorde épico en la regla ~2.5s
+    [[110,.22],[138.6,.17],[165,.13],[220,.10],[277,.07],[330,.05],[440,.03],[554,.018]]
+      .forEach(([f,v],i) => {
+        O(f, 2.5+i*.065, 6, 'sine',     v);
+        O(f, 2.5+i*.065, 6, 'triangle', v*.15, 6);
       });
+    NS(2.5, .5, .2, 160);
 
-    // Shimmer alto
-    O(880,3.2,4,'sine',.018);
-    O(1320,3.6,3,'sine',.010);
-    SW(500,1200,3.0,3,.015);
+    // Shimmer y brillo
+    O(880,  3.0, 5, 'sine', .02);
+    O(1320, 3.4, 4, 'sine', .01);
+    SW(500, 1300, 2.8, 3.5, .015);
 
-  } catch(e) {}
+  } catch(e){}
 }
 
-/* ── RENDER LOOP ── */
-let introFinished = false;
-const clock = new THREE.Clock();
-
-function animate() {
-  if (introFinished) return;
-  requestAnimationFrame(animate);
-
-  const elapsed = clock.getElapsedTime();
-
-  // Lanzar audio
-  if (!scoreStarted && elapsed > .1) {
-    scoreStarted = true;
-    buildScore();
-  }
-
-  // Estrellas aparecen
-  const stP = easeOut(prog(elapsed, .2, 2.5));
-  stars1.mat.opacity = stP * .9;
-  stars2.mat.opacity = stP * .7;
-  stars3.mat.opacity = stP * .8;
-
-  // Rotar estrellas muy lento — parallax
-  stars1.pts.rotation.y = elapsed * .008;
-  stars2.pts.rotation.y = elapsed * .012;
-  stars3.pts.rotation.y = elapsed * .018;
-  stars1.pts.rotation.x = Math.sin(elapsed * .003) * .02;
-
-  // Cámara se acerca muy suavemente
-  camera.position.z = 5 - easeOut(prog(elapsed, 0, 8)) * 1.2;
-  camera.position.y = Math.sin(elapsed * .15) * .04;
-  camera.rotation.z = Math.sin(elapsed * .1) * .005;
-
-  // Fog / horizonte
-  const fogP = easeOut(prog(elapsed, .8, 2.8));
-  fogMat.opacity  = fogP * .18;
-  fogMat2.opacity = fogP * .1;
-  fogPlane.position.y  = -1.8 + fogP * .3;
-  fogPlane2.position.y = -1.6 + fogP * .25;
-
-  // Anillos
-  const ringP = easeOut(prog(elapsed, 1.8, 3.5));
-  ringMat.opacity  = ringP * .35;
-  ringMat2.opacity = ringP * .2;
-  ring.rotation.z  = elapsed * .12;
-  ring2.rotation.z = -elapsed * .08;
-
-  // Core
-  const coreP = easeOut(prog(elapsed, 2.2, 3.5));
-  coreMat.opacity = coreP * (.5 + Math.sin(elapsed * 2) * .15);
-  core.scale.setScalar(1 + Math.sin(elapsed * 2.5) * .08);
-
-  renderer.render(scene, camera);
-}
-animate();
-
-/* ── SALIDA ── */
+// ── SALIDA ──
 let done = false;
-function finish() {
-  if (done) return;
-  done = true;
-  const intro = document.getElementById('intro');
-  intro.classList.add('fade-out');
-  setTimeout(() => {
-    introFinished = true;
-    intro.style.display = 'none';
-  }, 1250);
+function exitIntro() {
+  if (done) return; done = true;
+  const el = document.getElementById('intro');
+  el.classList.add('out');
+  setTimeout(() => el.style.display = 'none', 1450);
 }
 
-// Auto salida a los 8s
-setTimeout(finish, 8000);
+setTimeout(exitIntro, 8000);
 
-document.getElementById('skip-btn').addEventListener('click', finish);
-document.getElementById('intro').addEventListener('click', () => {
-  if (clock.getElapsedTime() > 2.5) finish();
-});
-document.addEventListener('touchstart', () => { try { getAC(); } catch(e) {} }, { once: true });
-
-})();
+// Iniciar audio inmediatamente
+setTimeout(() => { try{ buildScore(); }catch(e){} }, 100);
+document.addEventListener('touchstart', () => { try{getAC();buildScore();}catch(e){} }, {once:true});
+document.addEventListener('click',      () => { try{getAC();buildScore();}catch(e){} }, {once:true});
 </script>
 
 <script src="app.js"></script>
