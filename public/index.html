@@ -7,12 +7,25 @@
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="mobile.css">
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 <div class="background"><div class="particle-field"></div></div>
 
-<canvas id="c"></canvas>
+<div id="intro">
+  <canvas id="bg3d"></canvas>
 
+  <!-- Texto encima del canvas 3D -->
+  <div id="intro-content">
+    <div id="main-title">DOMINIUS AI</div>
+    <div id="sub-title">Tu IA Empresarial</div>
+    <div id="intro-line-h"></div>
+  </div>
+
+  <div id="skip-btn">SALTAR</div>
+</div>
+
+<!-- LOGIN -->
 <div class="login-screen" id="loginScreen">
   <div class="login-box">
     <h2 class="login-title">Iniciar Sesión</h2>
@@ -61,36 +74,284 @@
 <div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div><p>Un momento...</p></div>
 
 <style>
-#c {
+/* ── INTRO CONTAINER ── */
+#intro {
   position: fixed;
   inset: 0;
   z-index: 999999;
-  width: 100%;
-  height: 100%;
-  display: block;
-  cursor: pointer;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+
+#intro.fade-out {
+  animation: introOut 1.2s cubic-bezier(0.76,0,0.24,1) forwards;
+}
+@keyframes introOut {
+  0%   { opacity:1; }
+  100% { opacity:0; pointer-events:none; }
+}
+
+/* Three.js canvas */
+#bg3d {
+  position: absolute;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Contenido HTML encima */
+#intro-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ── TÍTULO PRINCIPAL ── */
+#main-title {
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+  font-size: clamp(38px, 8vw, 92px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  white-space: nowrap;
+  color: transparent;
+
+  /* Gradiente */
+  background: linear-gradient(
+    135deg,
+    #ffffff  0%,
+    #ede9fe 25%,
+    #a78bfa 50%,
+    #ede9fe 75%,
+    #ffffff 100%
+  );
+  background-size: 300% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+
+  /* Empieza invisible */
+  opacity: 0;
+  transform: translateY(30px);
+  filter: blur(12px);
+
+  /* Animación */
+  animation:
+    titleIn 1.4s cubic-bezier(0.16,1,0.3,1) 1.2s forwards,
+    shimmer 6s linear 2.8s infinite;
+
+  text-shadow: none;
+}
+
+/* Glow del título — pseudoelemento */
+#main-title::after {
+  content: 'DOMINIUS AI';
+  position: absolute;
+  inset: 0;
+  background: inherit;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  filter: blur(20px);
+  opacity: .5;
+  animation: glowPulse 3s ease-in-out 2.8s infinite;
+}
+
+#main-title { position: relative; }
+
+@keyframes titleIn {
+  0%   { opacity:0; transform:translateY(30px); filter:blur(12px); }
+  100% { opacity:1; transform:translateY(0);    filter:blur(0); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: 0%   center; }
+  100% { background-position: 300% center; }
+}
+
+@keyframes glowPulse {
+  0%,100% { opacity:.4; }
+  50%      { opacity:.7; }
+}
+
+/* Línea separadora */
+#intro-line-h {
+  width: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(167,139,250,.6), transparent);
+  margin: clamp(18px,3vw,30px) auto clamp(14px,2.5vw,24px);
+  animation: lineExpand 1s cubic-bezier(0.16,1,0.3,1) 2.3s forwards;
+  box-shadow: 0 0 12px rgba(139,92,246,.4);
+}
+
+@keyframes lineExpand {
+  0%   { width:0;   opacity:0; }
+  100% { width:clamp(80px,20vw,200px); opacity:1; }
+}
+
+/* ── SUBTÍTULO ── */
+#sub-title {
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+  font-size: clamp(11px, 1.4vw, 15px);
+  font-weight: 300;
+  letter-spacing: .5em;
+  text-transform: uppercase;
+  color: rgba(167,139,250,0);
+  opacity: 0;
+  transform: translateY(10px);
+  animation: subIn .9s cubic-bezier(0.16,1,0.3,1) 2.7s forwards;
+  order: 3;
+}
+
+@keyframes subIn {
+  0%   { opacity:0; color:rgba(167,139,250,0);   transform:translateY(10px); }
+  100% { opacity:1; color:rgba(167,139,250,.65); transform:translateY(0); }
+}
+
+/* ── SKIP ── */
+#skip-btn {
+  position: absolute;
+  bottom: 28px; right: 28px;
+  font-family: -apple-system, sans-serif;
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: rgba(255,255,255,.15);
+  cursor: pointer;
+  opacity: 0;
+  animation: skipIn .6s ease 3s forwards;
+  transition: color .3s;
+  user-select: none;
+}
+#skip-btn:hover { color: rgba(255,255,255,.4); }
+@keyframes skipIn { to { opacity:1; } }
 </style>
 
 <script>
 (function () {
 
-const canvas = document.getElementById('c');
-const ctx    = canvas.getContext('2d');
-let W, H, cx, cy, raf, t0, done = false;
-
-function resize() {
-  W = canvas.width  = window.innerWidth;
-  H = canvas.height = window.innerHeight;
-  cx = W / 2; cy = H / 2;
-}
-resize();
-window.addEventListener('resize', () => { resize(); });
-
 /* ══════════════════════════════════════
-   AUDIO — cinematic score
+   THREE.JS — Campo de estrellas 3D
+   con neblina volumétrica y movimiento
 ══════════════════════════════════════ */
-let AC;
+const canvas   = document.getElementById('bg3d');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setClearColor(0x000000, 1);
+
+const scene  = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
+camera.position.set(0, 0, 5);
+
+window.addEventListener('resize', () => {
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+});
+
+/* ── FOG volumétrico ── */
+scene.fog = new THREE.FogExp2(0x000000, 0.018);
+
+/* ── ESTRELLAS — capa lejana ── */
+function makeStars(count, spread, size, color) {
+  const geo = new THREE.BufferGeometry();
+  const pos = new Float32Array(count * 3);
+  for (let i = 0; i < count * 3; i++)
+    pos[i] = (Math.random() - 0.5) * spread;
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const mat = new THREE.PointsMaterial({
+    color,
+    size,
+    sizeAttenuation: true,
+    transparent: true,
+    opacity: 0,
+  });
+  const pts = new THREE.Points(geo, mat);
+  scene.add(pts);
+  return { pts, mat };
+}
+
+const stars1 = makeStars(3000, 800, 0.35, 0xffffff);
+const stars2 = makeStars(800,  400, 0.6,  0xc4b5fd);
+const stars3 = makeStars(300,  200, 0.9,  0x8b5cf6);
+
+/* ── PLANO DE NEBLINA — horizonte ── */
+const fogGeo = new THREE.PlaneGeometry(80, 4, 1, 1);
+const fogMat = new THREE.MeshBasicMaterial({
+  color: 0x5b21b6,
+  transparent: true,
+  opacity: 0,
+  depthWrite: false,
+  blending: THREE.AdditiveBlending,
+});
+const fogPlane = new THREE.Mesh(fogGeo, fogMat);
+fogPlane.position.set(0, -1.8, -8);
+fogPlane.rotation.x = -0.25;
+scene.add(fogPlane);
+
+/* ── SEGUNDO PLANO MÁS CERCANO Y BRILLANTE ── */
+const fogGeo2 = new THREE.PlaneGeometry(60, 2);
+const fogMat2 = new THREE.MeshBasicMaterial({
+  color: 0x7c3aed,
+  transparent: true,
+  opacity: 0,
+  depthWrite: false,
+  blending: THREE.AdditiveBlending,
+});
+const fogPlane2 = new THREE.Mesh(fogGeo2, fogMat2);
+fogPlane2.position.set(0, -1.6, -4);
+fogPlane2.rotation.x = -0.2;
+scene.add(fogPlane2);
+
+/* ── ANILLO de luz — orbit ── */
+const ringGeo = new THREE.TorusGeometry(3.5, 0.008, 2, 180);
+const ringMat = new THREE.MeshBasicMaterial({
+  color: 0x8b5cf6,
+  transparent: true,
+  opacity: 0,
+  blending: THREE.AdditiveBlending,
+});
+const ring = new THREE.Mesh(ringGeo, ringMat);
+ring.rotation.x = Math.PI / 2.4;
+ring.position.y = -0.3;
+scene.add(ring);
+
+const ringGeo2 = new THREE.TorusGeometry(5, 0.004, 2, 200);
+const ringMat2 = new THREE.MeshBasicMaterial({
+  color: 0x6d28d9,
+  transparent: true,
+  opacity: 0,
+  blending: THREE.AdditiveBlending,
+});
+const ring2 = new THREE.Mesh(ringGeo2, ringMat2);
+ring2.rotation.x = Math.PI / 2.2;
+ring2.position.y = -0.5;
+scene.add(ring2);
+
+/* ── LUZ CENTRAL — esfera de emisión ── */
+const coreGeo = new THREE.SphereGeometry(0.4, 32, 32);
+const coreMat = new THREE.MeshBasicMaterial({
+  color: 0xffffff,
+  transparent: true,
+  opacity: 0,
+  blending: THREE.AdditiveBlending,
+});
+const core = new THREE.Mesh(coreGeo, coreMat);
+core.position.set(0, -0.3, -2);
+scene.add(core);
+
+/* ── HELPER easing ── */
+const easeOut = t => 1 - Math.pow(1 - t, 3);
+const easeIn  = t => t * t * t;
+const clamp   = (v,a,b) => Math.min(b,Math.max(a,v));
+const prog    = (t,a,b) => clamp((t-a)/(b-a),0,1);
+
+/* ── AUDIO ── */
+let AC, scoreStarted = false;
 function getAC() {
   if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
   if (AC.state === 'suspended') AC.resume();
@@ -99,358 +360,162 @@ function getAC() {
 
 function buildScore() {
   try {
-    const ac  = getAC();
-    const now = ac.currentTime;
+    const ac = getAC(), now = ac.currentTime;
 
-    // Master reverb
-    const rvSr  = ac.sampleRate;
-    const rvLen = rvSr * 3.5;
-    const rvBuf = ac.createBuffer(2, rvLen, rvSr);
-    for (let ch = 0; ch < 2; ch++) {
-      const d = rvBuf.getChannelData(ch);
-      for (let i = 0; i < rvLen; i++)
-        d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / rvLen, 2.8);
+    // Reverb
+    const sr=ac.sampleRate, rl=sr*3, rb=ac.createBuffer(2,rl,sr);
+    for(let c=0;c<2;c++){const d=rb.getChannelData(c);for(let i=0;i<rl;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/rl,2.5);}
+    const rv=ac.createConvolver(); rv.buffer=rb;
+    const rvg=ac.createGain(); rvg.gain.value=.45;
+    rv.connect(rvg); rvg.connect(ac.destination);
+
+    function O(f,w,d,t='sine',v=.15,det=0){
+      const o=ac.createOscillator(),g=ac.createGain();
+      o.type=t;o.frequency.value=f;o.detune.value=det;
+      g.gain.setValueAtTime(0,now+w);
+      g.gain.linearRampToValueAtTime(v,now+w+.05);
+      g.gain.exponentialRampToValueAtTime(.0001,now+w+d);
+      o.connect(g);g.connect(ac.destination);g.connect(rv);
+      o.start(now+w);o.stop(now+w+d+.1);
     }
-    const rv = ac.createConvolver();
-    rv.buffer = rvBuf;
-    const rvG = ac.createGain(); rvG.gain.value = .5;
-    rv.connect(rvG); rvG.connect(ac.destination);
-
-    function O(freq, start, dur, type = 'sine', vol = .15, det = 0) {
-      const o = ac.createOscillator(), g = ac.createGain();
-      o.type = type; o.frequency.value = freq; o.detune.value = det;
-      g.gain.setValueAtTime(0, now + start);
-      g.gain.linearRampToValueAtTime(vol, now + start + .06);
-      g.gain.exponentialRampToValueAtTime(.0001, now + start + dur);
-      o.connect(g); g.connect(ac.destination); g.connect(rv);
-      o.start(now + start); o.stop(now + start + dur + .15);
+    function SW(f0,f1,w,d,v=.2){
+      const o=ac.createOscillator(),g=ac.createGain();
+      o.type='sine';
+      o.frequency.setValueAtTime(f0,now+w);
+      o.frequency.exponentialRampToValueAtTime(f1,now+w+d);
+      g.gain.setValueAtTime(0,now+w);
+      g.gain.linearRampToValueAtTime(v,now+w+.05);
+      g.gain.exponentialRampToValueAtTime(.0001,now+w+d);
+      o.connect(g);g.connect(ac.destination);g.connect(rv);
+      o.start(now+w);o.stop(now+w+d+.1);
     }
-
-    function SW(f0, f1, start, dur, vol = .2) {
-      const o = ac.createOscillator(), g = ac.createGain();
-      o.type = 'sine';
-      o.frequency.setValueAtTime(f0, now + start);
-      o.frequency.exponentialRampToValueAtTime(f1, now + start + dur);
-      g.gain.setValueAtTime(0, now + start);
-      g.gain.linearRampToValueAtTime(vol, now + start + .05);
-      g.gain.exponentialRampToValueAtTime(.0001, now + start + dur);
-      o.connect(g); g.connect(ac.destination); g.connect(rv);
-      o.start(now + start); o.stop(now + start + dur + .15);
-    }
-
-    function NS(start, dur, vol = .12, freq = 300) {
-      const sr  = ac.sampleRate;
-      const buf = ac.createBuffer(1, sr * dur, sr);
-      const d   = buf.getChannelData(0);
-      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-      const src = ac.createBufferSource();
-      src.buffer = buf;
-      const fl = ac.createBiquadFilter();
-      fl.type = 'bandpass'; fl.frequency.value = freq; fl.Q.value = .6;
-      const g = ac.createGain();
-      g.gain.setValueAtTime(0, now + start);
-      g.gain.linearRampToValueAtTime(vol, now + start + .04);
-      g.gain.exponentialRampToValueAtTime(.0001, now + start + dur);
-      src.connect(fl); fl.connect(g); g.connect(ac.destination); g.connect(rv);
-      src.start(now + start); src.stop(now + start + dur + .1);
+    function NS(w,d,v=.1,f=300){
+      const sr2=ac.sampleRate,buf=ac.createBuffer(1,sr2*d,sr2),da=buf.getChannelData(0);
+      for(let i=0;i<da.length;i++)da[i]=Math.random()*2-1;
+      const src=ac.createBufferSource(),fl=ac.createBiquadFilter(),g=ac.createGain();
+      fl.type='bandpass';fl.frequency.value=f;fl.Q.value=.7;
+      src.buffer=buf;
+      g.gain.setValueAtTime(0,now+w);
+      g.gain.linearRampToValueAtTime(v,now+w+.04);
+      g.gain.exponentialRampToValueAtTime(.0001,now+w+d);
+      src.connect(fl);fl.connect(g);g.connect(ac.destination);g.connect(rv);
+      src.start(now+w);src.stop(now+w+d+.1);
     }
 
-    // ── Silencio absoluto 0–0.6s ──
+    // Deep void rumble
+    O(28,.2,9,'sine',.35);
+    O(28,.2,9,'triangle',.08,-7);
+    SW(25,60,.2,4,.3);
+    NS(.2,2.5,.08,80);
 
-    // Rumble que crece del suelo
-    O(28,  .6, 7,  'sine',     .4);
-    O(28,  .6, 7,  'triangle', .1, -6);
-    SW(25, 55, .6, 3.5,        .28);
-    NS(.6, 2,  .08, 80);
+    // Horizonte aparece ~t=1
+    SW(80,160,1,2.5,.12);
+    NS(1,1.5,.06,200);
 
-    // Tensión media — el horizonte aparece ~1.2s
-    SW(80, 140, 1.8, 2, .12);
-    NS(1.8, 1.2, .06, 200);
+    // Anillos ~t=2
+    O(110,2,5,'sine',.14);
+    O(110,2,5,'triangle',.04,6);
 
-    // IMPACTO — el texto toca suelo ~3.5s
-    NS(3.4, .6,  .45, 120);
-    NS(3.4, .25, .3,  60);
-    O(35,  3.4, 4,   'sine', .5);
-    O(55,  3.5, 3.5, 'sine', .25);
-    O(70,  3.6, 3,   'sine', .15);
+    // Core brilla ~t=2.5
+    NS(2.5,.8,.2,400);
+    SW(400,800,2.5,.6,.04);
 
-    // Acorde épico que se despliega
-    [[110,.18],[138.6,.14],[165,.10],[220,.08],[277,.055],[330,.035]]
-      .forEach(([f, v], i) => {
-        O(f, 3.8 + i * .07, 5.5, 'sine', v);
-        O(f, 3.8 + i * .07, 5.5, 'triangle', v * .2, 8);
+    // Título aparece ~t=1.2
+    O(55,1.2,6,'sine',.3);
+    O(82,1.4,5,'sine',.15);
+
+    // Acorde que se despliega ~t=2.8
+    [[165,.12],[220,.09],[277,.07],[330,.05],[440,.035],[550,.022]]
+      .forEach(([f,v],i)=>{
+        O(f,2.8+i*.08,5,'sine',v);
+        O(f,2.8+i*.08,5,'triangle',v*.15,5);
       });
 
-    // Shimmer
-    O(880,  4.2, 4, 'sine', .022);
-    O(1320, 4.6, 3, 'sine', .012);
-    SW(600, 1400, 4.0, 2.5, .018);
+    // Shimmer alto
+    O(880,3.2,4,'sine',.018);
+    O(1320,3.6,3,'sine',.010);
+    SW(500,1200,3.0,3,.015);
 
-    // Crescendo final — llamarada ~7.5s
-    SW(55, 30, 7.0, 1.5, .3);
-    NS(7.3, .8, .55, 250);
-    NS(7.3, .4, .35, 80);
-    O(40, 7.3, 2, 'sine', .4);
-
-  } catch (e) {}
+  } catch(e) {}
 }
 
-/* ══════════════════════════════════════
-   EASING
-══════════════════════════════════════ */
-const easeOutExpo  = t => t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
-const easeInExpo   = t => t === 0 ? 0 : Math.pow(2, 10 * t - 10);
-const easeInOutQ   = t => t < .5 ? 2*t*t : 1 - Math.pow(-2*t+2, 2)/2;
-const clamp        = (v, a, b) => Math.min(b, Math.max(a, v));
-const invlerp      = (a, b, v) => clamp((v - a) / (b - a), 0, 1);
+/* ── RENDER LOOP ── */
+let introFinished = false;
+const clock = new THREE.Clock();
 
-/* ══════════════════════════════════════
-   TIMELINE (segundos)
-   0.0  negro puro
-   0.6  rumble empieza
-   1.2  horizonte comienza a salir
-   3.5  texto llega abajo → impacto
-   4.0  texto sube a su posición final
-   5.5  subtítulo aparece
-   7.3  llamarada blanca
-   7.9  fade a negro
-   8.6  finish
-══════════════════════════════════════ */
+function animate() {
+  if (introFinished) return;
+  requestAnimationFrame(animate);
 
-let flash = 0;
-let scoreStarted = false;
+  const elapsed = clock.getElapsedTime();
 
-function draw(ts) {
-  if (done) return;
-  if (!t0) t0 = ts;
-  const T = (ts - t0) / 1000;
-
-  /* Lanzar audio en primer frame (desktop) o tras gesto (móvil) */
-  if (!scoreStarted && T > .1) {
+  // Lanzar audio
+  if (!scoreStarted && elapsed > .1) {
     scoreStarted = true;
     buildScore();
   }
 
-  ctx.clearRect(0, 0, W, H);
+  // Estrellas aparecen
+  const stP = easeOut(prog(elapsed, .2, 2.5));
+  stars1.mat.opacity = stP * .9;
+  stars2.mat.opacity = stP * .7;
+  stars3.mat.opacity = stP * .8;
 
-  // ── FONDO NEGRO ──
-  ctx.fillStyle = '#000';
-  ctx.fillRect(0, 0, W, H);
+  // Rotar estrellas muy lento — parallax
+  stars1.pts.rotation.y = elapsed * .008;
+  stars2.pts.rotation.y = elapsed * .012;
+  stars3.pts.rotation.y = elapsed * .018;
+  stars1.pts.rotation.x = Math.sin(elapsed * .003) * .02;
 
-  // ── HORIZONTE ──
-  // Aparece entre t=1.2 y t=3.5 desde abajo
-  const hProg  = easeOutExpo(invlerp(1.2, 3.2, T));
-  const hY     = H * (.52 + (1 - hProg) * .6); // baja desde fuera de pantalla
+  // Cámara se acerca muy suavemente
+  camera.position.z = 5 - easeOut(prog(elapsed, 0, 8)) * 1.2;
+  camera.position.y = Math.sin(elapsed * .15) * .04;
+  camera.rotation.z = Math.sin(elapsed * .1) * .005;
 
-  if (hProg > 0) {
-    // Glow del horizonte — planeta lejano
-    const gR = Math.max(W, H) * 1.1;
-    const grd = ctx.createRadialGradient(cx, hY, 0, cx, hY, gR);
-    grd.addColorStop(0,    `rgba(180,100,255,${.32 * hProg})`);
-    grd.addColorStop(.04,  `rgba(140,60,240,${.28 * hProg})`);
-    grd.addColorStop(.12,  `rgba(88,28,180,${.2 * hProg})`);
-    grd.addColorStop(.3,   `rgba(40,10,100,${.1 * hProg})`);
-    grd.addColorStop(1,    'rgba(0,0,0,0)');
-    ctx.fillStyle = grd;
-    ctx.fillRect(0, 0, W, H);
+  // Fog / horizonte
+  const fogP = easeOut(prog(elapsed, .8, 2.8));
+  fogMat.opacity  = fogP * .18;
+  fogMat2.opacity = fogP * .1;
+  fogPlane.position.y  = -1.8 + fogP * .3;
+  fogPlane2.position.y = -1.6 + fogP * .25;
 
-    // Línea del horizonte nítida
-    const lineAlpha = Math.min(1, hProg * 2);
-    const lGrd = ctx.createLinearGradient(0, 0, W, 0);
-    lGrd.addColorStop(0,   'rgba(180,120,255,0)');
-    lGrd.addColorStop(.15, `rgba(210,160,255,${lineAlpha})`);
-    lGrd.addColorStop(.5,  `rgba(255,255,255,${lineAlpha})`);
-    lGrd.addColorStop(.85, `rgba(210,160,255,${lineAlpha})`);
-    lGrd.addColorStop(1,   'rgba(180,120,255,0)');
-    ctx.save();
-    ctx.shadowBlur  = 30 * hProg;
-    ctx.shadowColor = `rgba(180,120,255,${.8 * hProg})`;
-    ctx.strokeStyle = lGrd;
-    ctx.lineWidth   = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(0, hY); ctx.lineTo(W, hY);
-    ctx.stroke();
-    ctx.restore();
+  // Anillos
+  const ringP = easeOut(prog(elapsed, 1.8, 3.5));
+  ringMat.opacity  = ringP * .35;
+  ringMat2.opacity = ringP * .2;
+  ring.rotation.z  = elapsed * .12;
+  ring2.rotation.z = -elapsed * .08;
 
-    // Rayos de luz que salen del horizonte hacia arriba
-    const rayAlpha = hProg * .07;
-    for (let i = 0; i < 9; i++) {
-      const angle = (i / 8) * Math.PI - Math.PI / 2 + (Math.sin(T * .4 + i) * .04);
-      const len   = H * 1.4;
-      ctx.save();
-      ctx.globalAlpha = rayAlpha * (1 - Math.abs((i / 8) - .5) * .8);
-      const rGrd = ctx.createLinearGradient(
-        cx, hY,
-        cx + Math.cos(angle) * len,
-        hY  + Math.sin(angle) * len
-      );
-      rGrd.addColorStop(0,   'rgba(180,100,255,.9)');
-      rGrd.addColorStop(.4,  'rgba(120,60,220,.3)');
-      rGrd.addColorStop(1,   'rgba(0,0,0,0)');
-      ctx.strokeStyle = rGrd;
-      ctx.lineWidth   = len * .08;
-      ctx.beginPath();
-      ctx.moveTo(cx, hY);
-      ctx.lineTo(cx + Math.cos(angle) * len, hY + Math.sin(angle) * len);
-      ctx.stroke();
-      ctx.restore();
-    }
-  }
+  // Core
+  const coreP = easeOut(prog(elapsed, 2.2, 3.5));
+  coreMat.opacity = coreP * (.5 + Math.sin(elapsed * 2) * .15);
+  core.scale.setScalar(1 + Math.sin(elapsed * 2.5) * .08);
 
-  // ── TEXTO DOMINIUS AI ──
-  const mob   = W < 600;
-  const fs    = mob ? 42 : Math.min(96, W * .085);
-  const fs2   = mob ? 13 : Math.min(17, W * .015);
-
-  // Fase 1: cae desde arriba hasta cy+H*0.4 (impacto) entre t=1.5 y t=3.5
-  // Fase 2: sube a su posición final cy-fs*.1 entre t=3.5 y t=4.5
-  let titleY;
-  const fallProg = easeInExpo(invlerp(1.5, 3.5, T));
-  const riseProg = easeOutExpo(invlerp(3.5, 4.6, T));
-
-  const impactY = cy + fs * .5;
-  const finalY  = cy - fs * .15;
-  const startY  = -fs;
-
-  if (T < 3.5) {
-    titleY = startY + (impactY - startY) * fallProg;
-  } else {
-    titleY = impactY + (finalY - impactY) * riseProg;
-  }
-
-  const titleAlpha = clamp(invlerp(1.5, 2.5, T), 0, 1);
-
-  if (titleAlpha > 0) {
-    ctx.save();
-    ctx.globalAlpha = titleAlpha;
-
-    // Impacto: vibración al aterrizar
-    let shake = 0;
-    if (T > 3.45 && T < 3.8) {
-      const st = (T - 3.45) / .35;
-      shake = Math.sin(st * Math.PI * 8) * (1 - st) * (mob ? 3 : 6);
-    }
-
-    ctx.font      = `700 ${fs}px -apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-
-    // Glow del texto
-    const glowP  = riseProg;
-    ctx.shadowBlur  = 60 + Math.sin(T * 1.5) * 15;
-    ctx.shadowColor = `rgba(167,139,250,${.7 * glowP + .3})`;
-
-    // Gradiente del texto
-    const tGrd = ctx.createLinearGradient(cx - fs * 3, 0, cx + fs * 3, 0);
-    tGrd.addColorStop(0,   '#fff');
-    tGrd.addColorStop(.3,  '#e9d5ff');
-    tGrd.addColorStop(.55, '#a78bfa');
-    tGrd.addColorStop(.75, '#e9d5ff');
-    tGrd.addColorStop(1,   '#fff');
-    ctx.fillStyle = tGrd;
-    ctx.fillText('DOMINIUS AI', cx + shake, titleY + shake * .3);
-
-    // Segundo pase — brillo interior
-    ctx.shadowBlur  = 20;
-    ctx.shadowColor = '#fff';
-    ctx.globalAlpha = titleAlpha * .25;
-    ctx.fillStyle   = '#fff';
-    ctx.fillText('DOMINIUS AI', cx + shake, titleY + shake * .3);
-
-    ctx.restore();
-  }
-
-  // ── SUBTÍTULO ──
-  const subAlpha = easeOutExpo(invlerp(5.5, 6.4, T));
-  const subY     = finalY + fs * .75 + (1 - subAlpha) * 16;
-
-  if (subAlpha > 0) {
-    ctx.save();
-    ctx.globalAlpha  = subAlpha * .7;
-    ctx.font         = `300 ${fs2}px -apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif`;
-    ctx.textAlign    = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.letterSpacing = '0.4em';
-    ctx.fillStyle    = '#c4b5fd';
-    ctx.shadowBlur   = 20;
-    ctx.shadowColor  = 'rgba(167,139,250,.5)';
-    ctx.fillText('TU IA EMPRESARIAL', cx, subY);
-    ctx.restore();
-  }
-
-  // ── LLAMARADA FINAL ──
-  if (T > 7.3) {
-    const fp = invlerp(7.3, 7.75, T);
-    flash = Math.max(flash, easeInOutQ(fp < .5 ? fp * 2 : (1 - fp) * 2));
-  }
-
-  // ── FLASH ──
-  if (flash > .001) {
-    ctx.save();
-    ctx.globalAlpha = flash;
-    const fGrd = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * .8);
-    fGrd.addColorStop(0, '#fff');
-    fGrd.addColorStop(.3, 'rgba(220,180,255,.9)');
-    fGrd.addColorStop(1, 'rgba(88,28,180,0)');
-    ctx.fillStyle = fGrd;
-    ctx.fillRect(0, 0, W, H);
-    ctx.restore();
-    flash *= .88;
-  }
-
-  // ── FADE A NEGRO FINAL ──
-  if (T > 7.9) {
-    const fp = clamp((T - 7.9) / .7, 0, 1);
-    ctx.save();
-    ctx.globalAlpha = fp;
-    ctx.fillStyle   = '#000';
-    ctx.fillRect(0, 0, W, H);
-    ctx.restore();
-  }
-
-  // ── VIÑETA PERMANENTE ──
-  const vGrd = ctx.createRadialGradient(cx, cy, H * .25, cx, cy, H * .95);
-  vGrd.addColorStop(0, 'rgba(0,0,0,0)');
-  vGrd.addColorStop(1, 'rgba(0,0,0,.6)');
-  ctx.fillStyle = vGrd;
-  ctx.fillRect(0, 0, W, H);
-
-  // ── SKIP ──
-  if (T > 2) {
-    ctx.save();
-    ctx.globalAlpha  = clamp((T - 2) * .4, 0, .22);
-    ctx.font         = `400 10px -apple-system,sans-serif`;
-    ctx.textAlign    = 'right';
-    ctx.textBaseline = 'bottom';
-    ctx.fillStyle    = '#fff';
-    ctx.letterSpacing = '3px';
-    ctx.fillText('SALTAR', W - 24, H - 24);
-    ctx.restore();
-  }
-
-  // Fin
-  if (T > 8.6) { finish(); return; }
-
-  raf = requestAnimationFrame(draw);
+  renderer.render(scene, camera);
 }
+animate();
 
+/* ── SALIDA ── */
+let done = false;
 function finish() {
   if (done) return;
   done = true;
-  cancelAnimationFrame(raf);
-  canvas.style.transition = 'opacity .5s ease';
-  canvas.style.opacity    = '0';
-  setTimeout(() => canvas.style.display = 'none', 520);
+  const intro = document.getElementById('intro');
+  intro.classList.add('fade-out');
+  setTimeout(() => {
+    introFinished = true;
+    intro.style.display = 'none';
+  }, 1250);
 }
 
-canvas.addEventListener('click', () => {
-  try { getAC(); } catch(e) {}
-  if (t0 && (performance.now() - t0) / 1000 > 2) finish();
+// Auto salida a los 8s
+setTimeout(finish, 8000);
+
+document.getElementById('skip-btn').addEventListener('click', finish);
+document.getElementById('intro').addEventListener('click', () => {
+  if (clock.getElapsedTime() > 2.5) finish();
 });
 document.addEventListener('touchstart', () => { try { getAC(); } catch(e) {} }, { once: true });
-
-// Arrancar
-raf = requestAnimationFrame(draw);
 
 })();
 </script>
