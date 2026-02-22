@@ -7,24 +7,444 @@
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="mobile.css">
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+
+<style>
+/* ════════════════════════════════════════════════
+   INTRO — CSS PURO
+════════════════════════════════════════════════ */
+
+#intro {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: default;
+}
+
+/* ── FONDO: nebulosa con gradientes animados ── */
+#intro::before {
+  content: '';
+  position: absolute;
+  inset: -20%;
+  background:
+    radial-gradient(ellipse 55% 40% at 20% 50%, rgba(88,28,180,.55) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 55% at 80% 40%, rgba(30,60,180,.45) 0%, transparent 65%),
+    radial-gradient(ellipse 60% 35% at 55% 80%, rgba(120,20,150,.35) 0%, transparent 65%),
+    radial-gradient(ellipse 50% 50% at 50% 50%, rgba(15,5,35,1) 30%, rgba(5,0,15,1) 100%);
+  animation: nebulaShift 18s ease-in-out infinite alternate;
+  filter: blur(0px);
+}
+
+@keyframes nebulaShift {
+  0%   { transform: scale(1)    rotate(0deg);   opacity: .85; }
+  33%  { transform: scale(1.08) rotate(1.5deg); opacity: 1; }
+  66%  { transform: scale(1.04) rotate(-1deg);  opacity: .9; }
+  100% { transform: scale(1.1)  rotate(2deg);   opacity: 1; }
+}
+
+/* ── CAPA DE ESTRELLAS — CSS puro con box-shadow ── */
+#stars-a, #stars-b, #stars-c {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+#stars-a { animation: starsFloat 80s linear infinite; }
+#stars-b { animation: starsFloat 120s linear infinite reverse; opacity: .7; }
+#stars-c { animation: starsFloat 160s linear infinite; opacity: .5; }
+
+@keyframes starsFloat {
+  from { transform: translateY(0)    rotate(0deg); }
+  to   { transform: translateY(-40px) rotate(.5deg); }
+}
+
+/* Las estrellas son box-shadows en un div de 1px */
+#stars-a::after,
+#stars-b::after,
+#stars-c::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 1px; height: 1px;
+  border-radius: 50%;
+}
+
+#stars-a::after {
+  background: transparent;
+  box-shadow:
+    120px 80px 0 #fff, 340px 200px 0 rgba(255,255,255,.8),
+    560px 140px 0 #fff, 780px 300px 0 rgba(255,255,255,.7),
+    900px 80px 0 #fff, 1100px 220px 0 rgba(255,255,255,.9),
+    1300px 160px 0 rgba(255,255,255,.6), 1500px 340px 0 #fff,
+    80px 420px 0 rgba(255,255,255,.7), 260px 500px 0 #fff,
+    440px 380px 0 rgba(255,255,255,.8), 620px 460px 0 #fff,
+    800px 520px 0 rgba(255,255,255,.6), 1000px 400px 0 #fff,
+    1200px 480px 0 rgba(255,255,255,.9), 1400px 560px 0 rgba(255,255,255,.7),
+    50px 680px 0 #fff, 200px 720px 0 rgba(255,255,255,.5),
+    380px 640px 0 rgba(255,255,255,.8), 580px 760px 0 #fff,
+    760px 680px 0 rgba(255,255,255,.7), 940px 720px 0 #fff,
+    1120px 640px 0 rgba(255,255,255,.6), 1360px 700px 0 rgba(255,255,255,.9),
+    160px 900px 0 rgba(255,255,255,.7), 420px 860px 0 #fff,
+    660px 940px 0 rgba(255,255,255,.5), 840px 880px 0 #fff,
+    1060px 920px 0 rgba(255,255,255,.8), 1280px 840px 0 rgba(255,255,255,.6),
+    300px 1040px 0 #fff, 520px 1000px 0 rgba(255,255,255,.7),
+    700px 1080px 0 rgba(255,255,255,.9), 920px 1020px 0 #fff,
+    1140px 1060px 0 rgba(255,255,255,.5), 1400px 980px 0 rgba(255,255,255,.8);
+  animation: twinkle 4s ease-in-out infinite alternate;
+}
+
+#stars-b::after {
+  box-shadow:
+    200px 60px 0 rgba(196,181,253,.9), 450px 180px 0 rgba(196,181,253,.7),
+    680px 100px 0 rgba(196,181,253,.8), 870px 250px 0 rgba(196,181,253,.6),
+    1050px 130px 0 rgba(196,181,253,.9), 1250px 280px 0 rgba(196,181,253,.7),
+    150px 350px 0 rgba(167,139,250,.8), 380px 440px 0 rgba(196,181,253,.6),
+    600px 320px 0 rgba(196,181,253,.9), 820px 400px 0 rgba(167,139,250,.7),
+    1010px 360px 0 rgba(196,181,253,.8), 1180px 430px 0 rgba(196,181,253,.5),
+    90px 580px 0 rgba(196,181,253,.7), 310px 620px 0 rgba(167,139,250,.9),
+    500px 560px 0 rgba(196,181,253,.6), 720px 600px 0 rgba(196,181,253,.8),
+    950px 540px 0 rgba(167,139,250,.7), 1160px 590px 0 rgba(196,181,253,.5),
+    240px 780px 0 rgba(196,181,253,.8), 480px 820px 0 rgba(167,139,250,.6),
+    700px 760px 0 rgba(196,181,253,.9), 900px 800px 0 rgba(196,181,253,.7);
+  animation: twinkle 6s ease-in-out infinite alternate-reverse;
+}
+
+#stars-c::after {
+  box-shadow:
+    100px 100px 2px rgba(139,92,246,.8), 350px 250px 2px rgba(139,92,246,.6),
+    600px 150px 1px rgba(167,139,250,.7), 850px 320px 2px rgba(139,92,246,.9),
+    1100px 200px 1px rgba(139,92,246,.5), 1350px 280px 2px rgba(167,139,250,.8),
+    200px 500px 2px rgba(139,92,246,.7), 500px 600px 1px rgba(167,139,250,.6),
+    750px 480px 2px rgba(139,92,246,.8), 1000px 550px 1px rgba(139,92,246,.5),
+    1250px 490px 2px rgba(167,139,250,.9), 120px 750px 2px rgba(139,92,246,.6),
+    400px 800px 1px rgba(139,92,246,.8), 650px 720px 2px rgba(167,139,250,.7),
+    900px 780px 1px rgba(139,92,246,.5), 1150px 740px 2px rgba(139,92,246,.8);
+  animation: twinkle 8s ease-in-out infinite alternate;
+}
+
+@keyframes twinkle {
+  0%   { opacity: .5; }
+  100% { opacity: 1; }
+}
+
+/* ── LÍNEAS DE HORIZONTE ── */
+.h-line {
+  position: absolute;
+  left: 0; right: 0;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.h-line-1 {
+  top: 58%;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(139,92,246,.4) 15%,
+    rgba(196,181,253,.8) 40%,
+    rgba(255,255,255,.9) 50%,
+    rgba(196,181,253,.8) 60%,
+    rgba(139,92,246,.4) 85%,
+    transparent 100%);
+  box-shadow: 0 0 20px 2px rgba(139,92,246,.4);
+  animation: hLineIn 1.2s cubic-bezier(0.16,1,0.3,1) .5s forwards;
+}
+
+.h-line-2 {
+  top: calc(58% + 3px);
+  background: linear-gradient(90deg,
+    transparent 10%,
+    rgba(109,40,217,.3) 30%,
+    rgba(139,92,246,.5) 50%,
+    rgba(109,40,217,.3) 70%,
+    transparent 90%);
+  animation: hLineIn 1.4s cubic-bezier(0.16,1,0.3,1) .6s forwards;
+}
+
+.h-line-3 {
+  top: calc(58% - 3px);
+  background: linear-gradient(90deg,
+    transparent 20%,
+    rgba(139,92,246,.2) 40%,
+    rgba(167,139,250,.4) 50%,
+    rgba(139,92,246,.2) 60%,
+    transparent 80%);
+  animation: hLineIn 1.6s cubic-bezier(0.16,1,0.3,1) .4s forwards;
+}
+
+@keyframes hLineIn {
+  0%   { opacity:0; transform: scaleX(0); }
+  30%  { opacity:1; }
+  100% { opacity:1; transform: scaleX(1); }
+}
+
+/* Glow del horizonte */
+.h-glow {
+  position: absolute;
+  left: 0; right: 0;
+  top: 52%;
+  height: 120px;
+  background: linear-gradient(180deg,
+    transparent 0%,
+    rgba(88,28,180,.12) 30%,
+    rgba(109,40,217,.2) 50%,
+    rgba(88,28,180,.12) 70%,
+    transparent 100%);
+  opacity: 0;
+  filter: blur(8px);
+  animation: hLineIn 2s ease .3s forwards;
+  pointer-events: none;
+}
+
+/* ── CONTENIDO ── */
+#intro-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* Posicionar por encima del horizonte */
+  margin-top: -8vh;
+}
+
+/* Eyebrow */
+#eyebrow {
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+  font-size: clamp(9px, 1.1vw, 12px);
+  font-weight: 400;
+  letter-spacing: .65em;
+  text-transform: uppercase;
+  color: rgba(196,181,253,.7);
+  margin-bottom: clamp(12px, 2vw, 20px);
+  opacity: 0;
+  animation: riseIn .8s cubic-bezier(0.16,1,0.3,1) .9s forwards;
+}
+
+/* Título principal */
+#main-title {
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+  font-size: clamp(50px, 10.5vw, 122px);
+  font-weight: 700;
+  letter-spacing: -.02em;
+  line-height: 1;
+  margin: 0;
+  white-space: nowrap;
+
+  background: linear-gradient(
+    155deg,
+    #fff    0%,
+    #f5f0ff 15%,
+    #ddd6fe 30%,
+    #a78bfa 50%,
+    #ddd6fe 70%,
+    #f5f0ff 85%,
+    #fff   100%
+  );
+  background-size: 250% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+
+  opacity: 0;
+  transform: translateY(28px) scale(.97);
+  filter: blur(14px);
+  animation:
+    titleIn  1.6s cubic-bezier(0.16,1,0.3,1) 1.1s forwards,
+    bgShimmer 10s linear 2.9s infinite;
+}
+
+@keyframes titleIn {
+  0%   { opacity:0; transform:translateY(28px) scale(.97); filter:blur(14px); }
+  100% { opacity:1; transform:translateY(0)    scale(1);   filter:blur(0); }
+}
+
+@keyframes bgShimmer {
+  from { background-position: 0% center; }
+  to   { background-position: 250% center; }
+}
+
+/* Glow del título */
+#title-glow {
+  position: absolute;
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+  font-size: clamp(50px, 10.5vw, 122px);
+  font-weight: 700;
+  letter-spacing: -.02em;
+  line-height: 1;
+  white-space: nowrap;
+  color: rgba(139,92,246,.25);
+  filter: blur(32px);
+  opacity: 0;
+  top: 0; left: 50%;
+  transform: translateX(-50%) translateY(0);
+  pointer-events: none;
+  animation: titleIn 1.6s cubic-bezier(0.16,1,0.3,1) 1.1s forwards,
+             glowBreath 5s ease-in-out 2.9s infinite;
+}
+
+@keyframes glowBreath {
+  0%,100% { opacity:.6; filter:blur(32px); transform:translateX(-50%) scale(1); }
+  50%      { opacity:1;  filter:blur(42px); transform:translateX(-50%) scale(1.01); }
+}
+
+/* Wrapper para el glow relativo */
+#title-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+/* Regla */
+#rule {
+  width: 0;
+  height: 1px;
+  margin: clamp(24px,3.8vw,42px) 0 clamp(20px,3vw,32px);
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(167,139,250,.6) 10%,
+    rgba(255,255,255,.95) 50%,
+    rgba(167,139,250,.6) 90%,
+    transparent);
+  box-shadow: 0 0 18px 3px rgba(139,92,246,.45);
+  opacity: 0;
+  animation: ruleExpand 1.2s cubic-bezier(0.16,1,0.3,1) 2.6s forwards;
+}
+
+@keyframes ruleExpand {
+  0%   { width:0;                         opacity:0; }
+  15%  { opacity:1; }
+  100% { width:clamp(100px,24vw,280px);   opacity:1; }
+}
+
+/* Subtítulo */
+#sub-title {
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+  font-size: clamp(11px, 1.45vw, 16px);
+  font-weight: 300;
+  letter-spacing: .5em;
+  text-transform: uppercase;
+  color: rgba(220,210,255,0);
+  opacity: 0;
+  transform: translateY(10px);
+  animation: riseIn 1s cubic-bezier(0.16,1,0.3,1) 3.3s forwards;
+}
+
+@keyframes riseIn {
+  0%   { opacity:0; color:rgba(220,210,255,0);   transform:translateY(10px); }
+  100% { opacity:1; color:rgba(220,210,255,.72); transform:translateY(0); }
+}
+
+/* ── FLARE DE LUZ central ── */
+#flare {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%) translateY(-4vh);
+  width: min(70vw, 600px);
+  height: min(40vw, 300px);
+  background: radial-gradient(
+    ellipse at center,
+    rgba(167,139,250,.18) 0%,
+    rgba(109,40,217,.08) 40%,
+    transparent 70%
+  );
+  filter: blur(2px);
+  pointer-events: none;
+  opacity: 0;
+  animation: flareIn 2s ease 1.5s forwards, flarePulse 6s ease-in-out 3.5s infinite;
+}
+
+@keyframes flareIn  { to { opacity:1; } }
+@keyframes flarePulse {
+  0%,100% { opacity:.7; transform:translate(-50%,-50%) translateY(-4vh) scale(1); }
+  50%      { opacity:1;  transform:translate(-50%,-50%) translateY(-4vh) scale(1.05); }
+}
+
+/* ── VIÑETA ── */
+#vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 100% 100% at 50% 50%,
+    transparent 35%,
+    rgba(0,0,0,.45) 70%,
+    rgba(0,0,0,.85) 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── SKIP ── */
+#skip-btn {
+  position: absolute;
+  bottom: 28px; right: 30px;
+  z-index: 3;
+  font-family: -apple-system, sans-serif;
+  font-size: 10px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.18);
+  cursor: pointer;
+  user-select: none;
+  opacity: 0;
+  animation: skipShow .5s ease 3.8s forwards;
+  transition: color .25s;
+}
+#skip-btn:hover { color: rgba(255,255,255,.5); }
+@keyframes skipShow { to { opacity:1; } }
+
+/* ── SALIDA ── */
+#intro.exit {
+  animation: exitAnim 1.3s cubic-bezier(0.76,0,0.24,1) forwards;
+  pointer-events: none;
+}
+@keyframes exitAnim {
+  0%   { opacity:1; filter:blur(0);    }
+  100% { opacity:0; filter:blur(6px);  }
+}
+</style>
 </head>
 <body>
 <div class="background"><div class="particle-field"></div></div>
 
 <div id="intro">
-  <video id="iv" autoplay muted playsinline preload="auto">
-    <source src="bg.mp4" type="video/mp4">
-  </video>
-  <div id="overlay"></div>
-  <div id="content">
-    <div id="eyebrow">BIENVENIDO A</div>
-    <h1 id="title">DOMINIUS AI</h1>
+  <!-- Nebulosa de fondo (via ::before en #intro) -->
+
+  <!-- Estrellas CSS -->
+  <div id="stars-a"></div>
+  <div id="stars-b"></div>
+  <div id="stars-c"></div>
+
+  <!-- Flare central -->
+  <div id="flare"></div>
+
+  <!-- Líneas de horizonte -->
+  <div class="h-glow"></div>
+  <div class="h-line h-line-1"></div>
+  <div class="h-line h-line-2"></div>
+  <div class="h-line h-line-3"></div>
+
+  <!-- Viñeta -->
+  <div id="vignette"></div>
+
+  <!-- Texto -->
+  <div id="intro-content">
+    <div id="eyebrow">Bienvenido a</div>
+    <div id="title-wrap">
+      <div id="title-glow">DOMINIUS AI</div>
+      <h1 id="main-title">DOMINIUS AI</h1>
+    </div>
     <div id="rule"></div>
-    <p id="sub">Tu Inteligencia Artificial Empresarial</p>
+    <div id="sub-title">Tu Inteligencia Artificial Empresarial</div>
   </div>
-  <div id="skip" onclick="exitIntro()">SALTAR ›</div>
+
+  <div id="skip-btn" onclick="exitIntro()">SALTAR ›</div>
 </div>
 
+<!-- LOGIN -->
 <div class="login-screen" id="loginScreen">
   <div class="login-box">
     <h2 class="login-title">Iniciar Sesión</h2>
@@ -72,229 +492,36 @@
 <div class="notification" id="notification"></div>
 <div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div><p>Un momento...</p></div>
 
-<style>
-/* ─── INTRO ─── */
-#intro {
-  position: fixed; inset: 0; z-index: 999999;
-  background: #000;
-  display: flex; align-items: center; justify-content: center;
-  overflow: hidden;
-  transition: opacity 1.4s cubic-bezier(0.76,0,0.24,1);
-}
-#intro.out { opacity: 0; pointer-events: none; }
-
-/* Vídeo */
-#iv {
-  position: absolute; inset: 0;
-  width: 100%; height: 100%;
-  object-fit: cover;
-  opacity: 0;
-  transition: opacity 3s ease;
-  transform: scale(1.06);
-  animation: videoZoom 12s ease forwards;
-}
-#iv.loaded { opacity: 1; }
-@keyframes videoZoom {
-  from { transform: scale(1.08); }
-  to   { transform: scale(1.0); }
-}
-
-/* Overlay multicapa */
-#overlay {
-  position: absolute; inset: 0; z-index: 1;
-  background:
-    /* viñeta */
-    radial-gradient(ellipse 90% 90% at 50% 50%,
-      transparent 30%,
-      rgba(0,0,0,.5) 70%,
-      rgba(0,0,0,.9) 100%),
-    /* oscurecimiento general */
-    rgba(0,0,0,.35);
-}
-
-/* Contenido */
-#content {
-  position: relative; z-index: 2;
-  text-align: center;
-  display: flex; flex-direction: column; align-items: center;
-}
-
-/* Eyebrow */
-#eyebrow {
-  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
-  font-size: clamp(10px, 1.2vw, 13px);
-  font-weight: 400;
-  letter-spacing: .6em;
-  text-transform: uppercase;
-  color: rgba(196,181,253,0);
-  margin-bottom: clamp(10px,1.8vw,18px);
-  animation: fadeSlideUp .8s cubic-bezier(0.16,1,0.3,1) 1s forwards;
-}
-
-/* Título */
-#title {
-  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
-  font-size: clamp(52px, 11vw, 130px);
-  font-weight: 700;
-  letter-spacing: -.01em;
-  line-height: 1;
-  margin: 0;
-
-  /* Gradiente texto */
-  background: linear-gradient(
-    160deg,
-    #fff    0%,
-    #ede9fe 20%,
-    #c4b5fd 45%,
-    #ede9fe 70%,
-    #fff   100%
-  );
-  background-size: 200% auto;
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-
-  /* Estado inicial */
-  opacity: 0;
-  transform: scale(.94) translateY(16px);
-  filter: blur(10px);
-
-  animation:
-    titleReveal 1.4s cubic-bezier(0.16,1,0.3,1) 1.3s forwards,
-    shimmerMove 8s linear 2.9s infinite;
-
-  /* Glow */
-  -webkit-text-stroke: 0px transparent;
-}
-
-@keyframes titleReveal {
-  0%   { opacity:0; transform:scale(.94) translateY(16px); filter:blur(10px); }
-  100% { opacity:1; transform:scale(1)   translateY(0);    filter:blur(0); }
-}
-
-@keyframes shimmerMove {
-  from { background-position: 0% center; }
-  to   { background-position: 200% center; }
-}
-
-/* Glow del título — div separado */
-#title-glow {
-  position: absolute;
-  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
-  font-size: clamp(52px, 11vw, 130px);
-  font-weight: 700;
-  letter-spacing: -.01em;
-  line-height: 1;
-  color: rgba(167,139,250,.18);
-  filter: blur(28px);
-  pointer-events: none;
-  top: 0; left: 50%;
-  transform: translateX(-50%);
-  white-space: nowrap;
-  opacity: 0;
-  animation: glowIn 1.4s ease 1.3s forwards, glowPulse 4s ease-in-out 2.9s infinite;
-}
-@keyframes glowIn { to { opacity:1; } }
-@keyframes glowPulse {
-  0%,100% { opacity:.6; filter:blur(28px); }
-  50%      { opacity:1;  filter:blur(35px); }
-}
-
-/* Regla */
-#rule {
-  width: 0; height: 1px;
-  margin: clamp(22px,3.5vw,38px) 0 clamp(18px,3vw,30px);
-  background: linear-gradient(90deg,
-    transparent,
-    rgba(255,255,255,.5) 20%,
-    rgba(196,181,253,1)  50%,
-    rgba(255,255,255,.5) 80%,
-    transparent);
-  box-shadow: 0 0 20px 3px rgba(167,139,250,.55);
-  opacity: 0;
-  animation: ruleGrow 1.1s cubic-bezier(0.16,1,0.3,1) 2.5s forwards;
-}
-@keyframes ruleGrow {
-  0%   { width:0;                        opacity:0; }
-  20%  { opacity:1; }
-  100% { width:clamp(120px,28vw,320px);  opacity:1; }
-}
-
-/* Subtítulo */
-#sub {
-  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
-  font-size: clamp(12px, 1.6vw, 17px);
-  font-weight: 300;
-  letter-spacing: .35em;
-  text-transform: uppercase;
-  color: rgba(220,215,255,0);
-  margin: 0;
-  opacity: 0;
-  transform: translateY(12px);
-  animation: fadeSlideUp 1s cubic-bezier(0.16,1,0.3,1) 3.1s forwards;
-}
-
-@keyframes fadeSlideUp {
-  0%   { opacity:0; color:rgba(220,215,255,0);   transform:translateY(12px); }
-  100% { opacity:1; color:rgba(220,215,255,.7);  transform:translateY(0); }
-}
-
-/* Skip */
-#skip {
-  position: absolute; bottom:28px; right:30px; z-index:3;
-  font-family: -apple-system, sans-serif;
-  font-size: 10px; letter-spacing: 2.5px; text-transform: uppercase;
-  color: rgba(255,255,255,.18);
-  cursor: pointer; user-select: none;
-  opacity: 0;
-  animation: fadeSlideUp .5s ease 3.5s forwards;
-  transition: color .25s;
-}
-#skip:hover { color: rgba(255,255,255,.5); }
-
-/* Wrapper del título para el glow relativo */
-#title-wrap {
-  position: relative;
-  display: inline-block;
-}
-</style>
-
 <script>
-// ── VÍDEO ──
-const vid = document.getElementById('iv');
-vid.addEventListener('canplaythrough', () => vid.classList.add('loaded'), {once:true});
-vid.addEventListener('loadeddata',     () => vid.classList.add('loaded'), {once:true});
-// Fallback
-setTimeout(() => vid.classList.add('loaded'), 800);
+(function(){
 
-// ── AUDIO ──
-let AC, audioStarted = false;
-function getAC() {
-  if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
-  if (AC.state === 'suspended') AC.resume();
+/* ── AUDIO ── */
+let AC, started = false;
+function getAC(){
+  if(!AC) AC = new(window.AudioContext||window.webkitAudioContext)();
+  if(AC.state==='suspended') AC.resume();
   return AC;
 }
 
-function buildScore() {
-  if (audioStarted) return;
-  audioStarted = true;
-  try {
-    const ac = getAC(), t = ac.currentTime;
+function buildScore(){
+  if(started) return; started = true;
+  try{
+    const ac=getAC(), t=ac.currentTime;
 
     // Reverb grande
-    const sr=ac.sampleRate, rl=Math.floor(sr*4);
+    const sr=ac.sampleRate, rl=Math.floor(sr*4.5);
     const rb=ac.createBuffer(2,rl,sr);
     for(let c=0;c<2;c++){
       const d=rb.getChannelData(c);
-      for(let i=0;i<rl;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/rl,2);
+      for(let i=0;i<rl;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/rl,2.1);
     }
     const rv=ac.createConvolver(); rv.buffer=rb;
-    const rg=ac.createGain(); rg.gain.value=.5;
+    const rg=ac.createGain(); rg.gain.value=.55;
     rv.connect(rg); rg.connect(ac.destination);
 
     function O(f,w,d,tp,v,det=0){
       const o=ac.createOscillator(),g=ac.createGain();
-      o.type=tp||'sine'; o.frequency.value=f; o.detune.value=det;
+      o.type=tp; o.frequency.value=f; o.detune.value=det;
       g.gain.setValueAtTime(0,t+w);
       g.gain.linearRampToValueAtTime(v,t+w+.06);
       g.gain.exponentialRampToValueAtTime(.0001,t+w+d);
@@ -317,58 +544,66 @@ function buildScore() {
       const da=b.getChannelData(0);
       for(let i=0;i<da.length;i++) da[i]=Math.random()*2-1;
       const src=ac.createBufferSource(),fl=ac.createBiquadFilter(),g=ac.createGain();
-      fl.type='bandpass'; fl.frequency.value=f; fl.Q.value=.6;
+      fl.type='bandpass'; fl.frequency.value=f; fl.Q.value=.5;
       src.buffer=b;
       g.gain.setValueAtTime(0,t+w);
       g.gain.linearRampToValueAtTime(v,t+w+.04);
       g.gain.exponentialRampToValueAtTime(.0001,t+w+d);
-      src.connect(fl); fl.connect(g); g.connect(ac.destination); g.connect(rv);
+      src.connect(fl); fl.connect(g);
+      g.connect(ac.destination); g.connect(rv);
       src.start(t+w); src.stop(t+w+d+.1);
     }
 
-    // Profundidad — rumble que emerge con el vídeo
-    O(30, 0, 10, 'sine', .32);
-    SW(28, 58, 0, 3.5, .28);
-    NS(0, 3, .07, 70);
+    // Void profundo
+    O(28,  0, 10, 'sine',     .32);
+    O(28,  0, 10, 'triangle', .08, -7);
+    SW(26, 55, 0, 4,           .28);
+    NS(0,  3,  .07, 70);
 
-    // Activación del título ~1.3s
-    SW(1800, 200, 1.0, 1.6, .04);
-    NS(1.1, .6, .15, 400);
-    O(55,  1.3, 7, 'sine',     .3);
-    O(82,  1.4, 6, 'sine',     .15);
-    O(110, 1.5, 5, 'triangle', .06);
+    // Horizonte + eyebrow ~0.9s
+    SW(90, 180, .7, 2, .1);
+    NS(.6, 1.2, .06, 200);
 
-    // Acorde épico en la regla ~2.5s
-    [[110,.22],[138.6,.17],[165,.13],[220,.10],[277,.07],[330,.05],[440,.03],[554,.018]]
-      .forEach(([f,v],i) => {
-        O(f, 2.5+i*.065, 6, 'sine',     v);
-        O(f, 2.5+i*.065, 6, 'triangle', v*.15, 6);
+    // Título emerge ~1.1s
+    SW(1600, 250, .9, 1.8, .04);
+    NS(1.0,  .6,  .14, 450);
+    O(50,  1.1, 8, 'sine',     .3);
+    O(75,  1.2, 7, 'sine',     .16);
+    O(100, 1.3, 6, 'triangle', .07);
+
+    // Acorde épico en la regla ~2.6s
+    [[110,.22],[138.6,.17],[165,.13],[220,.10],
+     [277,.075],[330,.055],[440,.035],[554,.022],[659,.014]]
+      .forEach(([f,v],i)=>{
+        O(f, 2.6+i*.07, 6.5, 'sine',     v);
+        O(f, 2.6+i*.07, 6.5, 'triangle', v*.15, 7);
       });
-    NS(2.5, .5, .2, 160);
+    NS(2.6, .6, .22, 140);
 
-    // Shimmer y brillo
-    O(880,  3.0, 5, 'sine', .02);
-    O(1320, 3.4, 4, 'sine', .01);
-    SW(500, 1300, 2.8, 3.5, .015);
+    // Brillo alto
+    O(880,  3.1, 5.5, 'sine', .02);
+    O(1320, 3.5, 4.5, 'sine', .011);
+    SW(550, 1400, 2.9, 4, .015);
 
-  } catch(e){}
+  }catch(e){}
 }
 
-// ── SALIDA ──
+// Desktop: lanzar directo
+setTimeout(()=>{ try{ buildScore(); }catch(e){} }, 80);
+document.addEventListener('touchstart',()=>{ try{getAC();buildScore();}catch(e){} },{once:true});
+document.addEventListener('click',     ()=>{ try{getAC();buildScore();}catch(e){} },{once:true});
+
+/* ── SALIDA ── */
 let done = false;
-function exitIntro() {
-  if (done) return; done = true;
+window.exitIntro = function(){
+  if(done) return; done = true;
   const el = document.getElementById('intro');
-  el.classList.add('out');
-  setTimeout(() => el.style.display = 'none', 1450);
-}
+  el.classList.add('exit');
+  setTimeout(()=>{ el.style.display='none'; }, 1350);
+};
 
-setTimeout(exitIntro, 8000);
-
-// Iniciar audio inmediatamente
-setTimeout(() => { try{ buildScore(); }catch(e){} }, 100);
-document.addEventListener('touchstart', () => { try{getAC();buildScore();}catch(e){} }, {once:true});
-document.addEventListener('click',      () => { try{getAC();buildScore();}catch(e){} }, {once:true});
+setTimeout(window.exitIntro, 8500);
+})();
 </script>
 
 <script src="app.js"></script>
