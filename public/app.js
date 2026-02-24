@@ -277,26 +277,222 @@ function showScreen(screenId) {
 }
 
 // =============================================
-// INICIALIZACIÓN – INTRO + EVENTOS
+// NUEVA INTRO CON PARTÍCULAS (reemplaza la anterior)
+// =============================================
+function initParticleIntro() {
+    // Crear elementos si no existen
+    if (!document.getElementById('particleCanvas')) {
+        const canvas = document.createElement('canvas');
+        canvas.id = 'particleCanvas';
+        document.body.appendChild(canvas);
+    }
+    if (!document.getElementById('textCanvas')) {
+        const textCanvas = document.createElement('canvas');
+        textCanvas.id = 'textCanvas';
+        textCanvas.style.display = 'none';
+        document.body.appendChild(textCanvas);
+    }
+    if (!document.getElementById('intro')) {
+        const introDiv = document.createElement('div');
+        introDiv.id = 'intro';
+        introDiv.innerHTML = `
+            <div class="intro-glass">
+                <div class="intro-logo">
+                    <div class="logo-placeholder"><span>DA</span></div>
+                </div>
+                <h1 class="intro-title">DOMINIUS AI</h1>
+                <div class="intro-line"></div>
+                <p class="intro-sub">Inteligencia Artificial Empresarial</p>
+            </div>
+        `;
+        document.body.appendChild(introDiv);
+    }
+
+    const intro = document.getElementById('intro');
+    const canvas = document.getElementById('particleCanvas');
+    const ctx = canvas.getContext('2d');
+    const textCanvas = document.getElementById('textCanvas');
+    const textCtx = textCanvas.getContext('2d');
+
+    let particles = [];
+    let phase = 0; // 0: dispersas, 1: formando, 2: explosión
+    let phaseStartTime = 0;
+    let animationFrame;
+    let width, height;
+    let targetPoints = [];
+
+    const PARTICLE_COUNT = 600;
+    const FORM_DURATION = 2500; // ms
+    const EXPLODE_DURATION = 1500;
+
+    function getTextPoints() {
+        const w = 800;
+        const h = 200;
+        textCanvas.width = w;
+        textCanvas.height = h;
+        textCtx.clearRect(0, 0, w, h);
+        textCtx.font = 'bold 120px "Inter", "Helvetica Neue", sans-serif';
+        textCtx.fillStyle = '#fff';
+        textCtx.textAlign = 'center';
+        textCtx.textBaseline = 'middle';
+        textCtx.fillText('DOMINIUS AI', w/2, h/2);
+
+        const imageData = textCtx.getImageData(0, 0, w, h);
+        const data = imageData.data;
+        const points = [];
+        const step = 2;
+        for (let y = 0; y < h; y += step) {
+            for (let x = 0; x < w; x += step) {
+                const index = (y * w + x) * 4;
+                if (data[index] > 128) {
+                    const screenX = (x - w/2) * 1.5 + width/2;
+                    const screenY = (y - h/2) * 1.5 + height/2 - 30;
+                    points.push({ x: screenX, y: screenY });
+                }
+            }
+        }
+        return points;
+    }
+
+    function initParticles() {
+        targetPoints = getTextPoints();
+        while (targetPoints.length < PARTICLE_COUNT) {
+            targetPoints = targetPoints.concat(targetPoints.slice(0, PARTICLE_COUNT - targetPoints.length));
+        }
+        targetPoints = targetPoints.sort(() => Math.random() - 0.5);
+
+        particles = [];
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
+            const target = targetPoints[i % targetPoints.length];
+            particles.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                startX: Math.random() * width,
+                startY: Math.random() * height,
+                targetX: target.x,
+                targetY: target.y,
+                size: Math.random() * 3 + 1,
+                color: `rgba(139, 92, 246, ${Math.random() * 0.8 + 0.2})`
+            });
+        }
+    }
+
+    function resizeCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+        if (targetPoints.length > 0) {
+            targetPoints = getTextPoints();
+            particles.forEach((p, i) => {
+                const target = targetPoints[i % targetPoints.length];
+                p.targetX = target.x;
+                p.targetY = target.y;
+            });
+        } else {
+            initParticles();
+        }
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+
+    function animateParticles(timestamp) {
+        if (!phaseStartTime) phaseStartTime = timestamp;
+
+        const elapsed = timestamp - phaseStartTime;
+
+        if (phase === 0) {
+            // Fase dispersa
+            particles.forEach(p => {
+                p.x += (Math.random() - 0.5) * 2;
+                p.y += (Math.random() - 0.5) * 2;
+                // Rebote en bordes
+                if (p.x < 0 || p.x > width) p.x = Math.random() * width;
+                if (p.y < 0 || p.y > height) p.y = Math.random() * height;
+            });
+            if (elapsed > 1000) {
+                phase = 1;
+                phaseStartTime = timestamp;
+                particles.forEach(p => {
+                    p.startX = p.x;
+                    p.startY = p.y;
+                });
+            }
+        } else if (phase === 1) {
+            // Formación
+            const progress = Math.min(elapsed / FORM_DURATION, 1);
+            const eased = 1 - Math.pow(1 - progress, 3); // easeOutCubic
+            particles.forEach(p => {
+                p.x = p.startX + (p.targetX - p.startX) * eased;
+                p.y = p.startY + (p.targetY - p.startY) * eased;
+            });
+            if (progress >= 1) {
+                phase = 2;
+                phaseStartTime = timestamp;
+                particles.forEach(p => {
+                    p.startX = p.x;
+                    p.startY = p.y;
+                    const angle = Math.atan2(p.y - height/2, p.x - width/2);
+                    const speed = 5 + Math.random() * 5;
+                    p.vx = Math.cos(angle) * speed;
+                    p.vy = Math.sin(angle) * speed;
+                });
+            }
+        } else if (phase === 2) {
+            // Explosión
+            const progress = Math.min(elapsed / EXPLODE_DURATION, 1);
+            particles.forEach(p => {
+                p.x = p.startX + p.vx * progress * 20;
+                p.y = p.startY + p.vy * progress * 20;
+                p.size = Math.max(0, 4 * (1 - progress));
+            });
+            intro.style.opacity = 1 - progress;
+            if (progress >= 1) {
+                phase = 3;
+                // Ocultar intro y canvas
+                intro.style.display = 'none';
+                canvas.style.display = 'none';
+                // Mostrar login o redirigir según sesión
+                setTimeout(() => {
+                    const session = UserSystem.getSession();
+                    if (session) {
+                        window.location.href = 'chat.html';
+                    } else {
+                        showScreen('loginScreen');
+                    }
+                }, 200);
+            }
+        }
+
+        ctx.clearRect(0, 0, width, height);
+        particles.forEach(p => {
+            if (p.size <= 0) return;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fillStyle = p.color;
+            ctx.fill();
+        });
+
+        animationFrame = requestAnimationFrame(animateParticles);
+    }
+
+    resizeCanvas();
+    phase = 0;
+    phaseStartTime = performance.now();
+    animationFrame = requestAnimationFrame(animateParticles);
+}
+
+// =============================================
+// INICIALIZACIÓN – AHORA CON LA NUEVA INTRO
 // =============================================
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Iniciando Dominius AI...');
+    console.log('🚀 Iniciando Dominius AI con nueva intro...');
 
-    // Intro de 2 segundos
-    setTimeout(() => {
-        const welcomeScreen = document.getElementById('welcomeScreen');
-        if (welcomeScreen) welcomeScreen.classList.add('hidden');
+    // Ocultar cualquier pantalla de login que pueda estar visible inicialmente
+    document.querySelectorAll('.login-screen').forEach(screen => screen.classList.remove('visible'));
 
-        setTimeout(() => {
-            const session = UserSystem.getSession();
-            if (session) {
-                console.log('✅ Sesión activa, redirigiendo...');
-                window.location.href = 'chat.html';
-            } else {
-                showScreen('loginScreen');
-            }
-        }, 1000);
-    }, 2000);
+    // Iniciar la intro de partículas
+    initParticleIntro();
 
     // ========== LOGIN ==========
     const loginForm = document.getElementById('loginForm');
@@ -467,4 +663,4 @@ function showRecoveryCodeScreen(userId) {
     showScreen('recoveryCodeScreen');
 }
 
-console.log('✅ app.js final – Todo listo');
+console.log('✅ app.js final – Todo listo con nueva intro');
