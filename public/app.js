@@ -236,7 +236,7 @@ function showScreen(screenId) {
 }
 
 // =============================================
-// NUEVA INTRO PROFESIONAL CON PARTÍCULAS PROGRESIVAS
+// INTRO PROFESIONAL CON PARTÍCULAS (CORREGIDA)
 // =============================================
 (function() {
     const canvas = document.getElementById('particleCanvas');
@@ -247,26 +247,26 @@ function showScreen(screenId) {
     const textCtx = textCanvas.getContext('2d');
 
     let particles = [];
-    let phase = 0; // 0: dispersas y creciendo, 1: formando, 2: temblor, 3: explosión, 4: fin
+    let phase = 0; // 0: crecimiento, 1: formación, 2: temblor, 3: explosión
     let phaseStartTime = 0;
     let animationFrame;
     let width, height;
-    let targetPoints = [];
-    let currentParticleCount = 50; // empezamos con pocas
-    const MAX_PARTICLES = 1000;     // aumentamos hasta este número
-    const FORM_DURATION = 3000;     // 3s para formarse
-    const SHAKE_DURATION = 800;      // 0.8s de temblor
-    const EXPLODE_DURATION = 1500;   // 1.5s de explosión
+    let textPoints = []; // puntos objetivo (coordenadas de pantalla)
 
-    // Obtener puntos del texto "DOMINIUS AI"
-    function getTextPoints() {
-        const w = 1000; // mayor resolución para más puntos
-        const h = 250;
+    const MAX_PARTICLES = 1500;        // número máximo de partículas
+    const FORM_DURATION = 3000;        // 3s para formar el texto
+    const SHAKE_DURATION = 800;         // 0.8s de temblor
+    const EXPLODE_DURATION = 1500;      // 1.5s de explosión
+
+    // Genera los puntos del texto "DOMINIUS AI" en coordenadas de pantalla
+    function generateTextPoints() {
+        const w = 1200; // resolución alta para muchos puntos
+        const h = 300;
         textCanvas.width = w;
         textCanvas.height = h;
         textCtx.clearRect(0, 0, w, h);
-        textCtx.font = 'bold 140px "Inter", "Helvetica Neue", sans-serif';
-        textCtx.fillStyle = '#fff';
+        textCtx.font = 'bold 160px "Inter", "Helvetica Neue", sans-serif';
+        textCtx.fillStyle = '#ffffff';
         textCtx.textAlign = 'center';
         textCtx.textBaseline = 'middle';
         textCtx.fillText('DOMINIUS AI', w/2, h/2);
@@ -274,14 +274,19 @@ function showScreen(screenId) {
         const imageData = textCtx.getImageData(0, 0, w, h);
         const data = imageData.data;
         const points = [];
-        const step = 2; // cada 2 píxeles para densidad media
-        for (let y = 0; y < h; y += step) {
-            for (let x = 0; x < w; x += step) {
+
+        // Escalado para centrar en pantalla
+        const scaleX = width * 0.8 / w; // 80% del ancho
+        const scaleY = height * 0.3 / h; // 30% del alto (para que no ocupe todo)
+        const offsetX = (width - w * scaleX) / 2;
+        const offsetY = (height - h * scaleY) / 2;
+
+        for (let y = 0; y < h; y += 2) { // step 2 para densidad media
+            for (let x = 0; x < w; x += 2) {
                 const index = (y * w + x) * 4;
                 if (data[index] > 128) {
-                    // Normalizar y escalar al tamaño de pantalla
-                    const screenX = (x / w) * width;
-                    const screenY = (y / h) * height;
+                    const screenX = offsetX + x * scaleX;
+                    const screenY = offsetY + y * scaleY;
                     points.push({ x: screenX, y: screenY });
                 }
             }
@@ -289,95 +294,102 @@ function showScreen(screenId) {
         return points;
     }
 
-    // Inicializar partículas con un número inicial
-    function initParticles(count) {
-        targetPoints = getTextPoints();
-        particles = [];
-        for (let i = 0; i < count; i++) {
-            particles.push(createRandomParticle(i));
-        }
-    }
-
-    function createRandomParticle(index) {
+    // Crea una partícula aleatoria
+    function createParticle(index) {
         return {
             x: Math.random() * width,
             y: Math.random() * height,
-            targetX: 0, // se asignará después
-            targetY: 0,
+            startX: 0, startY: 0, // para interpolación
+            targetX: 0, targetY: 0,
             size: Math.random() * 4 + 2,
             color: `rgba(139, 92, 246, ${Math.random() * 0.7 + 0.3})`,
-            angle: Math.random() * Math.PI * 2,
-            speed: 0.5 + Math.random() * 1.5
+            vx: 0, vy: 0 // para explosión
         };
     }
 
-    // Añadir nuevas partículas gradualmente (hasta MAX_PARTICLES)
-    function addParticle() {
-        if (particles.length < MAX_PARTICLES) {
-            particles.push(createRandomParticle(particles.length));
+    // Reinicia las partículas con un número inicial
+    function resetParticles(count) {
+        textPoints = generateTextPoints();
+        if (textPoints.length === 0) {
+            console.warn('No se generaron puntos de texto');
+            return;
+        }
+        particles = [];
+        for (let i = 0; i < count; i++) {
+            const p = createParticle(i);
+            // Asignar un punto objetivo (cíclicamente)
+            const target = textPoints[i % textPoints.length];
+            p.targetX = target.x;
+            p.targetY = target.y;
+            particles.push(p);
         }
     }
 
+    // Añade una partícula nueva (para fase de crecimiento)
+    function addParticle() {
+        if (particles.length >= MAX_PARTICLES) return;
+        const index = particles.length;
+        const p = createParticle(index);
+        const target = textPoints[index % textPoints.length];
+        p.targetX = target.x;
+        p.targetY = target.y;
+        particles.push(p);
+    }
+
+    // Ajustar al cambiar tamaño de ventana
     function resizeCanvas() {
         width = window.innerWidth;
         height = window.innerHeight;
         canvas.width = width;
         canvas.height = height;
-        if (targetPoints.length > 0) {
-            targetPoints = getTextPoints();
-            // Reasignar targets a las partículas existentes
+        if (textPoints.length > 0) {
+            // Regenerar puntos y reasignar objetivos
+            textPoints = generateTextPoints();
             particles.forEach((p, i) => {
-                const target = targetPoints[i % targetPoints.length];
+                const target = textPoints[i % textPoints.length];
                 p.targetX = target.x;
                 p.targetY = target.y;
             });
         } else {
-            initParticles(currentParticleCount);
+            resetParticles(100);
         }
     }
 
     window.addEventListener('resize', resizeCanvas);
 
-    function animateParticles(timestamp) {
+    function animate(timestamp) {
         if (!phaseStartTime) phaseStartTime = timestamp;
-
         const elapsed = timestamp - phaseStartTime;
 
         if (phase === 0) {
-            // Fase de crecimiento: añadir partículas gradualmente
-            if (particles.length < MAX_PARTICLES && Math.random() < 0.3) {
+            // Fase de crecimiento: añadir partículas poco a poco
+            if (particles.length < MAX_PARTICLES && Math.random() < 0.4) {
                 addParticle();
             }
-            // Asignar objetivos a las nuevas partículas
-            particles.forEach((p, i) => {
-                if (!p.targetX) {
-                    const target = targetPoints[i % targetPoints.length];
-                    p.targetX = target.x;
-                    p.targetY = target.y;
-                }
-                // Movimiento errático (como explorando)
-                p.x += Math.cos(p.angle) * p.speed;
-                p.y += Math.sin(p.angle) * p.speed;
-                p.angle += (Math.random() - 0.5) * 0.5;
-                // Rebote en bordes
-                if (p.x < 0 || p.x > width) p.angle += Math.PI;
-                if (p.y < 0 || p.y > height) p.angle += Math.PI;
+            // Movimiento aleatorio suave
+            particles.forEach(p => {
+                p.x += (Math.random() - 0.5) * 3;
+                p.y += (Math.random() - 0.5) * 3;
+                // Mantener dentro de los bordes
+                if (p.x < 0) p.x = 0;
+                if (p.x > width) p.x = width;
+                if (p.y < 0) p.y = 0;
+                if (p.y > height) p.y = height;
             });
-
-            // Después de 1.5s, pasamos a fase de formación
-            if (elapsed > 1500) {
+            // Después de 2 segundos, pasar a formación
+            if (elapsed > 2000) {
                 phase = 1;
                 phaseStartTime = timestamp;
-                // Guardamos posiciones iniciales para la interpolación
+                // Guardar posición inicial para la interpolación
                 particles.forEach(p => {
                     p.startX = p.x;
                     p.startY = p.y;
                 });
             }
         } else if (phase === 1) {
-            // Formación: las partículas se mueven hacia sus objetivos
+            // Formación: interpolación hacia los puntos objetivo
             const progress = Math.min(elapsed / FORM_DURATION, 1);
-            // Easing suave (cubic-out)
+            // Easing cubic-out
             const eased = 1 - Math.pow(1 - progress, 3);
             particles.forEach(p => {
                 p.x = p.startX + (p.targetX - p.startX) * eased;
@@ -390,19 +402,18 @@ function showScreen(screenId) {
         } else if (phase === 2) {
             // Temblor: vibración alrededor del objetivo
             particles.forEach(p => {
-                p.x = p.targetX + (Math.random() - 0.5) * 12;
-                p.y = p.targetY + (Math.random() - 0.5) * 8;
+                p.x = p.targetX + (Math.random() - 0.5) * 15;
+                p.y = p.targetY + (Math.random() - 0.5) * 10;
             });
             if (elapsed > SHAKE_DURATION) {
                 phase = 3;
                 phaseStartTime = timestamp;
-                // Guardar posición actual para explosión
+                // Preparar explosión: guardar posición y asignar velocidad radial
                 particles.forEach(p => {
                     p.startX = p.x;
                     p.startY = p.y;
-                    // Velocidad radial explosiva
                     const angle = Math.atan2(p.y - height/2, p.x - width/2);
-                    const speed = 6 + Math.random() * 8;
+                    const speed = 8 + Math.random() * 10;
                     p.vx = Math.cos(angle) * speed;
                     p.vy = Math.sin(angle) * speed;
                 });
@@ -411,13 +422,13 @@ function showScreen(screenId) {
             // Explosión
             const progress = Math.min(elapsed / EXPLODE_DURATION, 1);
             particles.forEach(p => {
-                p.x = p.startX + p.vx * progress * 30;
-                p.y = p.startY + p.vy * progress * 30;
+                p.x = p.startX + p.vx * progress * 25;
+                p.y = p.startY + p.vy * progress * 25;
                 p.size = Math.max(0, 4 * (1 - progress));
             });
             if (progress >= 1) {
-                phase = 4;
-                // Terminar intro y mostrar login o redirigir
+                // Terminar la intro
+                cancelAnimationFrame(animationFrame);
                 setTimeout(() => {
                     const session = UserSystem.getSession();
                     if (session) {
@@ -426,12 +437,11 @@ function showScreen(screenId) {
                         showScreen('loginScreen');
                     }
                 }, 300);
-                cancelAnimationFrame(animationFrame);
                 return;
             }
         }
 
-        // Dibujar partículas
+        // Dibujar
         ctx.clearRect(0, 0, width, height);
         particles.forEach(p => {
             if (p.size <= 0) return;
@@ -441,20 +451,18 @@ function showScreen(screenId) {
             ctx.fill();
         });
 
-        animationFrame = requestAnimationFrame(animateParticles);
+        animationFrame = requestAnimationFrame(animate);
     }
 
-    // Iniciar la intro
+    // Iniciar
     function startIntro() {
         resizeCanvas();
-        initParticles(50); // empezamos con 50 partículas
+        resetParticles(100); // empezamos con 100
         phase = 0;
         phaseStartTime = performance.now();
-        animationFrame = requestAnimationFrame(animateParticles);
+        animationFrame = requestAnimationFrame(animate);
     }
 
-    // Reemplazamos el temporizador anterior (2 segundos) por la nueva intro
-    // pero respetamos que si hay sesión, al final redirige.
     window.addEventListener('load', startIntro);
 })();
 
@@ -462,7 +470,6 @@ function showScreen(screenId) {
 // EVENTOS DE NAVEGACIÓN ENTRE PANTALLAS
 // =============================================
 document.addEventListener('DOMContentLoaded', function() {
-    // Estos eventos se mantienen igual
     document.getElementById('showRegister')?.addEventListener('click', () => showScreen('registerScreen'));
     document.getElementById('showLogin')?.addEventListener('click', () => showScreen('loginScreen'));
     document.getElementById('showForgotPassword')?.addEventListener('click', () => showScreen('forgotPasswordScreen'));
