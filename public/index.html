@@ -8,25 +8,11 @@
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
 <body>
-  <!-- Canvas principal para partículas -->
+  <!-- Canvas para partículas (único elemento visible durante la intro) -->
   <canvas id="particleCanvas"></canvas>
 
-  <!-- Canvas oculto para obtener la forma del texto (no se muestra) -->
+  <!-- Canvas oculto para obtener la forma del texto -->
   <canvas id="textCanvas" style="display: none;"></canvas>
-
-  <!-- El texto real (solo para referencia visual, se puede ocultar si quieres, pero lo dejamos visible para que se vea el efecto) -->
-  <div id="intro">
-    <div class="intro-glass">
-      <div class="intro-logo">
-        <div class="logo-placeholder">
-          <span>DA</span>
-        </div>
-      </div>
-      <h1 class="intro-title">DOMINIUS AI</h1>
-      <div class="intro-line"></div>
-      <p class="intro-sub">Inteligencia Artificial Empresarial</p>
-    </div>
-  </div>
 
   <!-- PANTALLAS DE LOGIN (igual que antes) -->
   <div class="login-screen" id="loginScreen">
