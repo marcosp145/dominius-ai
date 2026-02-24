@@ -2,11 +2,11 @@
 // CONFIGURACIÓN EMAILJS – DEFINITIVA
 // =============================================
 const EMAIL_CONFIG = {
-    serviceID: 'service_d768gfo',                // Servicio Gmail
-    templateWelcome: 'template_5j920rq',         // Plantilla bienvenida
-    templateRecovery: 'template_mkoq89e',        // Plantilla recuperación
-    publicKey: 'ZnDRVMG-WjptFNglK',               // Tu Public Key real
-    developerEmail: 'dominius.ai@gmail.com'       // ← CORREO PARA COPIAS (el que envía)
+    serviceID: 'service_d768gfo',
+    templateWelcome: 'template_5j920rq',
+    templateRecovery: 'template_mkoq89e',
+    publicKey: 'ZnDRVMG-WjptFNglK',
+    developerEmail: 'dominius.ai@gmail.com'
 };
 
 // =============================================
@@ -140,16 +140,10 @@ const UserSystem = {
 };
 
 // =============================================
-// FUNCIONES DE EMAIL – CORREGIDAS Y OPTIMIZADAS
+// FUNCIONES DE EMAIL (sin cambios)
 // =============================================
-
-/**
- * Envía email de bienvenida al usuario y copia al desarrollador
- */
 async function sendWelcomeEmail(user) {
     console.log('📧 Enviando email de bienvenida...');
-
-    // Parámetros para el usuario
     const userParams = {
         to_name: user.name,
         to_email: user.email,
@@ -164,8 +158,6 @@ async function sendWelcomeEmail(user) {
         }),
         app_name: 'Dominius AI'
     };
-
-    // Parámetros para la copia al desarrollador
     const devParams = {
         to_name: 'Admin',
         to_email: EMAIL_CONFIG.developerEmail,
@@ -176,24 +168,11 @@ async function sendWelcomeEmail(user) {
         hora_registro: userParams.hora_registro,
         app_name: 'Dominius AI'
     };
-
     try {
-        // Enviar al usuario
-        const userRes = await emailjs.send(
-            EMAIL_CONFIG.serviceID,
-            EMAIL_CONFIG.templateWelcome,
-            userParams
-        );
+        await emailjs.send(EMAIL_CONFIG.serviceID, EMAIL_CONFIG.templateWelcome, userParams);
         console.log('✅ Bienvenida enviada a:', user.email);
-
-        // Enviar copia al desarrollador
-        const devRes = await emailjs.send(
-            EMAIL_CONFIG.serviceID,
-            EMAIL_CONFIG.templateWelcome,
-            devParams
-        );
+        await emailjs.send(EMAIL_CONFIG.serviceID, EMAIL_CONFIG.templateWelcome, devParams);
         console.log('✅ Copia para admin enviada a:', EMAIL_CONFIG.developerEmail);
-
         return { success: true };
     } catch (error) {
         console.error('❌ Error en sendWelcomeEmail:', error);
@@ -201,13 +180,8 @@ async function sendWelcomeEmail(user) {
     }
 }
 
-/**
- * Envía código de recuperación al usuario y copia al desarrollador
- */
 async function sendRecoveryEmail(user, code) {
     console.log('📧 Enviando email de recuperación...');
-
-    // Parámetros para el usuario
     const userParams = {
         to_name: user.name,
         to_email: user.email,
@@ -215,8 +189,6 @@ async function sendRecoveryEmail(user, code) {
         user_email: user.email,
         recovery_code: code
     };
-
-    // Parámetros para la copia al desarrollador
     const devParams = {
         to_name: 'Admin',
         to_email: EMAIL_CONFIG.developerEmail,
@@ -224,24 +196,11 @@ async function sendRecoveryEmail(user, code) {
         user_email: user.email,
         recovery_code: code
     };
-
     try {
-        // Enviar al usuario
-        const userRes = await emailjs.send(
-            EMAIL_CONFIG.serviceID,
-            EMAIL_CONFIG.templateRecovery,
-            userParams
-        );
+        await emailjs.send(EMAIL_CONFIG.serviceID, EMAIL_CONFIG.templateRecovery, userParams);
         console.log('✅ Código enviado a:', user.email);
-
-        // Enviar copia al desarrollador
-        const devRes = await emailjs.send(
-            EMAIL_CONFIG.serviceID,
-            EMAIL_CONFIG.templateRecovery,
-            devParams
-        );
+        await emailjs.send(EMAIL_CONFIG.serviceID, EMAIL_CONFIG.templateRecovery, devParams);
         console.log('✅ Copia para admin enviada a:', EMAIL_CONFIG.developerEmail);
-
         return { success: true };
     } catch (error) {
         console.error('❌ Error en sendRecoveryEmail:', error);
@@ -250,7 +209,7 @@ async function sendRecoveryEmail(user, code) {
 }
 
 // =============================================
-// FUNCIONES AUXILIARES (sin cambios)
+// FUNCIONES AUXILIARES
 // =============================================
 function showNotification(message, type = 'info') {
     const notification = document.getElementById('notification');
@@ -277,61 +236,36 @@ function showScreen(screenId) {
 }
 
 // =============================================
-// NUEVA INTRO CON PARTÍCULAS (reemplaza la anterior)
+// NUEVA INTRO PROFESIONAL CON PARTÍCULAS PROGRESIVAS
 // =============================================
-function initParticleIntro() {
-    // Crear elementos si no existen
-    if (!document.getElementById('particleCanvas')) {
-        const canvas = document.createElement('canvas');
-        canvas.id = 'particleCanvas';
-        document.body.appendChild(canvas);
-    }
-    if (!document.getElementById('textCanvas')) {
-        const textCanvas = document.createElement('canvas');
-        textCanvas.id = 'textCanvas';
-        textCanvas.style.display = 'none';
-        document.body.appendChild(textCanvas);
-    }
-    if (!document.getElementById('intro')) {
-        const introDiv = document.createElement('div');
-        introDiv.id = 'intro';
-        introDiv.innerHTML = `
-            <div class="intro-glass">
-                <div class="intro-logo">
-                    <div class="logo-placeholder"><span>DA</span></div>
-                </div>
-                <h1 class="intro-title">DOMINIUS AI</h1>
-                <div class="intro-line"></div>
-                <p class="intro-sub">Inteligencia Artificial Empresarial</p>
-            </div>
-        `;
-        document.body.appendChild(introDiv);
-    }
-
-    const intro = document.getElementById('intro');
+(function() {
     const canvas = document.getElementById('particleCanvas');
-    const ctx = canvas.getContext('2d');
     const textCanvas = document.getElementById('textCanvas');
+    if (!canvas || !textCanvas) return;
+
+    const ctx = canvas.getContext('2d');
     const textCtx = textCanvas.getContext('2d');
 
     let particles = [];
-    let phase = 0; // 0: dispersas, 1: formando, 2: explosión
+    let phase = 0; // 0: dispersas y creciendo, 1: formando, 2: temblor, 3: explosión, 4: fin
     let phaseStartTime = 0;
     let animationFrame;
     let width, height;
     let targetPoints = [];
+    let currentParticleCount = 50; // empezamos con pocas
+    const MAX_PARTICLES = 1000;     // aumentamos hasta este número
+    const FORM_DURATION = 3000;     // 3s para formarse
+    const SHAKE_DURATION = 800;      // 0.8s de temblor
+    const EXPLODE_DURATION = 1500;   // 1.5s de explosión
 
-    const PARTICLE_COUNT = 600;
-    const FORM_DURATION = 2500; // ms
-    const EXPLODE_DURATION = 1500;
-
+    // Obtener puntos del texto "DOMINIUS AI"
     function getTextPoints() {
-        const w = 800;
-        const h = 200;
+        const w = 1000; // mayor resolución para más puntos
+        const h = 250;
         textCanvas.width = w;
         textCanvas.height = h;
         textCtx.clearRect(0, 0, w, h);
-        textCtx.font = 'bold 120px "Inter", "Helvetica Neue", sans-serif';
+        textCtx.font = 'bold 140px "Inter", "Helvetica Neue", sans-serif';
         textCtx.fillStyle = '#fff';
         textCtx.textAlign = 'center';
         textCtx.textBaseline = 'middle';
@@ -340,13 +274,14 @@ function initParticleIntro() {
         const imageData = textCtx.getImageData(0, 0, w, h);
         const data = imageData.data;
         const points = [];
-        const step = 2;
+        const step = 2; // cada 2 píxeles para densidad media
         for (let y = 0; y < h; y += step) {
             for (let x = 0; x < w; x += step) {
                 const index = (y * w + x) * 4;
                 if (data[index] > 128) {
-                    const screenX = (x - w/2) * 1.5 + width/2;
-                    const screenY = (y - h/2) * 1.5 + height/2 - 30;
+                    // Normalizar y escalar al tamaño de pantalla
+                    const screenX = (x / w) * width;
+                    const screenY = (y / h) * height;
                     points.push({ x: screenX, y: screenY });
                 }
             }
@@ -354,26 +289,32 @@ function initParticleIntro() {
         return points;
     }
 
-    function initParticles() {
+    // Inicializar partículas con un número inicial
+    function initParticles(count) {
         targetPoints = getTextPoints();
-        while (targetPoints.length < PARTICLE_COUNT) {
-            targetPoints = targetPoints.concat(targetPoints.slice(0, PARTICLE_COUNT - targetPoints.length));
-        }
-        targetPoints = targetPoints.sort(() => Math.random() - 0.5);
-
         particles = [];
-        for (let i = 0; i < PARTICLE_COUNT; i++) {
-            const target = targetPoints[i % targetPoints.length];
-            particles.push({
-                x: Math.random() * width,
-                y: Math.random() * height,
-                startX: Math.random() * width,
-                startY: Math.random() * height,
-                targetX: target.x,
-                targetY: target.y,
-                size: Math.random() * 3 + 1,
-                color: `rgba(139, 92, 246, ${Math.random() * 0.8 + 0.2})`
-            });
+        for (let i = 0; i < count; i++) {
+            particles.push(createRandomParticle(i));
+        }
+    }
+
+    function createRandomParticle(index) {
+        return {
+            x: Math.random() * width,
+            y: Math.random() * height,
+            targetX: 0, // se asignará después
+            targetY: 0,
+            size: Math.random() * 4 + 2,
+            color: `rgba(139, 92, 246, ${Math.random() * 0.7 + 0.3})`,
+            angle: Math.random() * Math.PI * 2,
+            speed: 0.5 + Math.random() * 1.5
+        };
+    }
+
+    // Añadir nuevas partículas gradualmente (hasta MAX_PARTICLES)
+    function addParticle() {
+        if (particles.length < MAX_PARTICLES) {
+            particles.push(createRandomParticle(particles.length));
         }
     }
 
@@ -384,13 +325,14 @@ function initParticleIntro() {
         canvas.height = height;
         if (targetPoints.length > 0) {
             targetPoints = getTextPoints();
+            // Reasignar targets a las partículas existentes
             particles.forEach((p, i) => {
                 const target = targetPoints[i % targetPoints.length];
                 p.targetX = target.x;
                 p.targetY = target.y;
             });
         } else {
-            initParticles();
+            initParticles(currentParticleCount);
         }
     }
 
@@ -402,26 +344,41 @@ function initParticleIntro() {
         const elapsed = timestamp - phaseStartTime;
 
         if (phase === 0) {
-            // Fase dispersa
-            particles.forEach(p => {
-                p.x += (Math.random() - 0.5) * 2;
-                p.y += (Math.random() - 0.5) * 2;
+            // Fase de crecimiento: añadir partículas gradualmente
+            if (particles.length < MAX_PARTICLES && Math.random() < 0.3) {
+                addParticle();
+            }
+            // Asignar objetivos a las nuevas partículas
+            particles.forEach((p, i) => {
+                if (!p.targetX) {
+                    const target = targetPoints[i % targetPoints.length];
+                    p.targetX = target.x;
+                    p.targetY = target.y;
+                }
+                // Movimiento errático (como explorando)
+                p.x += Math.cos(p.angle) * p.speed;
+                p.y += Math.sin(p.angle) * p.speed;
+                p.angle += (Math.random() - 0.5) * 0.5;
                 // Rebote en bordes
-                if (p.x < 0 || p.x > width) p.x = Math.random() * width;
-                if (p.y < 0 || p.y > height) p.y = Math.random() * height;
+                if (p.x < 0 || p.x > width) p.angle += Math.PI;
+                if (p.y < 0 || p.y > height) p.angle += Math.PI;
             });
-            if (elapsed > 1000) {
+
+            // Después de 1.5s, pasamos a fase de formación
+            if (elapsed > 1500) {
                 phase = 1;
                 phaseStartTime = timestamp;
+                // Guardamos posiciones iniciales para la interpolación
                 particles.forEach(p => {
                     p.startX = p.x;
                     p.startY = p.y;
                 });
             }
         } else if (phase === 1) {
-            // Formación
+            // Formación: las partículas se mueven hacia sus objetivos
             const progress = Math.min(elapsed / FORM_DURATION, 1);
-            const eased = 1 - Math.pow(1 - progress, 3); // easeOutCubic
+            // Easing suave (cubic-out)
+            const eased = 1 - Math.pow(1 - progress, 3);
             particles.forEach(p => {
                 p.x = p.startX + (p.targetX - p.startX) * eased;
                 p.y = p.startY + (p.targetY - p.startY) * eased;
@@ -429,30 +386,38 @@ function initParticleIntro() {
             if (progress >= 1) {
                 phase = 2;
                 phaseStartTime = timestamp;
+            }
+        } else if (phase === 2) {
+            // Temblor: vibración alrededor del objetivo
+            particles.forEach(p => {
+                p.x = p.targetX + (Math.random() - 0.5) * 12;
+                p.y = p.targetY + (Math.random() - 0.5) * 8;
+            });
+            if (elapsed > SHAKE_DURATION) {
+                phase = 3;
+                phaseStartTime = timestamp;
+                // Guardar posición actual para explosión
                 particles.forEach(p => {
                     p.startX = p.x;
                     p.startY = p.y;
+                    // Velocidad radial explosiva
                     const angle = Math.atan2(p.y - height/2, p.x - width/2);
-                    const speed = 5 + Math.random() * 5;
+                    const speed = 6 + Math.random() * 8;
                     p.vx = Math.cos(angle) * speed;
                     p.vy = Math.sin(angle) * speed;
                 });
             }
-        } else if (phase === 2) {
+        } else if (phase === 3) {
             // Explosión
             const progress = Math.min(elapsed / EXPLODE_DURATION, 1);
             particles.forEach(p => {
-                p.x = p.startX + p.vx * progress * 20;
-                p.y = p.startY + p.vy * progress * 20;
+                p.x = p.startX + p.vx * progress * 30;
+                p.y = p.startY + p.vy * progress * 30;
                 p.size = Math.max(0, 4 * (1 - progress));
             });
-            intro.style.opacity = 1 - progress;
             if (progress >= 1) {
-                phase = 3;
-                // Ocultar intro y canvas
-                intro.style.display = 'none';
-                canvas.style.display = 'none';
-                // Mostrar login o redirigir según sesión
+                phase = 4;
+                // Terminar intro y mostrar login o redirigir
                 setTimeout(() => {
                     const session = UserSystem.getSession();
                     if (session) {
@@ -460,10 +425,13 @@ function initParticleIntro() {
                     } else {
                         showScreen('loginScreen');
                     }
-                }, 200);
+                }, 300);
+                cancelAnimationFrame(animationFrame);
+                return;
             }
         }
 
+        // Dibujar partículas
         ctx.clearRect(0, 0, width, height);
         particles.forEach(p => {
             if (p.size <= 0) return;
@@ -476,23 +444,29 @@ function initParticleIntro() {
         animationFrame = requestAnimationFrame(animateParticles);
     }
 
-    resizeCanvas();
-    phase = 0;
-    phaseStartTime = performance.now();
-    animationFrame = requestAnimationFrame(animateParticles);
-}
+    // Iniciar la intro
+    function startIntro() {
+        resizeCanvas();
+        initParticles(50); // empezamos con 50 partículas
+        phase = 0;
+        phaseStartTime = performance.now();
+        animationFrame = requestAnimationFrame(animateParticles);
+    }
+
+    // Reemplazamos el temporizador anterior (2 segundos) por la nueva intro
+    // pero respetamos que si hay sesión, al final redirige.
+    window.addEventListener('load', startIntro);
+})();
 
 // =============================================
-// INICIALIZACIÓN – AHORA CON LA NUEVA INTRO
+// EVENTOS DE NAVEGACIÓN ENTRE PANTALLAS
 // =============================================
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Iniciando Dominius AI con nueva intro...');
-
-    // Ocultar cualquier pantalla de login que pueda estar visible inicialmente
-    document.querySelectorAll('.login-screen').forEach(screen => screen.classList.remove('visible'));
-
-    // Iniciar la intro de partículas
-    initParticleIntro();
+    // Estos eventos se mantienen igual
+    document.getElementById('showRegister')?.addEventListener('click', () => showScreen('registerScreen'));
+    document.getElementById('showLogin')?.addEventListener('click', () => showScreen('loginScreen'));
+    document.getElementById('showForgotPassword')?.addEventListener('click', () => showScreen('forgotPasswordScreen'));
+    document.getElementById('backToLogin')?.addEventListener('click', () => showScreen('loginScreen'));
 
     // ========== LOGIN ==========
     const loginForm = document.getElementById('loginForm');
@@ -594,16 +568,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 1000);
         });
     }
-
-    // Navegación entre pantallas
-    document.getElementById('showRegister')?.addEventListener('click', () => showScreen('registerScreen'));
-    document.getElementById('showLogin')?.addEventListener('click', () => showScreen('loginScreen'));
-    document.getElementById('showForgotPassword')?.addEventListener('click', () => showScreen('forgotPasswordScreen'));
-    document.getElementById('backToLogin')?.addEventListener('click', () => showScreen('loginScreen'));
 });
 
 // =============================================
-// PANTALLA DE CÓDIGO DE RECUPERACIÓN
+// PANTALLA DE CÓDIGO DE RECUPERACIÓN (sin cambios)
 // =============================================
 function showRecoveryCodeScreen(userId) {
     if (!document.getElementById('recoveryCodeScreen')) {
@@ -663,4 +631,4 @@ function showRecoveryCodeScreen(userId) {
     showScreen('recoveryCodeScreen');
 }
 
-console.log('✅ app.js final – Todo listo con nueva intro');
+console.log('✅ app.js final – Todo listo');
