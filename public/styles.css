@@ -12,15 +12,65 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Canvas de partículas: ocupa toda la pantalla y está encima de todo durante la intro */
-#particleCanvas {
+/* INTRO SIMPLE */
+#intro {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  opacity: 1;
+  transition: opacity 1s ease;
   pointer-events: none;
-  z-index: 10;
+}
+
+#intro.fade-out {
+  opacity: 0;
+}
+
+.intro-content {
+  text-align: center;
+  animation: fadeInUp 1.2s ease-out;
+}
+
+.intro-title {
+  font-size: clamp(48px, 10vw, 120px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #fff, #c4b5fd, #a78bfa);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  margin-bottom: 20px;
+  line-height: 1.1;
+  text-shadow: 0 0 30px rgba(139,92,246,0.5);
+}
+
+.intro-welcome {
+  font-size: clamp(16px, 3vw, 24px);
+  font-weight: 300;
+  color: rgba(255,255,255,0.9);
+  letter-spacing: 1px;
+  opacity: 0;
+  animation: fadeIn 1s ease-out 0.8s forwards;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 /* LOGIN (igual que antes) */
