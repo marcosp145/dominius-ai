@@ -8,10 +8,13 @@
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
 <body>
-  <!-- Canvas para partículas (detrás del texto) -->
+  <!-- Canvas principal para partículas -->
   <canvas id="particleCanvas"></canvas>
 
-  <!-- INTRO (texto y logo) -->
+  <!-- Canvas oculto para obtener la forma del texto (no se muestra) -->
+  <canvas id="textCanvas" style="display: none;"></canvas>
+
+  <!-- El texto real (solo para referencia visual, se puede ocultar si quieres, pero lo dejamos visible para que se vea el efecto) -->
   <div id="intro">
     <div class="intro-glass">
       <div class="intro-logo">
