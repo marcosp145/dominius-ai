@@ -236,11 +236,64 @@ function showScreen(screenId) {
 }
 
 // =============================================
-// INTRO SIMPLE
+// INTRO PROFESIONAL CON PARTÍCULAS
 // =============================================
 document.addEventListener('DOMContentLoaded', function() {
     const intro = document.getElementById('intro');
-    
+    const canvas = document.getElementById('introCanvas');
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    let particles = [];
+    const PARTICLE_COUNT = 150;
+
+    function resizeCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+    }
+
+    function createParticles() {
+        particles = [];
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
+            particles.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                radius: Math.random() * 3 + 1,
+                color: `rgba(139, 92, 246, ${Math.random() * 0.5 + 0.2})`,
+                speedX: (Math.random() - 0.5) * 1,
+                speedY: (Math.random() - 0.5) * 1
+            });
+        }
+    }
+
+    function animateParticles() {
+        ctx.clearRect(0, 0, width, height);
+        particles.forEach(p => {
+            p.x += p.speedX;
+            p.y += p.speedY;
+            if (p.x < 0 || p.x > width) p.speedX *= -1;
+            if (p.y < 0 || p.y > height) p.speedY *= -1;
+
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fillStyle = p.color;
+            ctx.fill();
+        });
+        requestAnimationFrame(animateParticles);
+    }
+
+    window.addEventListener('resize', () => {
+        resizeCanvas();
+        createParticles();
+    });
+
+    resizeCanvas();
+    createParticles();
+    animateParticles();
+
     // Duración de la intro: 3 segundos
     setTimeout(() => {
         intro.classList.add('fade-out');
@@ -253,7 +306,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 showScreen('loginScreen');
             }
-        }, 1000); // tiempo del fade-out
+        }, 1000);
     }, 3000);
 });
 
