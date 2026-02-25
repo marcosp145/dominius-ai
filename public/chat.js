@@ -3,45 +3,41 @@
 // =============================================
 
 // ========== CONFIGURACIÓN ==========
-// La API key se carga desde /config/groq-key.js
-// Ese archivo debe contener: window.GROQ_API_KEY = 'gsk_xxxxxx';
-const API_URL = 'https://api.groq.com/openai/v1/chat/completions';
-
-function getApiKey() {
-    return window.GROQ_API_KEY || localStorage.getItem('dominius_groq_key') || '';
-}
+// La key está protegida en el servidor (api/groq.js con variable de entorno)
+// Nunca se expone en el frontend
+const API_URL = '/api/groq';
 
 // ========== MODOS DE IA ==========
 const MODES = {
     general: {
         name: 'General',
         icon: '💬',
-        prompt: 'Eres Dominius AI, un asistente empresarial de élite. Respondes de forma clara, precisa y profesional en español. Das respuestas completas y útiles.'
+        prompt: 'Eres Dominius AI, un asistente empresarial de élite. Respondes de forma clara, precisa y profesional en español. Das respuestas completas y útiles. No menciones en qué modo estás ni hagas referencia al modo en tus respuestas. Si alguien te pregunta en qué modo estás, responde simplemente: "Estoy en modo General".'
     },
     creative: {
         name: 'Creativo',
         icon: '🎨',
-        prompt: 'Eres Dominius AI en modo Creativo. Eres imaginativo, innovador y generas ideas originales y disruptivas. Piensas fuera de lo convencional, propones enfoques creativos y únicos. Respondes en español con entusiasmo y creatividad.'
+        prompt: 'Eres Dominius AI. Eres imaginativo, innovador y generas ideas originales y disruptivas. Piensas fuera de lo convencional y propones enfoques creativos y únicos. Respondes en español con entusiasmo y creatividad. No menciones en qué modo estás ni hagas referencia al modo en tus respuestas. Si alguien te pregunta en qué modo estás, responde simplemente: "Estoy en modo Creativo".'
     },
     business: {
         name: 'Gestión Empresarial',
         icon: '💼',
-        prompt: 'Eres Dominius AI en modo Gestión Empresarial. Eres un experto en management, recursos humanos, finanzas corporativas, operaciones y gestión de empresas. Ofreces análisis detallados y recomendaciones estratégicas. Respondes en español de forma profesional y estructurada.'
+        prompt: 'Eres Dominius AI. Eres un experto en management, recursos humanos, finanzas corporativas, operaciones y gestión de empresas. Ofreces análisis detallados y recomendaciones estratégicas. Respondes en español de forma profesional y estructurada. No menciones en qué modo estás ni hagas referencia al modo en tus respuestas. Si alguien te pregunta en qué modo estás, responde simplemente: "Estoy en modo Gestión Empresarial".'
     },
     strategy: {
         name: 'Estrategia',
         icon: '🎯',
-        prompt: 'Eres Dominius AI en modo Estrategia. Eres un experto en planificación estratégica, crecimiento empresarial, análisis competitivo y toma de decisiones a largo plazo. Usas frameworks como DAFO, OKRs, Porter, etc. Respondes en español con visión estratégica y rigor analítico.'
+        prompt: 'Eres Dominius AI. Eres un experto en planificación estratégica, crecimiento empresarial, análisis competitivo y toma de decisiones a largo plazo. Usas frameworks como DAFO, OKRs, Porter, etc. Respondes en español con visión estratégica y rigor analítico. No menciones en qué modo estás ni hagas referencia al modo en tus respuestas. Si alguien te pregunta en qué modo estás, responde simplemente: "Estoy en modo Estrategia".'
     },
     data: {
         name: 'Análisis de Datos',
         icon: '📊',
-        prompt: 'Eres Dominius AI en modo Análisis de Datos. Eres un experto en estadística, business intelligence, métricas, KPIs y análisis cuantitativo. Ayudas a interpretar datos, identificar tendencias y extraer insights accionables. Respondes en español con precisión analítica.'
+        prompt: 'Eres Dominius AI. Eres un experto en estadística, business intelligence, métricas, KPIs y análisis cuantitativo. Ayudas a interpretar datos, identificar tendencias y extraer insights accionables. Respondes en español con precisión analítica. No menciones en qué modo estás ni hagas referencia al modo en tus respuestas. Si alguien te pregunta en qué modo estás, responde simplemente: "Estoy en modo Análisis de Datos".'
     },
     code: {
         name: 'Programación',
         icon: '💻',
-        prompt: 'Eres Dominius AI en modo Programación. Eres un experto desarrollador de software con conocimiento profundo en múltiples lenguajes y tecnologías. Escribes código limpio, eficiente y bien documentado. Explicas el código claramente y ayudas con debugging. Respondes en español.'
+        prompt: 'Eres Dominius AI. Eres un experto desarrollador de software con conocimiento profundo en múltiples lenguajes y tecnologías. Escribes código limpio, eficiente y bien documentado. Explicas el código claramente y ayudas con debugging. Respondes en español. No menciones en qué modo estás ni hagas referencia al modo en tus respuestas. Si alguien te pregunta en qué modo estás, responde simplemente: "Estoy en modo Programación".'
     }
 };
 
@@ -287,34 +283,37 @@ function appendMessage(msg, save = true) {
 
     const content = document.createElement('div');
     content.className = 'message-content';
+    // position relative para que el botón copiar se posicione dentro
+    content.style.position = 'relative';
 
     if (isUser) {
         content.textContent = msg.content;
     } else {
         content.innerHTML = formatAIText(msg.content);
-    }
 
-    const time = document.createElement('div');
-    time.className = 'message-time';
-    time.textContent = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-
-    wrapper.appendChild(content);
-    wrapper.appendChild(time);
-
-    if (!isUser) {
+        // Botón copiar dentro del bubble del mensaje (esquina superior derecha)
         const copyBtn = document.createElement('button');
         copyBtn.className = 'copy-btn';
         copyBtn.title = 'Copiar respuesta';
-        copyBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        copyBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
         </svg>`;
         copyBtn.addEventListener('click', () => {
             navigator.clipboard.writeText(msg.content).then(() => {
+                copyBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>`;
                 showNotification('Copiado al portapapeles', 'success');
+                setTimeout(() => {
+                    copyBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>`;
+                }, 2000);
             });
         });
-        wrapper.appendChild(copyBtn);
+        content.appendChild(copyBtn);
     }
 
     // Mostrar archivos adjuntos del mensaje de usuario
@@ -329,6 +328,13 @@ function appendMessage(msg, save = true) {
         });
         content.appendChild(filesDiv);
     }
+
+    const time = document.createElement('div');
+    time.className = 'message-time';
+    time.textContent = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+
+    wrapper.appendChild(content);
+    wrapper.appendChild(time);
 
     messageDiv.appendChild(avatar);
     messageDiv.appendChild(wrapper);
@@ -375,50 +381,40 @@ async function sendMessage() {
     showTypingIndicator();
 
     try {
-        const apiKey = getApiKey();
         let aiResponse;
 
-        if (!apiKey) {
-            // Sin API key: modo simulación
-            await new Promise(r => setTimeout(r, 1200));
-            const modeInfo = MODES[currentMode] || MODES.general;
-            aiResponse = `[Modo ${modeInfo.name}] Para activar la IA real, añade tu API key de Groq en el archivo /config/groq-key.js con el formato:\n\nwindow.GROQ_API_KEY = 'gsk_tu_key_aqui';`;
-        } else {
-            // Construir historial de conversación
-            const chatMessages = chat ? chat.messages : [];
-            const systemPrompt = (MODES[currentMode] || MODES.general).prompt;
+        // Construir historial de conversación
+        const chatMessages = chat ? chat.messages : [];
+        const systemPrompt = (MODES[currentMode] || MODES.general).prompt;
 
-            const apiMessages = [
-                { role: 'system', content: systemPrompt },
-                ...chatMessages.slice(-20).map(m => ({
-                    role: m.role === 'user' ? 'user' : 'assistant',
-                    content: m.content
-                })),
-                { role: 'user', content: text }
-            ];
+        const apiMessages = [
+            { role: 'system', content: systemPrompt },
+            ...chatMessages.slice(-20).map(m => ({
+                role: m.role === 'user' ? 'user' : 'assistant',
+                content: m.content
+            })),
+            { role: 'user', content: text }
+        ];
 
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apiKey}`
-                },
-                body: JSON.stringify({
-                    model: 'llama-3.3-70b-versatile',
-                    messages: apiMessages,
-                    max_tokens: 4096,
-                    temperature: currentMode === 'creative' ? 0.9 : 0.7
-                })
-            });
+        // Llamada al proxy seguro (api/groq.js) — la key nunca sale al frontend
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                messages: apiMessages,
+                model: 'llama-3.3-70b-versatile',
+                max_tokens: 4096,
+                temperature: currentMode === 'creative' ? 0.9 : 0.7
+            })
+        });
 
-            if (!response.ok) {
-                const err = await response.json().catch(() => ({}));
-                throw new Error(err.error?.message || `Error ${response.status}`);
-            }
-
-            const data = await response.json();
-            aiResponse = data.choices?.[0]?.message?.content || 'No se recibió respuesta de la IA.';
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error?.message || `Error ${response.status}`);
         }
+
+        const data = await response.json();
+        aiResponse = data.choices?.[0]?.message?.content || 'No se recibió respuesta de la IA.';
 
         hideTypingIndicator();
         appendMessage({ role: 'assistant', content: aiResponse });
