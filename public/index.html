@@ -8,16 +8,66 @@
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
 <body>
-  <!-- INTRO PROFESIONAL CON EFECTO DE PARTÍCULAS -->
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- INTRO CINEMÁTICA PROFESIONAL            -->
+  <!-- ════════════════════════════════════════ -->
   <div id="intro">
+    <!-- Partículas de fondo -->
     <canvas id="introCanvas"></canvas>
-    <div class="intro-content">
-      <h1 class="intro-title">DOMINIUS AI</h1>
-      <p class="intro-welcome">Bienvenido a tu IA empresarial de confianza</p>
+
+    <!-- Líneas decorativas -->
+    <div class="intro-lines">
+      <div class="intro-line intro-line-h top"></div>
+      <div class="intro-line intro-line-h bottom"></div>
+      <div class="intro-line intro-line-v left"></div>
+      <div class="intro-line intro-line-v right"></div>
     </div>
+
+    <!-- Contenido central -->
+    <div class="intro-content">
+      <!-- Logo circular animado -->
+      <div class="intro-logo-ring">
+        <svg class="ring-svg" viewBox="0 0 200 200">
+          <circle class="ring-track" cx="100" cy="100" r="90" fill="none" stroke="rgba(139,92,246,0.15)" stroke-width="1"/>
+          <circle class="ring-progress" cx="100" cy="100" r="90" fill="none"
+            stroke="url(#ringGrad)" stroke-width="1.5"
+            stroke-dasharray="565" stroke-dashoffset="565"
+            stroke-linecap="round"/>
+          <defs>
+            <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#a78bfa"/>
+              <stop offset="100%" stop-color="#8b5cf6"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="intro-da">
+          <span class="intro-d">D</span><span class="intro-a">A</span>
+        </div>
+      </div>
+
+      <!-- Texto -->
+      <div class="intro-text-block">
+        <div class="intro-label">SISTEMA ACTIVADO</div>
+        <h1 class="intro-title">DOMINIUS AI</h1>
+        <p class="intro-subtitle">Inteligencia Empresarial de Élite</p>
+        <div class="intro-progress-bar">
+          <div class="intro-progress-fill"></div>
+        </div>
+        <div class="intro-status">Inicializando módulos...</div>
+      </div>
+    </div>
+
+    <!-- Esquinas decorativas -->
+    <div class="corner corner-tl"></div>
+    <div class="corner corner-tr"></div>
+    <div class="corner corner-bl"></div>
+    <div class="corner corner-br"></div>
   </div>
 
-  <!-- PANTALLAS DE LOGIN -->
+  <!-- ════════════════════════════════════════ -->
+  <!-- PANTALLAS DE LOGIN                      -->
+  <!-- ════════════════════════════════════════ -->
   <div class="login-screen" id="loginScreen">
     <div class="login-box">
       <h2 class="login-title">Iniciar Sesión</h2>
@@ -66,5 +116,124 @@
   <div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div><p>Un momento...</p></div>
 
   <script src="app.js"></script>
+
+  <!-- Script de la cinemática (después de app.js para no interferir) -->
+  <script>
+  (function() {
+    // ── Canvas partículas ──────────────────────────
+    const canvas = document.getElementById('introCanvas');
+    const ctx = canvas.getContext('2d');
+    let W, H, particles = [], animId;
+
+    function resize() {
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    function Particle() {
+      this.x = Math.random() * W;
+      this.y = Math.random() * H;
+      this.size = Math.random() * 1.5 + 0.3;
+      this.speedX = (Math.random() - 0.5) * 0.4;
+      this.speedY = (Math.random() - 0.5) * 0.4;
+      this.opacity = Math.random() * 0.5 + 0.1;
+      this.color = Math.random() > 0.5 ? '139,92,246' : '167,139,250';
+    }
+
+    Particle.prototype.update = function() {
+      this.x += this.speedX;
+      this.y += this.speedY;
+      if (this.x < 0) this.x = W;
+      if (this.x > W) this.x = 0;
+      if (this.y < 0) this.y = H;
+      if (this.y > H) this.y = 0;
+    };
+
+    for (let i = 0; i < 120; i++) particles.push(new Particle());
+
+    function drawParticles() {
+      ctx.clearRect(0, 0, W, H);
+      particles.forEach(p => {
+        p.update();
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${p.color},${p.opacity})`;
+        ctx.fill();
+      });
+      // Líneas de conexión entre partículas cercanas
+      particles.forEach((p, i) => {
+        for (let j = i + 1; j < particles.length; j++) {
+          const q = particles[j];
+          const dist = Math.hypot(p.x - q.x, p.y - q.y);
+          if (dist < 100) {
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(q.x, q.y);
+            ctx.strokeStyle = `rgba(139,92,246,${0.08 * (1 - dist / 100)})`;
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+          }
+        }
+      });
+      animId = requestAnimationFrame(drawParticles);
+    }
+    drawParticles();
+
+    // ── Animar el anillo SVG ──────────────────────
+    const ringProgress = document.querySelector('.ring-progress');
+    const progressFill = document.querySelector('.intro-progress-fill');
+    const statusEl = document.querySelector('.intro-status');
+
+    const statusMessages = [
+      'Cargando modelos de IA...',
+      'Conectando módulos empresariales...',
+      'Calibrando inteligencia...',
+      'Sistema listo.'
+    ];
+
+    let progress = 0;
+    let statusIdx = 0;
+    const totalDash = 565;
+
+    const progressInterval = setInterval(() => {
+      progress = Math.min(progress + 1.4, 100);
+      // Anillo SVG
+      const dashOffset = totalDash - (totalDash * progress / 100);
+      if (ringProgress) ringProgress.style.strokeDashoffset = dashOffset;
+      // Barra de progreso
+      if (progressFill) progressFill.style.width = progress + '%';
+      // Mensajes de estado
+      const newIdx = Math.min(Math.floor(progress / 25), statusMessages.length - 1);
+      if (newIdx !== statusIdx && statusEl) {
+        statusIdx = newIdx;
+        statusEl.style.opacity = '0';
+        setTimeout(() => {
+          statusEl.textContent = statusMessages[statusIdx];
+          statusEl.style.opacity = '1';
+        }, 200);
+      }
+      if (progress >= 100) clearInterval(progressInterval);
+    }, 28);
+
+    // ── Salida cinemática ─────────────────────────
+    setTimeout(() => {
+      const intro = document.getElementById('intro');
+      intro.classList.add('fade-out');
+      cancelAnimationFrame(animId);
+      setTimeout(() => {
+        intro.style.display = 'none';
+        const session = localStorage.getItem('dominius_session');
+        if (session) {
+          window.location.href = 'chat.html';
+        } else {
+          showScreen('loginScreen');
+        }
+      }, 900);
+    }, 4200);
+
+  })();
+  </script>
 </body>
 </html>
