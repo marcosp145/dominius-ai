@@ -1,542 +1,160 @@
 // =============================================
-// DOMINIUS AI - CHAT DEFINITIVO
+// DOMINIUS AI - CHAT PRINCIPAL
 // =============================================
 
-// Variables globales
-let attachedFiles = [];
+// ========== CONFIGURACIÓN ==========
+const API_URL = 'https://api.groq.com/openai/v1/chat/completions'; // Ajusta si usas otro endpoint
+const API_KEY = 'TU_API_KEY'; // IMPORTANTE: Reemplaza con tu API key real o cárgala desde un lugar seguro
+
+// ========== ELEMENTOS DEL DOM ==========
+const messagesContainer = document.getElementById('messagesContainer');
+const messageInput = document.getElementById('messageInput');
+const sendBtn = document.getElementById('sendBtn');
+const attachBtn = document.getElementById('attachBtn');
+const fileInput = document.getElementById('fileInput');
+const attachedFilesContainer = document.getElementById('attachedFilesContainer');
+const currentChatTitle = document.getElementById('currentChatTitle');
+const currentModeSpan = document.getElementById('currentMode');
+const chatsList = document.getElementById('chatsList');
+const newChatBtn = document.getElementById('newChatBtn');
+const logoutBtn = document.getElementById('logoutBtn');
+const clearChatBtn = document.getElementById('clearChatBtn');
+const deleteChatBtn = document.getElementById('deleteChatBtn');
+const tabButtons = document.querySelectorAll('.tab-button');
+const modeCards = document.querySelectorAll('.mode-card');
+const userNameSpan = document.getElementById('userName');
+const userInitials = document.getElementById('userInitials');
+
+// ========== VARIABLES DE ESTADO ==========
+let currentUser = null;
 let currentChatId = null;
-let currentMode = 'general';
-let isAIResponding = false;
-let stopGeneration = false;
-let currentAIMessage = '';
+let chats = [];
+let attachedFiles = [];
+let isGenerating = false;
+let currentMode = 'general'; // modo por defecto
 
-// Variables para pausa/reanudar
-let typewriterInterval = null;
-let typewriterElement = null;
-let typewriterFullText = '';
-let typewriterIndex = 0;
-let isPaused = false;
-
-// 🔑 API KEY eliminada del frontend por seguridad.
-// Las llamadas a Groq se hacen a través de /api/groq (Netlify Function)
-// La key real está guardada en las variables de entorno de Netlify.
-
-// =============================================
-// INICIALIZACIÓN
-// =============================================
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Dominius AI - Iniciando sistema...');
+// ========== INICIALIZACIÓN ==========
+document.addEventListener('DOMContentLoaded', async () => {
+    // Verificar sesión
     const session = localStorage.getItem('dominius_session');
     if (!session) {
-        console.log('❌ No hay sesión activa, redirigiendo...');
         window.location.href = 'index.html';
         return;
     }
-    initUserData();
-    initEvents();
-    loadChatsList();
-    initParticles();
-    setTimeout(() => {
-        const input = document.getElementById('messageInput');
-        if (input) { input.focus(); input.value = ''; updateCharCount(); autoResizeTextarea(); }
-    }, 500);
-    console.log('✅ Dominius AI - Sistema listo');
+    currentUser = JSON.parse(session);
+    userNameSpan.textContent = currentUser.name || currentUser.username;
+    userInitials.textContent = (currentUser.name || currentUser.username).substring(0, 2).toUpperCase();
+
+    // Cargar chats del usuario
+    loadChats();
+
+    // Establecer chat activo (si existe)
+    if (chats.length > 0) {
+        setActiveChat(chats[0].id);
+    } else {
+        createNewChat();
+    }
+
+    // Event listeners
+    setupEventListeners();
 });
 
-// =============================================
-// CONFIGURACIÓN DE EVENTOS
-// =============================================
-function initEvents() {
-    console.log('⚙️ Configurando eventos...');
-
-    // Logout
-    document.getElementById('logoutBtn')?.addEventListener('click', function() {
-        if (confirm('¿Estás seguro de cerrar sesión?')) {
-            localStorage.removeItem('dominius_session');
-            window.location.href = 'index.html';
-        }
-    });
-
-    // Pestañas
-    document.querySelectorAll('.tab-button').forEach(btn => {
-        btn.addEventListener('click', function() {
-            document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-            this.classList.add('active');
-            const tabName = this.getAttribute('data-tab');
-            document.getElementById(tabName + 'Panel')?.classList.add('active');
-        });
-    });
-
-    // Nuevo chat
-    document.getElementById('newChatBtn')?.addEventListener('click', createNewChat);
-
-    // Modos
-    document.querySelectorAll('.mode-card').forEach(card => {
-        card.addEventListener('click', function() {
-            document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('active'));
-            this.classList.add('active');
-            currentMode = this.getAttribute('data-mode');
-            document.getElementById('currentMode').textContent = 'Modo: ' + getModeName(currentMode);
-            showNotification(`Modo ${getModeName(currentMode)} activado`, 'info');
-            if (!currentChatId) createNewChat();
-        });
-    });
-
-    // Limpiar / Eliminar chat
-    document.getElementById('clearChatBtn')?.addEventListener('click', function() {
-        if (currentChatId && confirm('¿Limpiar este chat?')) clearCurrentChat();
-    });
-    document.getElementById('deleteChatBtn')?.addEventListener('click', function() {
-        if (currentChatId && confirm('¿Eliminar este chat permanentemente?')) deleteCurrentChat();
-    });
-
-    // Archivos adjuntos
-    const attachBtn = document.getElementById('attachBtn');
-    const fileInput = document.getElementById('fileInput');
-    if (attachBtn && fileInput) {
-        attachBtn.addEventListener('click', () => fileInput.click());
-        fileInput.addEventListener('change', async function(e) {
-            const files = Array.from(e.target.files || []);
-            for (const file of files) {
-                const content = await readFileContent(file);
-                attachedFiles.push({ name: file.name, size: file.size, type: file.type, content });
-            }
-            updateAttachedFiles();
-            e.target.value = '';
-            if (files.length) showNotification(`✅ ${files.length} archivo(s) adjuntado(s)`, 'success');
-            updateButtonState(); // Actualizar botón al adjuntar
-        });
-    }
-
-    // ========== BOTÓN INTELIGENTE ==========
-    const sendBtn = document.getElementById('sendBtn');
-    const messageInput = document.getElementById('messageInput');
-
-    window.hasContent = function() {
-        return messageInput.value.trim() !== '' || attachedFiles.length > 0;
-    };
-
-    window.updateButtonState = function() {
-        if (!sendBtn) return;
-        const content = hasContent();
-
-        if (content) {
-            // Siempre modo ENVIAR (aunque IA responda)
-            sendBtn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>`;
-            sendBtn.title = 'Enviar mensaje';
-            sendBtn.style.background = 'linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)';
-            sendBtn.disabled = false;
-            sendBtn.style.opacity = '1';
-            sendBtn.style.cursor = 'pointer';
-        } else {
-            // Sin contenido
-            if (isAIResponding) {
-                // Modo pausa/reanudar
-                if (isPaused) {
-                    sendBtn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>`;
-                    sendBtn.title = 'Reanudar';
-                    sendBtn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
-                } else {
-                    sendBtn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>`;
-                    sendBtn.title = 'Pausar';
-                    sendBtn.style.background = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
-                }
-                sendBtn.disabled = false;
-                sendBtn.style.opacity = '1';
-                sendBtn.style.cursor = 'pointer';
-            } else {
-                // Sin contenido y sin respuesta → botón deshabilitado
-                sendBtn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>`;
-                sendBtn.title = 'Escribe un mensaje';
-                sendBtn.style.background = 'rgba(139, 92, 246, 0.3)';
-                sendBtn.disabled = true;
-                sendBtn.style.opacity = '0.6';
-                sendBtn.style.cursor = 'not-allowed';
-            }
-        }
-    };
-
-    // Evento click del botón
-    sendBtn?.addEventListener('click', function() {
-        if (hasContent()) {
-            sendUserMessage();
-        } else {
-            if (isAIResponding) {
-                // Pausar / Reanudar
-                if (isPaused) {
-                    isPaused = false;
-                    if (typewriterElement && typewriterFullText) {
-                        typeWriter(typewriterElement, typewriterFullText, typewriterIndex, 35);
-                    }
-                } else {
-                    isPaused = true;
-                    if (typewriterInterval) {
-                        clearInterval(typewriterInterval);
-                        typewriterInterval = null;
-                    }
-                }
-                updateButtonState();
-            }
-        }
-    });
-
-    // Eventos del input
-    if (messageInput) {
-        messageInput.addEventListener('input', function() {
-            updateCharCount();
-            autoResizeTextarea();
-            updateButtonState();
-        });
-        messageInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                if (hasContent()) sendUserMessage();
-            }
-        });
-    }
-
-    console.log('✅ Eventos configurados');
+// ========== FUNCIONES DE CHATS ==========
+function loadChats() {
+    const stored = localStorage.getItem(`chats_${currentUser.id}`);
+    chats = stored ? JSON.parse(stored) : [];
+    renderChatsList();
 }
 
-// =============================================
-// LEER ARCHIVOS
-// =============================================
-async function readFileContent(file) {
-    return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target.result);
-        reader.onerror = () => resolve(`[Error leyendo archivo: ${file.name}]`);
-        if (file.type.startsWith('text/') || ['application/json', 'text/plain'].includes(file.type) || /\.(txt|js|html|css|md|json)$/i.test(file.name)) {
-            reader.readAsText(file);
-        } else {
-            resolve(`[Archivo: ${file.name}, ${formatFileSize(file.size)}]`);
-        }
-    });
+function saveChats() {
+    localStorage.setItem(`chats_${currentUser.id}`, JSON.stringify(chats));
 }
 
-// =============================================
-// EFECTO MÁQUINA DE ESCRIBIR
-// =============================================
-function typeWriter(element, text, startIndex = 0, speed = 35) {
-    return new Promise((resolve) => {
-        typewriterElement = element;
-        typewriterFullText = text;
-        typewriterIndex = startIndex;
-        if (startIndex === 0) element.innerHTML = '';
-        if (typewriterInterval) clearInterval(typewriterInterval);
-        typewriterInterval = setInterval(() => {
-            if (stopGeneration) {
-                clearInterval(typewriterInterval);
-                typewriterInterval = null;
-                resolve();
-                return;
-            }
-            if (isPaused) return;
-            if (typewriterIndex < typewriterFullText.length) {
-                element.innerHTML = formatAIResponse(typewriterFullText.substring(0, typewriterIndex + 1));
-                typewriterIndex++;
-                const container = document.getElementById('messagesContainer');
-                if (container) container.scrollTop = container.scrollHeight;
-            } else {
-                clearInterval(typewriterInterval);
-                typewriterInterval = null;
-                resolve();
-            }
-        }, speed);
-    });
-}
-
-// =============================================
-// ENVIAR MENSAJE (ABORTA RESPUESTA ANTERIOR)
-// =============================================
-async function sendUserMessage() {
-    const messageInput = document.getElementById('messageInput');
-    if (!messageInput) return;
-
-    // Abortar respuesta anterior
-    if (isAIResponding) {
-        stopGeneration = true;
-        if (typewriterInterval) {
-            clearInterval(typewriterInterval);
-            typewriterInterval = null;
-        }
-        isAIResponding = false;
-        isPaused = false;
-        updateButtonState();
-    }
-
-    const message = messageInput.value.trim();
-    if (!message && attachedFiles.length === 0) return;
-
-    if (!currentChatId) createNewChat();
-
-    let fullMessage = message;
-    if (attachedFiles.length > 0) {
-        fullMessage += '\n\n--- Archivos adjuntos ---\n';
-        attachedFiles.forEach(file => {
-            fullMessage += `\n📎 ${file.name} (${formatFileSize(file.size)}):\n${file.content}\n`;
-        });
-    }
-
-    addUserMessage(message, attachedFiles);
-    messageInput.value = '';
-    attachedFiles = [];
-    updateAttachedFiles();
-    updateCharCount();
-    autoResizeTextarea();
-    saveMessageToChat(currentChatId, 'user', fullMessage);
-    updateButtonState();
-
-    await getAIResponse(fullMessage);
-}
-
-// =============================================
-// OBTENER RESPUESTA DE IA
-// =============================================
-async function getAIResponse(userMessage) {
-    isAIResponding = true;
-    stopGeneration = false;
-    isPaused = false;
-    typewriterIndex = 0;
-    currentAIMessage = '';
-    updateButtonState();
-
-    const container = document.getElementById('messagesContainer');
-    if (!container) return;
-
-    const typingDiv = document.createElement('div');
-    typingDiv.className = 'message ai-message';
-    typingDiv.id = 'typingIndicator';
-    typingDiv.innerHTML = `<div class="message-avatar ai-avatar"><span>AI</span></div><div class="message-content-wrapper"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div>`;
-    container.appendChild(typingDiv);
-    container.scrollTop = container.scrollHeight;
-
-    try {
-        const chatHistory = getChatHistory(currentChatId);
-        const messages = [
-            { role: 'system', content: getModeSystemPrompt(currentMode) },
-            ...chatHistory.map(msg => ({ role: msg.role, content: msg.content })),
-            { role: 'user', content: userMessage }
-        ];
-
-
-        // Llamamos a nuestra Netlify Function (key segura en el servidor)
-        const response = await fetch('/api/groq', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                model: 'llama-3.3-70b-versatile',
-                messages,
-                temperature: 0.7,
-                max_tokens: 8000
-            })
-        });
-
-        if (!response.ok) throw new Error('Error en la API');
-
-        const data = await response.json();
-        currentAIMessage = data.choices?.[0]?.message?.content || '';
-
-        typingDiv.remove();
-
-        const aiMessageDiv = document.createElement('div');
-        aiMessageDiv.className = 'message ai-message';
-        aiMessageDiv.innerHTML = `<div class="message-avatar ai-avatar"><span>AI</span></div><div class="message-content-wrapper"><div class="message-content"></div><div class="message-time">${new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</div></div>`;
-        container.appendChild(aiMessageDiv);
-
-        const contentDiv = aiMessageDiv.querySelector('.message-content');
-
-        // Hablar simultáneamente al typewriter si fue mensaje de voz
-        if (window.lastWasVoice && currentAIMessage) {
-            window.lastWasVoice = false;
-            speakAIResponse(currentAIMessage);
-        }
-
-        // El efecto typewriter
-        if (!stopGeneration && currentAIMessage) {
-            await typeWriter(contentDiv, currentAIMessage, 0, 35);
-        } else {
-            contentDiv.innerHTML = formatAIResponse(currentAIMessage);
-        }
-
-        saveMessageToChat(currentChatId, 'assistant', currentAIMessage);
-        addCopyButton(aiMessageDiv, currentAIMessage);
-
-        // Si el mensaje fue por voz, la IA responde hablando
-        if (window.lastWasVoice && currentAIMessage) {
-            window.lastWasVoice = false;
-            speakAIResponse(currentAIMessage);
-        }
-
-    } catch (error) {
-        console.error('Error obteniendo respuesta:', error);
-        typingDiv.remove();
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'message ai-message';
-        errorDiv.innerHTML = `<div class="message-avatar ai-avatar"><span>AI</span></div><div class="message-content-wrapper"><div class="message-content">❌ Error al obtener respuesta. Por favor intenta de nuevo.</div></div>`;
-        container.appendChild(errorDiv);
-    }
-
-    isAIResponding = false;
-    stopGeneration = false;
-    isPaused = false;
-    typewriterInterval = null;
-    updateButtonState();
-}
-
-// =============================================
-// FORMATEAR RESPUESTA
-// =============================================
-function formatAIResponse(text) {
-    if (!text) return '';
-    text = text.replace(/```(\w+)?\n([\s\S]*?)```/g, (_, lang, code) => `<pre><code>${escapeHtml(code.trim())}</code></pre>`);
-    text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
-    text = text.replace(/\*\*([^\*]+)\*\*/g, '<strong>$1</strong>');
-    text = text.replace(/\*([^\*]+)\*/g, '<em>$1</em>');
-    text = text.replace(/\n/g, '<br>');
-    return text;
-}
-
-function escapeHtml(text) {
-    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-    return text.replace(/[&<>"']/g, m => map[m]);
-}
-
-// =============================================
-// AÑADIR MENSAJE DEL USUARIO
-// =============================================
-function addUserMessage(message, files = []) {
-    const container = document.getElementById('messagesContainer');
-    if (!container) return;
-
-    const welcomeMsg = container.querySelector('.welcome-message');
-    if (welcomeMsg) welcomeMsg.style.display = 'none';
-
-    const messageDiv = document.createElement('div');
-    messageDiv.className = 'message user-message';
-
-    const session = JSON.parse(localStorage.getItem('dominius_session') || '{}');
-    const initials = session.name ? session.name.substring(0, 2).toUpperCase() : 'U';
-
-    let filesHTML = '';
-    if (files.length) {
-        filesHTML = '<div class="message-files">' + files.map(f => `<div class="file-tag">📎 ${f.name} (${formatFileSize(f.size)})</div>`).join('') + '</div>';
-    }
-
-    const timeString = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-
-    messageDiv.innerHTML = `
-        <div class="message-content-wrapper">
-            <div class="message-content">${escapeHtml(message).replace(/\n/g, '<br>')}</div>
-            ${filesHTML}
-            <div class="message-time">${timeString}</div>
-        </div>
-        <div class="message-avatar user-avatar"><span>${initials}</span></div>
-    `;
-    container.appendChild(messageDiv);
-    container.scrollTop = container.scrollHeight;
-}
-
-// =============================================
-// BOTÓN COPIAR
-// =============================================
-function addCopyButton(messageDiv, content) {
-    const wrapper = messageDiv.querySelector('.message-content-wrapper');
-    if (!wrapper) return;
-    const copyBtn = document.createElement('button');
-    copyBtn.className = 'copy-btn';
-    copyBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
-    copyBtn.title = 'Copiar';
-    copyBtn.addEventListener('click', function() {
-        navigator.clipboard.writeText(content).then(() => {
-            copyBtn.innerHTML = '✓';
-            setTimeout(() => copyBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`, 2000);
-        }).catch(() => {
-            const textArea = document.createElement('textarea');
-            textArea.value = content;
-            document.body.appendChild(textArea);
-            textArea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textArea);
-            copyBtn.innerHTML = '✓';
-            setTimeout(() => copyBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`, 2000);
-        });
-    });
-    wrapper.appendChild(copyBtn);
-}
-
-// =============================================
-// ARCHIVOS ADJUNTOS
-// =============================================
-function updateAttachedFiles() {
-    const container = document.getElementById('attachedFilesContainer');
-    if (!container) return;
-    if (attachedFiles.length === 0) {
-        container.style.display = 'none';
-        container.innerHTML = '';
-        return;
-    }
-    container.style.display = 'flex';
-    container.innerHTML = attachedFiles.map((file, i) => `
-        <div class="attached-file-item">
-            <span class="file-icon">📎</span>
-            <div class="file-info">
-                <span class="file-name">${file.name}</span>
-                <span class="file-size">${formatFileSize(file.size)}</span>
-            </div>
-            <button class="remove-file-btn" onclick="removeFile(${i})">×</button>
-        </div>
-    `).join('');
-}
-
-window.removeFile = function(index) {
-    attachedFiles.splice(index, 1);
-    updateAttachedFiles();
-    updateButtonState();
-};
-
-function formatFileSize(bytes) {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
-
-// =============================================
-// GESTIÓN DE CHATS
-// =============================================
 function createNewChat() {
-    const chatId = 'chat_' + Date.now();
-    currentChatId = chatId;
-    const chat = {
-        id: chatId,
+    const newChat = {
+        id: Date.now().toString(),
         title: 'Nuevo Chat',
-        mode: currentMode,
+        mode: 'general', // modo por defecto
         messages: [],
         createdAt: new Date().toISOString()
     };
-    const chats = getChats();
-    chats.unshift(chat);
-    saveChats(chats);
-    loadChatsList();
-    loadChat(chatId);
-    document.getElementById('currentChatTitle').textContent = 'Nuevo Chat';
+    chats.unshift(newChat);
+    saveChats();
+    renderChatsList();
+    setActiveChat(newChat.id);
+    showWelcomeMessage();
 }
 
-function loadChat(chatId) {
+function setActiveChat(chatId) {
     currentChatId = chatId;
-    const chats = getChats();
     const chat = chats.find(c => c.id === chatId);
     if (!chat) return;
 
-    const container = document.getElementById('messagesContainer');
-    if (!container) return;
-    container.innerHTML = '';
+    // Actualizar título
+    currentChatTitle.textContent = chat.title;
+    currentMode = chat.mode || 'general';
+    updateModeDisplay();
 
-    if (chat.messages.length === 0) {
-        container.innerHTML = `<div class="welcome-message">
+    // Marcar en la lista
+    document.querySelectorAll('.chat-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.id === chatId);
+    });
+
+    // Mostrar mensajes
+    renderMessages(chat.messages);
+}
+
+function updateChatTitle(chatId, newTitle) {
+    const chat = chats.find(c => c.id === chatId);
+    if (chat) {
+        chat.title = newTitle;
+        saveChats();
+        renderChatsList();
+        if (currentChatId === chatId) {
+            currentChatTitle.textContent = newTitle;
+        }
+    }
+}
+
+// Función para generar título a partir del primer mensaje
+function generateTitleFromMessage(text) {
+    // Extraer palabras clave: cogemos las primeras 5-6 palabras relevantes
+    const words = text.split(' ').filter(w => w.length > 3); // palabras de más de 3 letras
+    let title = words.slice(0, 5).join(' ');
+    if (title.length > 40) title = title.substring(0, 40) + '...';
+    return title || 'Nuevo Chat';
+}
+
+// ========== RENDERIZADO DE CHATS ==========
+function renderChatsList() {
+    chatsList.innerHTML = '';
+    chats.forEach(chat => {
+        const chatItem = document.createElement('div');
+        chatItem.className = `chat-item ${chat.id === currentChatId ? 'active' : ''}`;
+        chatItem.dataset.id = chat.id;
+        chatItem.innerHTML = `
+            <div class="chat-item-title">${chat.title}</div>
+            <div class="chat-item-preview">${chat.messages[chat.messages.length - 1]?.content?.substring(0, 30) || 'Nuevo chat'}</div>
+        `;
+        chatItem.addEventListener('click', () => setActiveChat(chat.id));
+        chatsList.appendChild(chatItem);
+    });
+}
+
+// ========== MENSAJES ==========
+function renderMessages(messages) {
+    messagesContainer.innerHTML = '';
+    if (messages.length === 0) {
+        showWelcomeMessage();
+    } else {
+        messages.forEach(msg => appendMessage(msg, false));
+    }
+    scrollToBottom();
+}
+
+function showWelcomeMessage() {
+    messagesContainer.innerHTML = `
+        <div class="welcome-message">
             <div class="welcome-logo">
                 <div class="da-logo">
                     <span class="d-letter">D</span>
@@ -544,401 +162,282 @@ function loadChat(chatId) {
                 </div>
             </div>
             <h2>¡Hola! Soy Dominius AI</h2>
-            <p>Tu asistente empresarial de élite. ¿En qué puedo ayudarte hoy?</p>
-        </div>`;
-    } else {
-        chat.messages.forEach(msg => {
-            if (msg.role === 'user') addUserMessage(msg.content, []);
-            else if (msg.role === 'assistant') addAIMessage(msg.content, msg.timestamp);
-        });
-    }
-    document.getElementById('currentChatTitle').textContent = chat.title;
-    document.querySelectorAll('.chat-item').forEach(item => {
-        item.classList.remove('active');
-        if (item.getAttribute('data-chat-id') === chatId) item.classList.add('active');
-    });
-}
-
-function addAIMessage(content, timestamp) {
-    const container = document.getElementById('messagesContainer');
-    if (!container) return;
-    const msgDiv = document.createElement('div');
-    msgDiv.className = 'message ai-message';
-    const time = timestamp ? new Date(timestamp) : new Date();
-    msgDiv.innerHTML = `<div class="message-avatar ai-avatar"><span>AI</span></div><div class="message-content-wrapper"><div class="message-content">${formatAIResponse(content)}</div><div class="message-time">${time.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</div></div>`;
-    container.appendChild(msgDiv);
-    addCopyButton(msgDiv, content);
-    container.scrollTop = container.scrollHeight;
-}
-
-function clearCurrentChat() {
-    const chats = getChats();
-    const chat = chats.find(c => c.id === currentChatId);
-    if (chat) {
-        chat.messages = [];
-        saveChats(chats);
-        loadChat(currentChatId);
-        showNotification('Chat limpiado', 'success');
-    }
-}
-
-function deleteCurrentChat() {
-    let chats = getChats();
-    chats = chats.filter(c => c.id !== currentChatId);
-    saveChats(chats);
-    currentChatId = null;
-    loadChatsList();
-    const container = document.getElementById('messagesContainer');
-    if (container) container.innerHTML = `<div class="welcome-message">
-        <div class="welcome-logo">
-            <div class="da-logo">
-                <span class="d-letter">D</span>
-                <span class="a-letter">A</span>
+            <p>Tu asistente empresarial de élite. Transformo ideas en resultados estratégicos. ¿En qué puedo potenciar tu negocio hoy?</p>
+            <div class="quick-suggestions">
+                <button class="suggestion-btn" onclick="quickAction('Necesito un análisis de mercado para un nuevo restaurante')">
+                    📊 Análisis de mercado
+                </button>
+                <button class="suggestion-btn" onclick="quickAction('Genera código HTML para una página web moderna')">
+                    💻 Generar código
+                </button>
+                <button class="suggestion-btn" onclick="quickAction('Ayúdame a crear una estrategia de marketing')">
+                    🎯 Estrategia marketing
+                </button>
+                <button class="suggestion-btn" onclick="quickAction('Ayúdame a redactar un email profesional')">
+                    📧 Redactar email
+                </button>
             </div>
         </div>
-        <h2>¡Hola! Soy Dominius AI</h2>
-        <p>Crea un nuevo chat para empezar</p>
-    </div>`;
-    document.getElementById('currentChatTitle').textContent = 'Dominius AI';
-    showNotification('Chat eliminado', 'success');
+    `;
 }
 
-function loadChatsList() {
-    const chats = getChats();
-    const container = document.getElementById('chatsList');
-    if (!container) return;
-    if (chats.length === 0) {
-        container.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">No hay chats</p>';
-        return;
+function appendMessage(msg, save = true) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${msg.role === 'user' ? 'user-message' : 'ai-message'}`;
+
+    const avatar = document.createElement('div');
+    avatar.className = `message-avatar ${msg.role === 'user' ? 'user-avatar' : 'ai-avatar'}`;
+    avatar.textContent = msg.role === 'user' ? (currentUser?.name?.substring(0,2) || 'U') : 'AI';
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'message-content-wrapper';
+
+    const content = document.createElement('div');
+    content.className = 'message-content';
+    content.innerHTML = msg.content.replace(/\n/g, '<br>');
+
+    const time = document.createElement('div');
+    time.className = 'message-time';
+    time.textContent = new Date().toLocaleTimeString();
+
+    wrapper.appendChild(content);
+    wrapper.appendChild(time);
+
+    if (msg.role === 'ai') {
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'copy-btn';
+        copyBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+        copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(msg.content);
+            showNotification('Copiado al portapapeles', 'success');
+        });
+        wrapper.appendChild(copyBtn);
     }
-    container.innerHTML = chats.map(chat => {
-        const preview = chat.messages.length ? chat.messages[chat.messages.length - 1].content.substring(0, 50) + '...' : 'Sin mensajes';
-        return `<div class="chat-item ${chat.id === currentChatId ? 'active' : ''}" data-chat-id="${chat.id}"><div class="chat-item-title">${chat.title}</div><div class="chat-item-preview">${preview}</div></div>`;
-    }).join('');
-    container.querySelectorAll('.chat-item').forEach(el => {
-        el.addEventListener('click', () => loadChat(el.dataset.chatId));
+
+    messageDiv.appendChild(avatar);
+    messageDiv.appendChild(wrapper);
+
+    messagesContainer.appendChild(messageDiv);
+    scrollToBottom();
+
+    if (save) {
+        const chat = chats.find(c => c.id === currentChatId);
+        if (chat) {
+            chat.messages.push(msg);
+            saveChats();
+        }
+    }
+}
+
+async function sendMessage() {
+    const text = messageInput.value.trim();
+    if (!text && attachedFiles.length === 0) return;
+
+    // Si es el primer mensaje de este chat, generar título
+    const chat = chats.find(c => c.id === currentChatId);
+    if (chat && chat.messages.length === 0) {
+        const title = generateTitleFromMessage(text);
+        updateChatTitle(currentChatId, title);
+    }
+
+    // Mensaje del usuario
+    const userMsg = { role: 'user', content: text, files: attachedFiles };
+    appendMessage(userMsg);
+
+    // Limpiar input y archivos
+    messageInput.value = '';
+    attachedFiles = [];
+    attachedFilesContainer.style.display = 'none';
+    attachedFilesContainer.innerHTML = '';
+    adjustTextareaHeight();
+
+    // Mostrar indicador de escritura
+    showTypingIndicator();
+
+    // Llamar a la API
+    try {
+        const response = await callAPI(text, currentMode);
+        hideTypingIndicator();
+        const aiMsg = { role: 'assistant', content: response };
+        appendMessage(aiMsg);
+    } catch (error) {
+        hideTypingIndicator();
+        showNotification('Error al conectar con la IA', 'error');
+        console.error(error);
+    }
+}
+
+async function callAPI(prompt, mode) {
+    // Aquí debes implementar la llamada real a tu API (Groq, OpenAI, etc.)
+    // Esto es un ejemplo simulado
+    return new Promise(resolve => {
+        setTimeout(() => {
+            resolve(`Respuesta en modo ${mode} a: "${prompt}"`);
+        }, 1000);
     });
 }
 
-// =============================================
-// ALMACENAMIENTO
-// =============================================
-function getChats() {
-    const session = JSON.parse(localStorage.getItem('dominius_session') || '{}');
-    const key = `chats_${session.id}`;
-    return JSON.parse(localStorage.getItem(key) || '[]');
-}
-
-function saveChats(chats) {
-    const session = JSON.parse(localStorage.getItem('dominius_session') || '{}');
-    localStorage.setItem(`chats_${session.id}`, JSON.stringify(chats));
-}
-
-function saveMessageToChat(chatId, role, content) {
-    const chats = getChats();
-    const chat = chats.find(c => c.id === chatId);
-    if (chat) {
-        chat.messages.push({ role, content, timestamp: new Date().toISOString() });
-        if (chat.messages.length === 2 && role === 'user') {
-            chat.title = content.substring(0, 30) + (content.length > 30 ? '...' : '');
-            document.getElementById('currentChatTitle').textContent = chat.title;
-        }
-        saveChats(chats);
-        loadChatsList();
-    }
-}
-
-function getChatHistory(chatId) {
-    const chat = getChats().find(c => c.id === chatId);
-    return chat ? chat.messages : [];
-}
-
-// =============================================
-// UTILIDADES
-// =============================================
-function initUserData() {
-    const session = JSON.parse(localStorage.getItem('dominius_session') || '{}');
-    if (session.name) {
-        document.getElementById('userName').textContent = session.name;
-        document.getElementById('userInitials').textContent = session.name.substring(0, 2).toUpperCase();
-    }
-}
-
-function updateCharCount() {
-    const input = document.getElementById('messageInput');
-    const counter = document.getElementById('charCount');
-    if (input && counter) counter.textContent = `${input.value.length} / Sin límite`;
-}
-
-function autoResizeTextarea() {
-    const ta = document.getElementById('messageInput');
-    if (!ta) return;
-    ta.style.height = 'auto';
-    ta.style.height = Math.min(ta.scrollHeight, 150) + 'px';
-}
-
-function getModeName(mode) {
-    const names = { general: 'General', creative: 'Creativo', business: 'Gestión Empresarial', strategy: 'Estrategia', data: 'Análisis de Datos', code: 'Programación' };
-    return names[mode] || 'General';
-}
-
-function getModeSystemPrompt(mode) {
-    const prompts = {
-        general: 'Eres Dominius AI, un asistente de IA avanzado, profesional y amigable. Proporciona respuestas claras, concisas y útiles. Si no sabes algo, admítelo honestamente. Formatea las respuestas para mejor legibilidad.',
-        creative: 'Eres Dominius AI en modo creativo. Eres imaginativo, innovador y generas ideas originales. Piensa fuera de lo convencional y sugiere enfoques únicos. Inspira creatividad y propón soluciones inusuales.',
-        business: 'Eres Dominius AI especializado en gestión empresarial. Proporciona análisis estratégico, consejos prácticos y soluciones empresariales. Considera ROI, escalabilidad y sostenibilidad en tus recomendaciones.',
-        strategy: 'Eres Dominius AI experto en estrategia. Ayudas con planificación a largo plazo, análisis competitivo y desarrollo estratégico. Piensa de forma holística y considera múltiples escenarios.',
-        data: 'Eres Dominius AI enfocado en análisis de datos. Interpreta datos, identificas tendencias y proporcionas insights accionables. Explica conceptos complejos de forma clara y visual.',
-        code: 'Eres Dominius AI especializado en programación. Escribe código limpio, eficiente y bien documentado. Explica conceptos técnicos claramente y ayuda con debugging. Considera buenas prácticas y patrones de diseño.'
+// ========== MODOS ==========
+function updateModeDisplay() {
+    const modeNames = {
+        general: 'General',
+        creative: 'Creativo',
+        business: 'Gestión Empresarial',
+        strategy: 'Estrategia',
+        data: 'Análisis de Datos',
+        code: 'Programación'
     };
-    return prompts[mode] || prompts.general;
+    currentModeSpan.textContent = `Modo: ${modeNames[currentMode] || 'General'}`;
+
+    // Marcar el modo activo en el panel
+    modeCards.forEach(card => {
+        card.classList.toggle('active', card.dataset.mode === currentMode);
+    });
 }
 
-function showNotification(message, type = 'info') {
-    const notif = document.createElement('div');
-    notif.className = `notification ${type}`;
-    notif.textContent = message;
-    document.body.appendChild(notif);
-    setTimeout(() => notif.classList.add('show'), 10);
-    setTimeout(() => {
-        notif.classList.remove('show');
-        setTimeout(() => notif.remove(), 500);
-    }, 3000);
-}
-
-// =============================================
-// ACCIONES RÁPIDAS
-// =============================================
-window.quickAction = function(text) {
-    const input = document.getElementById('messageInput');
-    if (input) {
-        input.value = text;
-        autoResizeTextarea();
-        updateCharCount();
-        input.focus();
-        updateButtonState();
-        setTimeout(() => sendUserMessage(), 100);
+function setMode(mode) {
+    currentMode = mode;
+    const chat = chats.find(c => c.id === currentChatId);
+    if (chat) {
+        chat.mode = mode;
+        saveChats();
     }
-};
-
-// =============================================
-// PARTÍCULAS
-// =============================================
-function initParticles() {
-    const container = document.createElement('div');
-    container.id = 'particles';
-    container.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:hidden;';
-    document.querySelector('.chat-area')?.appendChild(container);
-    for (let i = 0; i < 30; i++) createParticle(container, i);
+    updateModeDisplay();
 }
 
-function createParticle(container, i) {
-    const p = document.createElement('div');
-    p.style.cssText = `position:absolute;border-radius:50%;pointer-events:none;z-index:0;`;
-    p.style.left = Math.random() * 100 + '%';
-    p.style.top = Math.random() * 100 + '%';
-    p.style.width = (1 + Math.random() * 2) + 'px';
-    p.style.height = p.style.width;
-    p.style.opacity = 0.2 + Math.random() * 0.4;
-    p.style.backgroundColor = ['rgba(139,92,246,0.6)','rgba(167,139,250,0.5)','rgba(196,181,253,0.4)','rgba(124,58,237,0.5)'][Math.floor(Math.random() * 4)];
-    p.style.animation = `floatParticle ${15 + Math.random() * 15}s linear ${Math.random() * 20}s infinite`;
-    container.appendChild(p);
+// ========== TYPING INDICATOR ==========
+function showTypingIndicator() {
+    const indicator = document.createElement('div');
+    indicator.className = 'typing-indicator';
+    indicator.id = 'typingIndicator';
+    indicator.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+    messagesContainer.appendChild(indicator);
+    scrollToBottom();
 }
 
-// Inicializar estado del botón al cargar
-setTimeout(() => { if (window.updateButtonState) window.updateButtonState(); }, 100);
-
-
-// =============================================
-// SISTEMA DE AUDIO V3 - SIN PAUSAS + SIMULTÁNEO
-// =============================================
-let isRecording = false;
-let recognition = null;
-let isSpeaking = false;
-
-// ── HABLAR: divide en frases y encadena sin pausa ──
-function speakAIResponse(text) {
-    const synth = window.speechSynthesis;
-    if (!synth) return;
-    synth.cancel();
-    isSpeaking = true;
-
-    // Limpiar markdown
-    const clean = text
-        .replace(/```[\s\S]*?```/g, 'código.')
-        .replace(/`[^`]+`/g, '')
-        .replace(/\*\*([^*]+)\*\*/g, '$1')
-        .replace(/\*([^*]+)\*/g, '$1')
-        .replace(/#{1,6}\s/g, '')
-        .replace(/\[.*?\]\(.*?\)/g, '')
-        .replace(/\n+/g, ' ')
-        .trim();
-
-    // Dividir en frases (por punto, coma, etc.)
-    const sentences = clean.match(/[^.!?,:;]+[.!?,:;]*/g) || [clean];
-
-    // Precargar voces
-    const voices = synth.getVoices();
-    const esVoice = voices.find(v => v.lang === 'es-ES') ||
-                    voices.find(v => v.lang === 'es-MX') ||
-                    voices.find(v => v.lang.startsWith('es')) ||
-                    null;
-
-    let index = 0;
-
-    function speakNext() {
-        if (index >= sentences.length || !isSpeaking) {
-            isSpeaking = false;
-            return;
-        }
-        const sentence = sentences[index].trim();
-        if (!sentence) { index++; speakNext(); return; }
-
-        const u = new SpeechSynthesisUtterance(sentence);
-        u.lang = 'es-ES';
-        u.rate = 1.1;      // Un poco más rápido = más natural
-        u.pitch = 1.0;
-        u.volume = 1.0;
-        if (esVoice) u.voice = esVoice;
-
-        u.onend = () => {
-            index++;
-            speakNext(); // encadenar sin pausa
-        };
-        u.onerror = () => {
-            index++;
-            speakNext();
-        };
-
-        synth.speak(u);
-    }
-
-    // Si las voces aún no cargaron, esperar
-    if (voices.length === 0) {
-        synth.onvoiceschanged = () => {
-            const v2 = synth.getVoices();
-            const esV = v2.find(v => v.lang === 'es-ES') ||
-                        v2.find(v => v.lang.startsWith('es')) || null;
-            if (esV) {
-                // reasignar
-                Object.defineProperty(u => u, 'voice', { value: esV });
-            }
-            speakNext();
-        };
-    } else {
-        speakNext();
-    }
+function hideTypingIndicator() {
+    const indicator = document.getElementById('typingIndicator');
+    if (indicator) indicator.remove();
 }
 
-function stopSpeaking() {
-    isSpeaking = false;
-    if (window.speechSynthesis) window.speechSynthesis.cancel();
+// ========== UTILIDADES ==========
+function scrollToBottom() {
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
 
-// ── BOTÓN MICRÓFONO ──
-function initMicButton() {
-    const inputContainer = document.querySelector('.input-container');
-    if (!inputContainer || document.getElementById('micBtn')) return;
-
-    const micBtn = document.createElement('button');
-    micBtn.id = 'micBtn';
-    micBtn.className = 'attach-btn';
-    micBtn.title = 'Pulsa para hablar';
-    micBtn.type = 'button';
-    micBtn.style.cssText = 'transition: all 0.2s ease; flex-shrink: 0;';
-    micBtn.innerHTML = `
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-            <line x1="12" y1="19" x2="12" y2="23"></line>
-            <line x1="8" y1="23" x2="16" y2="23"></line>
-        </svg>`;
-
-    micBtn.addEventListener('click', toggleMic);
-
-    const sendBtn = document.getElementById('sendBtn');
-    if (sendBtn) inputContainer.insertBefore(micBtn, sendBtn);
+function adjustTextareaHeight() {
+    messageInput.style.height = 'auto';
+    messageInput.style.height = Math.min(messageInput.scrollHeight, 150) + 'px';
 }
 
-function toggleMic() {
-    if (isRecording) stopMic();
-    else startMic();
-}
+// ========== ARCHIVOS ADJUNTOS ==========
+attachBtn.addEventListener('click', () => {
+    fileInput.click();
+});
 
-function startMic() {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) {
-        showNotification('Usa Chrome para el micrófono', 'error');
+fileInput.addEventListener('change', (e) => {
+    const files = Array.from(e.target.files);
+    attachedFiles = attachedFiles.concat(files);
+    renderAttachedFiles();
+});
+
+function renderAttachedFiles() {
+    if (attachedFiles.length === 0) {
+        attachedFilesContainer.style.display = 'none';
         return;
     }
+    attachedFilesContainer.style.display = 'flex';
+    attachedFilesContainer.innerHTML = '';
+    attachedFiles.forEach((file, index) => {
+        const fileItem = document.createElement('div');
+        fileItem.className = 'attached-file-item';
+        fileItem.innerHTML = `
+            <span class="file-icon">📎</span>
+            <div class="file-info">
+                <span class="file-name">${file.name}</span>
+                <span class="file-size">${(file.size / 1024).toFixed(1)} KB</span>
+            </div>
+            <button class="remove-file-btn" data-index="${index}">×</button>
+        `;
+        fileItem.querySelector('.remove-file-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            const idx = parseInt(e.target.dataset.index);
+            attachedFiles.splice(idx, 1);
+            renderAttachedFiles();
+        });
+        attachedFilesContainer.appendChild(fileItem);
+    });
+}
 
-    recognition = new SR();
-    recognition.lang = 'es-ES';
-    recognition.continuous = false;
-    recognition.interimResults = false;
+// ========== ACCIONES RÁPIDAS (desde welcome) ==========
+window.quickAction = function(text) {
+    messageInput.value = text;
+    sendMessage();
+};
 
-    recognition.onstart = () => {
-        isRecording = true;
-        setMicActive(true);
-        showNotification('🎤 Escuchando...', 'info');
-    };
+// ========== EVENT LISTENERS ==========
+function setupEventListeners() {
+    // Enviar mensaje
+    sendBtn.addEventListener('click', sendMessage);
 
-    recognition.onresult = (e) => {
-        const transcript = e.results[0][0].transcript.trim();
-        stopMic();
-        if (transcript) {
-            window.lastWasVoice = true;
-            const input = document.getElementById('messageInput');
-            if (input) {
-                input.value = transcript;
-                autoResizeTextarea();
-                updateCharCount();
-                updateButtonState();
-                setTimeout(() => sendUserMessage(), 100);
-            }
+    // Enter para enviar, Shift+Enter nueva línea
+    messageInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
         }
-    };
+    });
 
-    recognition.onerror = (e) => {
-        stopMic();
-        if (e.error === 'not-allowed') showNotification('Permite el micrófono en el navegador', 'error');
-        else if (e.error !== 'no-speech') showNotification('No te escuché, inténtalo de nuevo', 'error');
-    };
+    // Ajustar altura del textarea
+    messageInput.addEventListener('input', adjustTextareaHeight);
 
-    recognition.onend = () => { if (isRecording) stopMic(); };
-    recognition.start();
+    // Logout
+    logoutBtn.addEventListener('click', () => {
+        UserSystem.logout();
+    });
+
+    // Nuevo chat
+    newChatBtn.addEventListener('click', createNewChat);
+
+    // Limpiar chat actual
+    clearChatBtn.addEventListener('click', () => {
+        const chat = chats.find(c => c.id === currentChatId);
+        if (chat) {
+            chat.messages = [];
+            saveChats();
+            renderMessages([]);
+        }
+    });
+
+    // Eliminar chat actual
+    deleteChatBtn.addEventListener('click', () => {
+        if (!currentChatId) return;
+        chats = chats.filter(c => c.id !== currentChatId);
+        saveChats();
+        if (chats.length > 0) {
+            setActiveChat(chats[0].id);
+        } else {
+            createNewChat();
+        }
+        renderChatsList();
+    });
+
+    // Tabs (sidebar)
+    tabButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tab = btn.dataset.tab;
+            tabButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+            document.getElementById(tab + 'Panel').classList.add('active');
+        });
+    });
+
+    // Modos
+    modeCards.forEach(card => {
+        card.addEventListener('click', () => {
+            const mode = card.dataset.mode;
+            setMode(mode);
+        });
+    });
 }
-
-function stopMic() {
-    isRecording = false;
-    if (recognition) {
-        try { recognition.stop(); } catch(e) {}
-        recognition = null;
-    }
-    setMicActive(false);
-}
-
-function setMicActive(active) {
-    const btn = document.getElementById('micBtn');
-    if (!btn) return;
-    if (active) {
-        btn.style.color = '#ef4444';
-        btn.style.borderColor = 'rgba(239,68,68,0.5)';
-        btn.style.background = 'rgba(239,68,68,0.15)';
-        btn.style.boxShadow = '0 0 10px rgba(239,68,68,0.3)';
-        btn.title = 'Parar';
-    } else {
-        btn.style.color = '';
-        btn.style.borderColor = '';
-        btn.style.background = '';
-        btn.style.boxShadow = '';
-        btn.title = 'Pulsa para hablar';
-    }
-}
-
-window.lastWasVoice = false;
-setTimeout(() => initMicButton(), 300);
-// Precargar voces al iniciar
-if (window.speechSynthesis) window.speechSynthesis.getVoices();
-
-console.log('🎤 Audio V3 listo');
