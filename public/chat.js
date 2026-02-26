@@ -352,7 +352,18 @@ function appendMessage(msg, save = true) {
 
 // ========== ENVIAR MENSAJE ==========
 async function sendMessage() {
-    if (isGenerating) return;
+    // Si está generando pero pausado → permitir enviar (el usuario quiere corregir/añadir)
+    // Si está generando y NO pausado → bloquear para no solapar
+    if (isGenerating && !typewriterPaused) return;
+    // Si estaba pausado y el usuario envía → cancelar el typewriter actual limpiamente
+    if (typewriterPaused) {
+        typewriterSkipAll = true;   // señal global para que el bucle termine ya
+        typewriterPaused = false;
+        // Pequeña espera para que el bucle async termine
+        await sleep(120);
+        isGenerating = false;
+    }
+
     const text = messageInput.value.trim();
     if (!text && attachedFiles.length === 0) return;
 
@@ -434,13 +445,21 @@ async function sendMessage() {
 }
 
 // ========== TYPEWRITER ==========
-// Muestra el mensaje de la IA carácter a carácter de forma fluida.
-// Velocidad adaptativa: más rápido en textos largos, más lento en cortos.
+// Muestra el mensaje carácter a carácter con botón pausa/reanudar/saltar.
+// Velocidad adaptativa según longitud del texto.
+
+let typewriterPaused = false;   // pausa la animación
+let typewriterSkipAll = false;  // cancela el typewriter por completo (al enviar con pausa activa)
+
 async function appendMessageTypewriter(msg) {
-    // Crear la estructura del mensaje (igual que appendMessage pero sin contenido todavía)
     const welcome = messagesContainer.querySelector('.welcome-message');
     if (welcome) welcome.remove();
 
+    // Resetear pausa y skip al empezar nuevo mensaje
+    typewriterPaused = false;
+    typewriterSkipAll = false;
+
+    // ── Estructura del mensaje ──
     const messageDiv = document.createElement('div');
     messageDiv.className = 'message ai-message';
 
@@ -455,7 +474,57 @@ async function appendMessageTypewriter(msg) {
     content.className = 'message-content';
     content.style.position = 'relative';
 
-    // Cursor parpadeante mientras escribe
+    // Barra de controles: pausa + saltar (visible mientras escribe)
+    const controls = document.createElement('div');
+    controls.className = 'typewriter-controls';
+
+    // Botón PAUSA / REANUDAR
+    const pauseBtn = document.createElement('button');
+    pauseBtn.className = 'tw-btn tw-pause-btn';
+    pauseBtn.title = 'Pausar';
+    pauseBtn.innerHTML = `
+        <svg class="icon-pause" width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+            <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
+        </svg>
+        <svg class="icon-play" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="display:none">
+            <polygon points="5,3 19,12 5,21"/>
+        </svg>
+        <span class="tw-label">Pausar</span>`;
+
+    pauseBtn.addEventListener('click', () => {
+        typewriterPaused = !typewriterPaused;
+        pauseBtn.querySelector('.icon-pause').style.display = typewriterPaused ? 'none'  : 'inline';
+        pauseBtn.querySelector('.icon-play').style.display  = typewriterPaused ? 'inline': 'none';
+        pauseBtn.querySelector('.tw-label').textContent     = typewriterPaused ? 'Reanudar' : 'Pausar';
+        pauseBtn.classList.toggle('paused', typewriterPaused);
+        // Al pausar: habilitar envío para que el usuario pueda escribir su corrección
+        // Al reanudar: volver a deshabilitar
+        sendBtn.disabled = !typewriterPaused;
+        if (typewriterPaused) {
+            messageInput.placeholder = 'Escribe tu corrección o continuación...';
+            messageInput.focus();
+        } else {
+            messageInput.placeholder = 'Escribe tu mensaje...';
+        }
+    });
+
+    // Botón SALTAR (mostrar todo de golpe)
+    const skipBtn = document.createElement('button');
+    skipBtn.className = 'tw-btn tw-skip-btn';
+    skipBtn.title = 'Mostrar todo';
+    skipBtn.innerHTML = `
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="5,3 15,12 5,21"/><rect x="17" y="3" width="3" height="18"/>
+        </svg>
+        <span class="tw-label">Saltar</span>`;
+
+    let skipRequested = false;
+    skipBtn.addEventListener('click', () => { skipRequested = true; typewriterPaused = false; });
+
+    controls.appendChild(pauseBtn);
+    controls.appendChild(skipBtn);
+
+    // Cursor parpadeante
     const cursor = document.createElement('span');
     cursor.className = 'typewriter-cursor';
     cursor.textContent = '▍';
@@ -465,6 +534,7 @@ async function appendMessageTypewriter(msg) {
     time.textContent = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
 
     wrapper.appendChild(content);
+    wrapper.appendChild(controls);
     wrapper.appendChild(time);
     messageDiv.appendChild(avatar);
     messageDiv.appendChild(wrapper);
@@ -474,10 +544,7 @@ async function appendMessageTypewriter(msg) {
     const fullText = msg.content;
     const totalChars = fullText.length;
 
-    // Velocidad adaptativa:
-    // - Textos cortos (<200 chars): 18ms/char → se lee bien
-    // - Textos medios (200-800):    10ms/char → fluido
-    // - Textos largos (>800):        5ms/char → rápido pero sin perder el efecto
+    // Velocidad adaptativa
     let charDelay;
     if (totalChars < 200)       charDelay = 18;
     else if (totalChars < 800)  charDelay = 10;
@@ -487,17 +554,24 @@ async function appendMessageTypewriter(msg) {
     let displayed = '';
     content.appendChild(cursor);
 
+    // ── Bucle de escritura ──
     for (let i = 0; i < totalChars; i++) {
+        // Saltar o cancelar: mostrar todo de golpe / terminar
+        if (skipRequested || typewriterSkipAll) break;
+
+        // Pausar: esperar hasta que se reanude
+        while (typewriterPaused && !skipRequested && !typewriterSkipAll) {
+            await sleep(80);
+        }
+        if (skipRequested || typewriterSkipAll) break;
+
         displayed += fullText[i];
-
-        // Renderizar el texto formateado en cada paso
         content.innerHTML = formatAIText(displayed);
-        content.appendChild(cursor); // volver a añadir el cursor tras reemplazar innerHTML
+        content.appendChild(cursor);
 
-        // Scroll suave mientras escribe
         if (i % 8 === 0) scrollToBottom();
 
-        // Pequeñas pausas naturales en signos de puntuación
+        // Pausas naturales en puntuación
         let delay = charDelay;
         const ch = fullText[i];
         if (ch === '.' || ch === '!' || ch === '?') delay = charDelay + 60;
@@ -507,11 +581,15 @@ async function appendMessageTypewriter(msg) {
         await sleep(delay);
     }
 
-    // Fin: quitar cursor, renderizar versión completa con botón copiar
+    // ── Fin: ocultar controles, mostrar texto completo + botón copiar ──
+    controls.remove();
+    typewriterPaused = false;
+    typewriterSkipAll = false;
+
     content.innerHTML = formatAIText(fullText);
     content.style.position = 'relative';
 
-    // Añadir botón copiar dentro del bubble
+    // Botón copiar dentro del bubble
     const copyBtn = document.createElement('button');
     copyBtn.className = 'copy-btn';
     copyBtn.title = 'Copiar respuesta';
@@ -537,7 +615,7 @@ async function appendMessageTypewriter(msg) {
 
     scrollToBottom();
 
-    // Guardar en el historial del chat
+    // Guardar en historial
     const chat = chats.find(c => c.id === currentChatId);
     if (chat) {
         chat.messages.push({ role: 'assistant', content: fullText });
