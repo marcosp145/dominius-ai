@@ -352,16 +352,32 @@ function appendMessage(msg, save = true) {
 
 // ========== ENVIAR MENSAJE ==========
 async function sendMessage() {
-    // Si está generando pero pausado → permitir enviar (el usuario quiere corregir/añadir)
-    // Si está generando y NO pausado → bloquear para no solapar
-    if (isGenerating && !typewriterPaused) return;
-    // Si estaba pausado y el usuario envía → cancelar el typewriter actual limpiamente
+    // Si está escribiendo y NO pausado → pausar (el botón actúa como pausa)
+    if (isGenerating && !typewriterPaused) {
+        typewriterPaused = true;
+        setSendBtnMode('resume');
+        messageInput.placeholder = 'Escribe tu corrección y pulsa enviar...';
+        messageInput.focus();
+        return;
+    }
+
+    // Si está pausado → el usuario quiere enviar su corrección
     if (typewriterPaused) {
-        typewriterSkipAll = true;   // señal global para que el bucle termine ya
+        const text = messageInput.value.trim();
+        if (!text) {
+            // Sin texto: reanudar
+            typewriterPaused = false;
+            setSendBtnMode('generating');
+            messageInput.placeholder = 'Escribe tu mensaje...';
+            return;
+        }
+        // Cancelar typewriter actual y enviar nuevo mensaje
+        typewriterSkipAll = true;
         typewriterPaused = false;
-        // Pequeña espera para que el bucle async termine
         await sleep(120);
         isGenerating = false;
+        setSendBtnMode('send');
+        messageInput.placeholder = 'Escribe tu mensaje...';
     }
 
     const text = messageInput.value.trim();
@@ -376,10 +392,8 @@ async function sendMessage() {
 
     const filesSnapshot = [...attachedFiles];
 
-    // Mostrar mensaje del usuario
     appendMessage({ role: 'user', content: text, files: filesSnapshot });
 
-    // Limpiar estado
     messageInput.value = '';
     attachedFiles = [];
     attachedFilesContainer.style.display = 'none';
@@ -388,13 +402,10 @@ async function sendMessage() {
     fileInput.value = '';
 
     isGenerating = true;
-    sendBtn.disabled = true;
+    setSendBtnMode('generating');
     showTypingIndicator();
 
     try {
-        let aiResponse;
-
-        // Construir historial de conversación
         const chatMessages = chat ? chat.messages : [];
         const systemPrompt = (MODES[currentMode] || MODES.general).prompt;
 
@@ -407,7 +418,6 @@ async function sendMessage() {
             { role: 'user', content: text }
         ];
 
-        // Llamada al proxy seguro (api/groq.js) — la key nunca sale al frontend
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -425,7 +435,7 @@ async function sendMessage() {
         }
 
         const data = await response.json();
-        aiResponse = data.choices?.[0]?.message?.content || 'No se recibió respuesta de la IA.';
+        const aiResponse = data.choices?.[0]?.message?.content || 'No se recibió respuesta de la IA.';
 
         hideTypingIndicator();
         await appendMessageTypewriter({ role: 'assistant', content: aiResponse });
@@ -440,26 +450,44 @@ async function sendMessage() {
         });
     } finally {
         isGenerating = false;
-        sendBtn.disabled = false;
+        typewriterPaused = false;
+        setSendBtnMode('send');
     }
 }
 
-// ========== TYPEWRITER ==========
-// Muestra el mensaje carácter a carácter con botón pausa/reanudar/saltar.
-// Velocidad adaptativa según longitud del texto.
+// Cambia el icono/estado del botón de enviar
+// send       → flecha enviar (normal)
+// generating → pausa (IA escribiendo)
+// resume     → play (pausado, puede reanudar o enviar corrección)
+function setSendBtnMode(mode) {
+    const ICONS = {
+        send: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>`,
+        generating: `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>
+        </svg>`,
+        resume: `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="5,3 19,12 5,21"/>
+        </svg>`
+    };
+    sendBtn.innerHTML = ICONS[mode] || ICONS.send;
+    sendBtn.disabled = false;
+    sendBtn.className = `send-btn send-btn--${mode}`;
+}
 
-let typewriterPaused = false;   // pausa la animación
-let typewriterSkipAll = false;  // cancela el typewriter por completo (al enviar con pausa activa)
+// ========== TYPEWRITER ==========
+let typewriterPaused = false;
+let typewriterSkipAll = false;
 
 async function appendMessageTypewriter(msg) {
     const welcome = messagesContainer.querySelector('.welcome-message');
     if (welcome) welcome.remove();
 
-    // Resetear pausa y skip al empezar nuevo mensaje
     typewriterPaused = false;
     typewriterSkipAll = false;
 
-    // ── Estructura del mensaje ──
     const messageDiv = document.createElement('div');
     messageDiv.className = 'message ai-message';
 
@@ -474,57 +502,6 @@ async function appendMessageTypewriter(msg) {
     content.className = 'message-content';
     content.style.position = 'relative';
 
-    // Barra de controles: pausa + saltar (visible mientras escribe)
-    const controls = document.createElement('div');
-    controls.className = 'typewriter-controls';
-
-    // Botón PAUSA / REANUDAR
-    const pauseBtn = document.createElement('button');
-    pauseBtn.className = 'tw-btn tw-pause-btn';
-    pauseBtn.title = 'Pausar';
-    pauseBtn.innerHTML = `
-        <svg class="icon-pause" width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-            <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
-        </svg>
-        <svg class="icon-play" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="display:none">
-            <polygon points="5,3 19,12 5,21"/>
-        </svg>
-        <span class="tw-label">Pausar</span>`;
-
-    pauseBtn.addEventListener('click', () => {
-        typewriterPaused = !typewriterPaused;
-        pauseBtn.querySelector('.icon-pause').style.display = typewriterPaused ? 'none'  : 'inline';
-        pauseBtn.querySelector('.icon-play').style.display  = typewriterPaused ? 'inline': 'none';
-        pauseBtn.querySelector('.tw-label').textContent     = typewriterPaused ? 'Reanudar' : 'Pausar';
-        pauseBtn.classList.toggle('paused', typewriterPaused);
-        // Al pausar: habilitar envío para que el usuario pueda escribir su corrección
-        // Al reanudar: volver a deshabilitar
-        sendBtn.disabled = !typewriterPaused;
-        if (typewriterPaused) {
-            messageInput.placeholder = 'Escribe tu corrección o continuación...';
-            messageInput.focus();
-        } else {
-            messageInput.placeholder = 'Escribe tu mensaje...';
-        }
-    });
-
-    // Botón SALTAR (mostrar todo de golpe)
-    const skipBtn = document.createElement('button');
-    skipBtn.className = 'tw-btn tw-skip-btn';
-    skipBtn.title = 'Mostrar todo';
-    skipBtn.innerHTML = `
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-            <polygon points="5,3 15,12 5,21"/><rect x="17" y="3" width="3" height="18"/>
-        </svg>
-        <span class="tw-label">Saltar</span>`;
-
-    let skipRequested = false;
-    skipBtn.addEventListener('click', () => { skipRequested = true; typewriterPaused = false; });
-
-    controls.appendChild(pauseBtn);
-    controls.appendChild(skipBtn);
-
-    // Cursor parpadeante
     const cursor = document.createElement('span');
     cursor.className = 'typewriter-cursor';
     cursor.textContent = '▍';
@@ -534,7 +511,6 @@ async function appendMessageTypewriter(msg) {
     time.textContent = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
 
     wrapper.appendChild(content);
-    wrapper.appendChild(controls);
     wrapper.appendChild(time);
     messageDiv.appendChild(avatar);
     messageDiv.appendChild(wrapper);
@@ -544,7 +520,6 @@ async function appendMessageTypewriter(msg) {
     const fullText = msg.content;
     const totalChars = fullText.length;
 
-    // Velocidad adaptativa
     let charDelay;
     if (totalChars < 200)       charDelay = 18;
     else if (totalChars < 800)  charDelay = 10;
@@ -554,16 +529,13 @@ async function appendMessageTypewriter(msg) {
     let displayed = '';
     content.appendChild(cursor);
 
-    // ── Bucle de escritura ──
     for (let i = 0; i < totalChars; i++) {
-        // Saltar o cancelar: mostrar todo de golpe / terminar
-        if (skipRequested || typewriterSkipAll) break;
+        if (typewriterSkipAll) break;
 
-        // Pausar: esperar hasta que se reanude
-        while (typewriterPaused && !skipRequested && !typewriterSkipAll) {
+        while (typewriterPaused && !typewriterSkipAll) {
             await sleep(80);
         }
-        if (skipRequested || typewriterSkipAll) break;
+        if (typewriterSkipAll) break;
 
         displayed += fullText[i];
         content.innerHTML = formatAIText(displayed);
@@ -571,7 +543,6 @@ async function appendMessageTypewriter(msg) {
 
         if (i % 8 === 0) scrollToBottom();
 
-        // Pausas naturales en puntuación
         let delay = charDelay;
         const ch = fullText[i];
         if (ch === '.' || ch === '!' || ch === '?') delay = charDelay + 60;
@@ -581,15 +552,13 @@ async function appendMessageTypewriter(msg) {
         await sleep(delay);
     }
 
-    // ── Fin: ocultar controles, mostrar texto completo + botón copiar ──
-    controls.remove();
+    // Fin: texto completo + botón copiar
     typewriterPaused = false;
     typewriterSkipAll = false;
 
     content.innerHTML = formatAIText(fullText);
     content.style.position = 'relative';
 
-    // Botón copiar dentro del bubble
     const copyBtn = document.createElement('button');
     copyBtn.className = 'copy-btn';
     copyBtn.title = 'Copiar respuesta';
@@ -612,10 +581,8 @@ async function appendMessageTypewriter(msg) {
         });
     });
     content.appendChild(copyBtn);
-
     scrollToBottom();
 
-    // Guardar en historial
     const chat = chats.find(c => c.id === currentChatId);
     if (chat) {
         chat.messages.push({ role: 'assistant', content: fullText });
@@ -771,6 +738,12 @@ function setupEventListeners() {
         adjustTextareaHeight();
         const charCount = document.getElementById('charCount');
         if (charCount) charCount.textContent = `${messageInput.value.length} / Sin límite`;
+        // Si está pausado y escribe algo → el botón pasa a flecha enviar
+        if (typewriterPaused && messageInput.value.trim().length > 0) {
+            setSendBtnMode('send');
+        } else if (typewriterPaused && messageInput.value.trim().length === 0) {
+            setSendBtnMode('resume');
+        }
     });
 
     logoutBtn.addEventListener('click', () => {
