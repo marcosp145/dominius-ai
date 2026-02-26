@@ -417,13 +417,13 @@ async function sendMessage() {
         aiResponse = data.choices?.[0]?.message?.content || 'No se recibió respuesta de la IA.';
 
         hideTypingIndicator();
-        appendMessage({ role: 'assistant', content: aiResponse });
+        await appendMessageTypewriter({ role: 'assistant', content: aiResponse });
 
     } catch (error) {
         hideTypingIndicator();
         console.error('Error API:', error);
         showNotification('Error: ' + (error.message || 'No se pudo conectar'), 'error');
-        appendMessage({
+        await appendMessageTypewriter({
             role: 'assistant',
             content: `❌ Error al conectar con la IA: ${error.message || 'Sin conexión'}\n\nVerifica tu API key y conexión a internet.`
         });
@@ -431,6 +431,122 @@ async function sendMessage() {
         isGenerating = false;
         sendBtn.disabled = false;
     }
+}
+
+// ========== TYPEWRITER ==========
+// Muestra el mensaje de la IA carácter a carácter de forma fluida.
+// Velocidad adaptativa: más rápido en textos largos, más lento en cortos.
+async function appendMessageTypewriter(msg) {
+    // Crear la estructura del mensaje (igual que appendMessage pero sin contenido todavía)
+    const welcome = messagesContainer.querySelector('.welcome-message');
+    if (welcome) welcome.remove();
+
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message ai-message';
+
+    const avatar = document.createElement('div');
+    avatar.className = 'message-avatar ai-avatar';
+    avatar.textContent = 'AI';
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'message-content-wrapper';
+
+    const content = document.createElement('div');
+    content.className = 'message-content';
+    content.style.position = 'relative';
+
+    // Cursor parpadeante mientras escribe
+    const cursor = document.createElement('span');
+    cursor.className = 'typewriter-cursor';
+    cursor.textContent = '▍';
+
+    const time = document.createElement('div');
+    time.className = 'message-time';
+    time.textContent = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+
+    wrapper.appendChild(content);
+    wrapper.appendChild(time);
+    messageDiv.appendChild(avatar);
+    messageDiv.appendChild(wrapper);
+    messagesContainer.appendChild(messageDiv);
+    scrollToBottom();
+
+    const fullText = msg.content;
+    const totalChars = fullText.length;
+
+    // Velocidad adaptativa:
+    // - Textos cortos (<200 chars): 18ms/char → se lee bien
+    // - Textos medios (200-800):    10ms/char → fluido
+    // - Textos largos (>800):        5ms/char → rápido pero sin perder el efecto
+    let charDelay;
+    if (totalChars < 200)       charDelay = 18;
+    else if (totalChars < 800)  charDelay = 10;
+    else if (totalChars < 2000) charDelay = 5;
+    else                        charDelay = 2;
+
+    let displayed = '';
+    content.appendChild(cursor);
+
+    for (let i = 0; i < totalChars; i++) {
+        displayed += fullText[i];
+
+        // Renderizar el texto formateado en cada paso
+        content.innerHTML = formatAIText(displayed);
+        content.appendChild(cursor); // volver a añadir el cursor tras reemplazar innerHTML
+
+        // Scroll suave mientras escribe
+        if (i % 8 === 0) scrollToBottom();
+
+        // Pequeñas pausas naturales en signos de puntuación
+        let delay = charDelay;
+        const ch = fullText[i];
+        if (ch === '.' || ch === '!' || ch === '?') delay = charDelay + 60;
+        else if (ch === ',' || ch === ';' || ch === ':') delay = charDelay + 25;
+        else if (ch === '\n') delay = charDelay + 30;
+
+        await sleep(delay);
+    }
+
+    // Fin: quitar cursor, renderizar versión completa con botón copiar
+    content.innerHTML = formatAIText(fullText);
+    content.style.position = 'relative';
+
+    // Añadir botón copiar dentro del bubble
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'copy-btn';
+    copyBtn.title = 'Copiar respuesta';
+    copyBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>`;
+    copyBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(fullText).then(() => {
+            copyBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>`;
+            showNotification('Copiado al portapapeles', 'success');
+            setTimeout(() => {
+                copyBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>`;
+            }, 2000);
+        });
+    });
+    content.appendChild(copyBtn);
+
+    scrollToBottom();
+
+    // Guardar en el historial del chat
+    const chat = chats.find(c => c.id === currentChatId);
+    if (chat) {
+        chat.messages.push({ role: 'assistant', content: fullText });
+        saveChats();
+    }
+}
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 // ========== MODOS ==========
