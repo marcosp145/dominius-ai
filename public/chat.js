@@ -520,14 +520,15 @@ async function appendMessageTypewriter(msg) {
     const fullText = msg.content;
     const totalChars = fullText.length;
 
+    // Velocidad más lenta y fluida
     let charDelay;
-    if (totalChars < 200)       charDelay = 18;
-    else if (totalChars < 800)  charDelay = 10;
-    else if (totalChars < 2000) charDelay = 5;
-    else                        charDelay = 2;
+    if (totalChars < 200)       charDelay = 28;
+    else if (totalChars < 800)  charDelay = 18;
+    else if (totalChars < 2000) charDelay = 10;
+    else                        charDelay = 5;
 
     let displayed = '';
-    content.appendChild(cursor);
+    // Sin cursor — escritura limpia directamente
 
     for (let i = 0; i < totalChars; i++) {
         if (typewriterSkipAll) break;
@@ -539,7 +540,7 @@ async function appendMessageTypewriter(msg) {
 
         displayed += fullText[i];
         content.innerHTML = formatAIText(displayed);
-        content.appendChild(cursor);
+        // sin cursor — se añade directamente el texto formateado
 
         if (i % 8 === 0) scrollToBottom();
 
@@ -738,11 +739,15 @@ function setupEventListeners() {
         adjustTextareaHeight();
         const charCount = document.getElementById('charCount');
         if (charCount) charCount.textContent = `${messageInput.value.length} / Sin límite`;
-        // Si está pausado y escribe algo → el botón pasa a flecha enviar
-        if (typewriterPaused && messageInput.value.trim().length > 0) {
-            setSendBtnMode('send');
-        } else if (typewriterPaused && messageInput.value.trim().length === 0) {
-            setSendBtnMode('resume');
+        // Mientras la IA escribe (generando O pausado):
+        // - Si hay texto → botón flecha enviar
+        // - Si no hay texto → botón pausa o resume según estado
+        if (isGenerating || typewriterPaused) {
+            if (messageInput.value.trim().length > 0) {
+                setSendBtnMode('send');
+            } else {
+                setSendBtnMode(typewriterPaused ? 'resume' : 'generating');
+            }
         }
     });
 
