@@ -1006,3 +1006,46 @@ li {
     0%, 100% { opacity: 1; }
     50%       { opacity: 0; }
 }
+
+
+/* ========== BOTÓN MICRÓFONO ========== */
+.mic-btn {
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+    background: transparent;
+    border: none;
+    border-radius: 12px;
+    color: rgba(255, 255, 255, 0.4);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.18s ease;
+    margin-bottom: 1px;
+    position: relative;
+}
+
+.mic-btn:hover {
+    background: rgba(139, 92, 246, 0.15);
+    color: #a78bfa;
+}
+
+/* Escuchando: rojo pulsante */
+.mic-btn.mic-listening {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.12);
+    animation: micPulse 1.2s ease-in-out infinite;
+}
+
+/* Hablando: verde pulsante */
+.mic-btn.mic-speaking {
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.12);
+    animation: micPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes micPulse {
+    0%, 100% { box-shadow: 0 0 0 0 currentColor; opacity: 1; }
+    50%       { box-shadow: 0 0 0 6px transparent; opacity: 0.75; }
+}
