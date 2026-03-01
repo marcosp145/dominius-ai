@@ -801,3 +801,186 @@ function setupEventListeners() {
         });
     });
 }
+
+// ========== VOZ: HABLAR CON LA IA ==========
+// Speech-to-Text → envía mensaje → Text-to-Speech fluido
+
+const micBtn = document.getElementById('micBtn');
+let recognition = null;
+let isListening = false;
+let isSpeaking = false;
+let speechSynth = window.speechSynthesis;
+let currentUtterance = null;
+
+// Inicializar reconocimiento de voz
+function initRecognition() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        showNotification('Tu navegador no soporta reconocimiento de voz', 'error');
+        return null;
+    }
+    const r = new SpeechRecognition();
+    r.lang = 'es-ES';
+    r.continuous = false;
+    r.interimResults = true;
+
+    r.onstart = () => {
+        isListening = true;
+        micBtn.classList.add('mic-listening');
+        messageInput.placeholder = 'Escuchando...';
+    };
+
+    r.onresult = (e) => {
+        const transcript = Array.from(e.results)
+            .map(res => res[0].transcript)
+            .join('');
+        messageInput.value = transcript;
+        adjustTextareaHeight();
+        // Si el resultado es final → enviar automáticamente
+        if (e.results[e.results.length - 1].isFinal) {
+            stopListening();
+            setTimeout(() => sendMessageVoice(), 300);
+        }
+    };
+
+    r.onerror = () => stopListening();
+    r.onend   = () => stopListening();
+    return r;
+}
+
+function startListening() {
+    // Si la IA está hablando → pararla
+    if (isSpeaking) stopSpeaking();
+    recognition = initRecognition();
+    if (!recognition) return;
+    recognition.start();
+}
+
+function stopListening() {
+    isListening = false;
+    if (micBtn) {
+        micBtn.classList.remove('mic-listening');
+        messageInput.placeholder = 'Escribe tu mensaje...';
+    }
+    if (recognition) {
+        try { recognition.stop(); } catch(_) {}
+        recognition = null;
+    }
+}
+
+// Versión de sendMessage para voz: tras respuesta, la IA habla
+async function sendMessageVoice() {
+    const text = messageInput.value.trim();
+    if (!text) return;
+
+    const chat = chats.find(c => c.id === currentChatId);
+    if (chat && chat.messages.length === 0 && text) {
+        updateChatTitle(currentChatId, generateTitleFromMessage(text));
+    }
+
+    appendMessage({ role: 'user', content: text });
+    messageInput.value = '';
+    adjustTextareaHeight();
+
+    isGenerating = true;
+    setSendBtnMode('generating');
+    showTypingIndicator();
+
+    try {
+        const chatMessages = chat ? chat.messages : [];
+        const systemPrompt = (MODES[currentMode] || MODES.general).prompt;
+        const apiMessages = [
+            { role: 'system', content: systemPrompt },
+            ...chatMessages.slice(-20).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content })),
+            { role: 'user', content: text }
+        ];
+
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ messages: apiMessages, model: 'llama-3.3-70b-versatile', max_tokens: 4096, temperature: 0.7 })
+        });
+
+        const data = await response.json();
+        const aiResponse = data.choices?.[0]?.message?.content || 'No entendí tu mensaje.';
+
+        hideTypingIndicator();
+        await appendMessageTypewriter({ role: 'assistant', content: aiResponse });
+
+        // Hablar la respuesta en voz alta
+        speakText(aiResponse);
+
+    } catch (err) {
+        hideTypingIndicator();
+        showNotification('Error de conexión', 'error');
+    } finally {
+        isGenerating = false;
+        setSendBtnMode('send');
+    }
+}
+
+// Text-to-Speech: limpia markdown antes de leer
+function speakText(text) {
+    if (!speechSynth) return;
+    stopSpeaking();
+
+    // Quitar markdown para que suene natural
+    const clean = text
+        .replace(/```[\s\S]*?```/g, 'bloque de código')
+        .replace(/`[^`]+`/g, '')
+        .replace(/\*\*([^*]+)\*\*/g, '$1')
+        .replace(/\*([^*]+)\*/g, '$1')
+        .replace(/#{1,6}\s/g, '')
+        .replace(/\n+/g, '. ')
+        .trim();
+
+    currentUtterance = new SpeechSynthesisUtterance(clean);
+    currentUtterance.lang  = 'es-ES';
+    currentUtterance.rate  = 1.05;   // ligeramente más rápido que defecto
+    currentUtterance.pitch = 1.0;
+    currentUtterance.volume = 1.0;
+
+    // Elegir voz en español si hay disponible
+    const voices = speechSynth.getVoices();
+    const esVoice = voices.find(v => v.lang.startsWith('es') && v.localService)
+                 || voices.find(v => v.lang.startsWith('es'));
+    if (esVoice) currentUtterance.voice = esVoice;
+
+    currentUtterance.onstart = () => {
+        isSpeaking = true;
+        micBtn.classList.add('mic-speaking');
+        micBtn.title = 'Parar audio';
+    };
+    currentUtterance.onend = currentUtterance.onerror = () => {
+        isSpeaking = false;
+        micBtn.classList.remove('mic-speaking');
+        micBtn.title = 'Hablar con la IA';
+    };
+
+    speechSynth.speak(currentUtterance);
+}
+
+function stopSpeaking() {
+    if (speechSynth) speechSynth.cancel();
+    isSpeaking = false;
+    if (micBtn) {
+        micBtn.classList.remove('mic-speaking');
+        micBtn.title = 'Hablar con la IA';
+    }
+}
+
+// Cargar voces (algunas requieren evento)
+if (speechSynth) speechSynth.onvoiceschanged = () => speechSynth.getVoices();
+
+// Clic en el botón mic
+if (micBtn) {
+    micBtn.addEventListener('click', () => {
+        if (isSpeaking) {
+            stopSpeaking();
+        } else if (isListening) {
+            stopListening();
+        } else {
+            startListening();
+        }
+    });
+}
