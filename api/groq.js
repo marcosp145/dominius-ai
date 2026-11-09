@@ -5,10 +5,10 @@ export default async function handler(req, res) {
 
     try {
         const { messages, model, temperature, max_tokens } = req.body;
-        const GROQ_API_KEY = process.env.GROQ_API_KEY;
+        const GROQ_API_KEY = process.env.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;
 
         if (!GROQ_API_KEY) {
-            return res.status(500).json({ error: 'API key no configurada' });
+            return res.status(500).json({ error: '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' });
         }
 
         const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
