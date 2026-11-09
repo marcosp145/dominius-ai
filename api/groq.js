@@ -11,11 +11,11 @@ export default async function handler(req, res) {
             return res.status(500).json({ error: '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' });
         }
 
-        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        const response = await fetch('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', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${GROQ_API_KEY}`
+                'Authorization': `Bearer ${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}`
             },
             body: JSON.stringify({
                 model: model || 'llama-3.3-70b-versatile',
